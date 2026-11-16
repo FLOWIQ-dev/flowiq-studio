@@ -314,6 +314,7 @@ class StudioApp {
   }
 
   askText(title,label,value='',placeholder=''){
+    $('modal-content').classList.remove('asset-browser-modal');
     return new Promise(resolve=>{
       this.modalResolve=resolve;
       $('modal-content').innerHTML='<h2>'+esc(title)+'</h2><div class="field"><label>'+esc(label)+'</label><input id="studio-dialog-input" maxlength="64" value="'+esc(value)+'" placeholder="'+esc(placeholder)+'" autocomplete="off" autocapitalize="sentences"></div><div class="modal-actions"><button class="btn" id="studio-dialog-cancel">Cancelar</button><button class="btn primary" id="studio-dialog-ok">Confirmar</button></div>';
