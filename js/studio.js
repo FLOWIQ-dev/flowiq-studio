@@ -105,7 +105,7 @@ class StudioApp {
     const list = $('project-list');
     if (!this.projects.length) { list.innerHTML = '<div class="empty">Nenhum projeto por aqui ainda.<br>Crie um projeto para começar.</div>'; return; }
     list.innerHTML = [...this.projects].sort((a,b) => new Date(b.updatedAt || 0)-new Date(a.updatedAt || 0)).map(p => `
-      <article class="project-card"><h3><img src="./assets/icon.svg" alt="">${esc(p.name)}</h3><p>Atualizado em ${new Date(p.updatedAt || Date.now()).toLocaleString('pt-BR')}</p><div class="project-actions"><button class="btn primary" data-open="${esc(p.id)}">Abrir Studio →</button><button class="btn danger" data-delete="${esc(p.id)}" title="Excluir">⌫</button></div></article>`).join('');
+      <article class="project-card"><h3><img src="./assets/icon.svg" alt="">${esc(p.name)}</h3><p>Atualizado em ${new Date(p.updatedAt || Date.now()).toLocaleString('pt-BR')}</p><div class="project-actions"><button class="btn primary" data-open="${esc(p.id)}">Abrir Studio <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14m-6-6 6 6-6 6"/></svg></button><button class="btn danger" data-delete="${esc(p.id)}" title="Excluir" aria-label="Excluir projeto"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M10 11v6m4-6v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg></button></div></article>`).join('');
     list.querySelectorAll('[data-open]').forEach(b => b.onclick = () => this.openProject(b.dataset.open));
     list.querySelectorAll('[data-delete]').forEach(b => b.onclick = () => this.deleteProject(b.dataset.delete));
   }
@@ -812,8 +812,9 @@ class StudioApp {
 
   log(message,type='') {
     const target=$('console-log'); if(!target)return;
-    const line=document.createElement('div');line.className=type==='error'?'log-error':type==='ok'?'log-ok':'';
-    line.textContent='['+new Date().toLocaleTimeString('pt-BR')+'] '+message;
+    if(type!=='error' && type!=='warn')return;
+    const line=document.createElement('div');line.className=type==='error'?'log-error':'log-warn';
+    line.textContent=message;
     target.append(line);target.scrollTop=target.scrollHeight;
   }
 }
