@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#0b1220"><meta name="flowiq-build" content="2026.11.16.54"><title>Flowiq Studio</title><link rel="manifest" href="./manifest.json"><link rel="icon" href="./assets/icon.svg" type="image/svg+xml">
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#0b1220"><meta name="flowiq-build" content="2026.11.16.55"><title>Flowiq Studio</title><link rel="manifest" href="./manifest.json"><link rel="icon" href="./assets/icon.svg" type="image/svg+xml">
 <style>
 :root{color-scheme:dark;--bg:#15181d;--panel:#1b1f25;--panel-raised:#22272e;--panel-hover:#292f37;--line:#30363f;--line-soft:#272d35;--text:#e7eaf0;--muted:#929ba8;--faint:#69727f;--accent:#579cff;--accent-dim:#203b59;--danger:#e17878;--radius:6px;--space-1:4px;--space-2:8px;--space-3:12px;--space-4:16px;--space-5:20px;--control-height:36px;--icon-target:40px;--icon-size:20px;--panel-gutter:12px;--panel-width:clamp(180px,17vw,230px)}
 *{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--text);font:13px Inter,"Segoe UI",system-ui,-apple-system,sans-serif;-webkit-font-smoothing:antialiased}
@@ -405,44 +405,217 @@ button,input,textarea{font:inherit}button{cursor:pointer}.screen{display:none;wi
  .studio-toast{bottom:calc(18px + env(safe-area-inset-bottom));font-size:11px}
  .modal-box{border-radius:16px}
 }
+
+/* Build 55: creator workspace system */
+:root{--bg:#11151b;--panel:#171e27;--panel-raised:#1e2834;--panel-hover:#263442;--line:#2a3542;--line-soft:#222c37;--text:#e7edf5;--muted:#9aa9b8;--faint:#748496;--accent:#76b6f5;--accent-dim:#20364b;--danger:#df888c;--radius:8px;--control-height:40px;--panel-gutter:12px}
+body{background:#11151b}
+.hub-header{height:62px;min-height:62px;padding:0 max(16px,calc((100vw - 1120px)/2));background:#141b24;border:0;border-bottom:1px solid #ffffff0b}
+.brand{font-size:15px;letter-spacing:-.45px}.brand img{width:30px;height:30px}.brand b{color:#8ea7c0;font-weight:500}
+.hub-header .btn{height:40px;min-height:40px;padding:0 15px;border:0;border-radius:8px;background:#367dbb}
+.hub-header .btn svg,.hub-section-heading .btn svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round}
+.hub-main{width:min(100%,1120px);padding:24px 24px 56px}
+.hub-nav{display:flex;gap:5px;margin:0 0 34px;padding:5px;border:0;border-radius:10px;background:#171f29}
+.hub-nav button{display:flex;align-items:center;justify-content:center;gap:8px;min-width:0;min-height:42px;padding:0 16px;border:0;border-radius:7px;background:transparent;color:#8c9bab;font-size:12px;font-weight:600}
+.hub-nav button svg{display:block;width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.hub-nav button[aria-selected=true]{background:#2a3b4e;color:#e6f2ff;box-shadow:none}
+.hub-view{display:none}.hub-view.active{display:block}
+.hub-welcome{min-height:126px;margin:0 0 34px;display:flex;align-items:center}
+.hub-welcome .eyebrow,.eyebrow{color:#80a8ce;font-size:9px;font-weight:750;letter-spacing:1.45px}
+.hub-welcome h1{margin:10px 0 8px;font-size:clamp(25px,4vw,34px);line-height:1.15;letter-spacing:-1.1px;font-weight:650}
+.hub-welcome p{margin:0;color:#91a1b1;font-size:13px}
+.home-section-heading,.hub-section-heading{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin:0 0 17px}
+.home-section-heading h2,.hub-section-heading h2{margin:7px 0 0;font-size:21px;font-weight:640;letter-spacing:-.5px}
+.hub-section-heading small{display:block;margin-top:6px;color:#8292a3;font-size:11px}
+.home-recent-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(245px,1fr));gap:8px}
+.recent-project{display:flex;align-items:center;gap:12px;min-height:76px;padding:12px;border:0;border-radius:10px;background:#1a232e;color:#e2eaf2;text-align:left}
+.recent-project:hover{background:#202d3a}
+.recent-project-icon,.project-glyph{display:grid;place-items:center;width:42px;height:42px;flex:0 0 42px;border-radius:10px;background:#263d54}
+.recent-project-icon img,.project-glyph img{width:24px;height:24px}
+.recent-project>span:nth-child(2){display:flex;flex:1;min-width:0;flex-direction:column;gap:5px}
+.recent-project strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;font-weight:620}
+.recent-project small{color:#8496a8;font-size:10px}
+.recent-project>svg{width:17px;height:17px;fill:none;stroke:#8ca7c2;stroke-width:1.8;flex:none}
+.home-footer-note{display:flex;align-items:center;gap:12px;margin-top:36px;padding:16px 0;border-top:1px solid #ffffff10;color:#92a2b1}
+.home-footer-note>svg{width:22px;height:22px;flex:none;fill:none;stroke:#83b9e9;stroke-width:1.6}
+.home-footer-note>span{display:flex;flex-direction:column;gap:4px}
+.home-footer-note strong{font-size:11px;font-weight:600;color:#cbd6e1}
+.home-footer-note small{font-size:10px;color:#8494a4}
+.project-tools{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 14px;color:#788b9e;font-size:10px}
+.project-search,.library-search{display:flex;align-items:center;gap:9px;flex:1;max-width:460px;min-width:0;height:42px;padding:0 12px;border-radius:8px;background:#1a242f}
+.project-search svg,.library-search svg{width:17px;height:17px;flex:none;fill:none;stroke:#8da5bc;stroke-width:1.8;stroke-linecap:round}
+.project-search input,.library-search input{width:100%;min-width:0;border:0!important;outline:0!important;background:transparent!important;color:#e5edf5;font-size:12px}
+#project-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:8px}
+.project-card{padding:0;border:0;border-radius:10px;background:#1a232e;overflow:hidden}
+.project-card:hover{background:#202d3a;border:0}
+.project-card-open{display:flex;align-items:center;gap:12px;width:100%;min-height:76px;padding:13px;border:0;background:transparent;color:#e5edf5;text-align:left}
+.project-card-copy{display:flex;flex:1;min-width:0;flex-direction:column;gap:5px}
+.project-card-copy strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;font-weight:620}
+.project-card-copy small{color:#8496a8;font-size:10px}
+.project-card-arrow{width:17px;height:17px;fill:none;stroke:#8ca7c2;stroke-width:1.8}
+.project-card-tools{display:flex;gap:18px;padding:0 14px 11px 67px}
+.project-card-tools button{padding:3px 0;border:0;background:transparent;color:#8ba0b5;font-size:10px}
+.project-card-tools button:last-child{color:#d38d92}
+.empty-project-state{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:9px;min-height:210px;padding:25px;text-align:center;color:#e1e9f1}
+.empty-project-icon{display:grid;place-items:center;width:46px;height:46px;margin-bottom:4px;border-radius:13px;background:#253c53;color:#a4d0fa}
+.empty-project-icon svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8}
+.empty-project-state strong{font-size:14px;font-weight:620}.empty-project-state small{max-width:300px;color:#8798a8;font-size:11px;line-height:1.5}.empty-project-state .btn{margin-top:8px;border:0;border-radius:8px}
+.hub-section-heading .btn{min-height:40px;border:0;border-radius:8px}
+.library-controls{display:flex;align-items:center;gap:9px;margin:14px 0 15px}
+.library-search{max-width:none}
+.library-controls select,.library-controls>input:not([type=search]){height:42px;min-width:0;padding:0 11px;border:0;border-radius:8px;background:#1a242f;color:#b5c3d0;font-size:11px}
+.library-workspace{display:grid;grid-template-columns:minmax(0,1fr) minmax(280px,38%);gap:14px;align-items:stretch;min-height:390px}
+.asset-list{display:flex;flex-direction:column;gap:3px;min-width:0;max-height:65vh;overflow:auto;padding-right:4px}
+.asset-entry{display:flex;align-items:center;gap:11px;width:100%;min-height:66px;padding:9px 11px;border:0;border-radius:9px;background:transparent;color:#e4ecf4;text-align:left}
+.asset-entry:hover{background:#1a2632}.asset-entry.selected{background:#23374b}
+.asset-entry-thumb{display:grid;place-items:center;width:44px;height:44px;flex:0 0 44px;overflow:hidden;border-radius:9px;background:#263746;color:#a8c8e7}
+.asset-entry-thumb svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.asset-entry-thumb img{width:100%;height:100%;object-fit:cover}
+.asset-entry-copy{display:flex;flex:1;min-width:0;flex-direction:column;gap:5px}
+.asset-entry-copy strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;font-weight:600}
+.asset-entry-copy small{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#8495a6;font-size:10px}
+.asset-entry-chevron{width:16px;height:16px;flex:none;fill:none;stroke:#7e96ad;stroke-width:1.8}
+.asset-preview-pane{display:flex;flex-direction:column;min-width:0;min-height:390px;overflow:hidden;border-radius:11px;background:#19222c}
+.preview-empty{display:flex;flex:1;min-height:250px;align-items:center;justify-content:center;flex-direction:column;gap:10px;padding:22px;text-align:center;color:#d6e1ec}
+.preview-empty svg{width:38px;height:38px;fill:none;stroke:#7899b8;stroke-width:1.3}
+.preview-empty strong{font-size:13px;font-weight:620}.preview-empty span{max-width:230px;color:#8395a7;font-size:10px;line-height:1.5}
+.preview-pane-heading{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:13px 14px}
+.preview-pane-heading>div{display:flex;min-width:0;flex-direction:column;gap:5px}
+.preview-pane-heading strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;font-weight:620}
+.preview-pane-heading small{color:#8496a8;font-size:10px}
+.preview-pane-content{display:grid;place-items:center;flex:1;min-height:240px;overflow:auto;background:#111820}
+.preview-media{display:grid;place-items:center;width:100%;height:100%;min-height:240px;max-height:520px;padding:12px;background-color:#111820;background-image:linear-gradient(45deg,#ffffff08 25%,transparent 25%),linear-gradient(-45deg,#ffffff08 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#ffffff08 75%),linear-gradient(-45deg,transparent 75%,#ffffff08 75%);background-size:18px 18px;background-position:0 0,0 9px,9px -9px,-9px 0}
+.preview-media img{display:block;max-width:100%;max-height:480px;width:auto;height:auto;object-fit:contain}
+.preview-media video{display:block;width:100%;max-height:480px}
+.preview-audio{display:grid;place-items:center;gap:18px;width:100%;padding:35px 18px}
+.preview-audio svg{width:50px;height:50px;fill:none;stroke:#8bb6df;stroke-width:1.2}
+.preview-audio audio{width:100%}
+.preview-pdf{width:100%;height:480px;border:0;background:#f4f6f8}
+.preview-code{width:100%;height:100%;min-height:260px;max-height:500px;overflow:auto;margin:0;padding:15px;background:#111820;color:#c5d6e6;white-space:pre-wrap;overflow-wrap:anywhere;font:10px/1.6 ui-monospace,monospace}
+.preview-unsupported{display:flex;align-items:center;justify-content:center;flex-direction:column;gap:9px;min-height:250px;padding:24px;text-align:center}
+.preview-unsupported svg{width:32px;height:32px;fill:none;stroke:#819bb4;stroke-width:1.4}
+.preview-unsupported strong{font-size:12px;color:#d5e0eb}.preview-unsupported span{max-width:230px;color:#8394a4;font-size:10px;line-height:1.5}
+.preview-pane-actions{display:flex;align-items:center;gap:7px;padding:12px}
+.preview-pane-actions .btn{flex:1;min-width:0;min-height:38px;padding:0 8px;border:0;border-radius:7px;font-size:10px}
+.preview-pane-actions .btn.primary{background:#326fa7}
+.library-note{margin:14px 0 0;color:#7f91a3;font-size:10px;line-height:1.5}
+.settings-layout{display:grid;gap:13px;max-width:760px}
+.settings-section{padding:17px 18px;border-radius:11px;background:#1a232e}
+.settings-section-heading{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+.settings-section-heading>svg{width:23px;height:23px;flex:none;fill:none;stroke:#8eb8df;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+.settings-section-heading>div{display:flex;flex-direction:column;gap:4px}
+.settings-section-heading strong{font-size:13px;font-weight:620}.settings-section-heading small{color:#8496a8;font-size:10px}
+.setting-row{display:flex;align-items:center;justify-content:space-between;gap:14px;min-height:58px;padding:9px 0;border-top:1px solid #ffffff0a;cursor:pointer}
+.setting-row>span{display:flex;flex-direction:column;gap:4px}.setting-row strong{font-size:11px;font-weight:600}.setting-row small{font-size:10px;color:#8496a8}
+.setting-row input{width:18px;height:18px;accent-color:#5b9ddd}
+.storage-summary{display:grid;grid-template-columns:1fr auto;gap:10px;padding:12px 0;margin-bottom:10px;border-top:1px solid #ffffff0a;border-bottom:1px solid #ffffff0a}
+.storage-summary span{font-size:10px;color:#8798a8}.storage-summary strong{font-size:11px;font-weight:620;color:#dce7f1;font-variant-numeric:tabular-nums}
+.settings-actions{display:grid;gap:2px}
+.settings-action{display:flex;align-items:center;gap:12px;width:100%;min-height:66px;padding:9px 3px;border:0;border-radius:8px;background:transparent;color:#e2eaf2;text-align:left}
+.settings-action:hover:not(:disabled){background:#ffffff07}.settings-action:disabled{opacity:.48;cursor:not-allowed}
+.settings-action-icon{display:grid;place-items:center;width:38px;height:38px;flex:none;border-radius:9px;background:#263a4e;color:#9cc7ed}
+.settings-action-icon svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.settings-action>span:nth-child(2){display:flex;flex:1;min-width:0;flex-direction:column;gap:5px}
+.settings-action strong{font-size:11px;font-weight:620}.settings-action small{font-size:10px;color:#8496a8}
+.settings-chevron{width:16px;height:16px;flex:none;fill:none;stroke:#71869b;stroke-width:1.8}
+.settings-about p{margin:0;color:#91a0ae;font-size:11px;line-height:1.6}
+.hub-tools-menu,.home-stats,.home-stat-action,.welcome-mark{display:none!important}
+.studio-toast{z-index:2000}
+.modal-backdrop{z-index:120}
+.topbar{background:#171f29;border-color:#283542}
+.topbar-actions{background:transparent!important;border:0!important}
+.topbar .icon-action{border:0!important;border-radius:8px}
+.editor-layout{background:#111820}
+.side-panel{background:#18212b;border-color:#2a3643!important}
+.panel-header{background:#1c2733;border-color:#2a3643!important}
+.panel-content{background:#18212b}
+.stage-area{background:#111820}
+.stage-toolbar{background:#1a2530;border-color:#2a3643!important}
+.stage-scroll{background-color:#111820}
+#canvas{background:#202a35;border-color:#405064}
+.property-group{border:0;border-radius:9px;background:#202b37;padding:0 11px 11px}
+.field input,.field textarea,.field select{border:0;border-radius:7px;background:#131c25}
+.tree-row{border:0;border-radius:7px}
+.tree-row.selected{background:#263d54}
+.btn{border:0;border-radius:7px;background:#263442}
+.btn.primary{background:#326fa7}
+@media(max-width:820px){
+ .hub-header{height:58px;min-height:58px;padding:0 13px}.local-status{display:none}
+ .hub-main{padding:14px 13px 32px}
+ .hub-nav{position:sticky;top:0;z-index:15;gap:2px;margin:0 -3px 23px;padding:4px}
+ .hub-nav button{flex:1;flex-direction:column;gap:4px;min-height:52px;padding:4px 3px;font-size:10px}
+ .hub-nav button svg{width:18px;height:18px}
+ .hub-welcome{min-height:112px;margin-bottom:24px}
+ .hub-welcome h1{font-size:26px}.hub-welcome p{max-width:300px;font-size:11px}
+ .home-recent-list{grid-template-columns:1fr;gap:5px}
+ .home-section-heading h2,.hub-section-heading h2{font-size:19px}
+ .project-tools{align-items:center}.project-tools>span{display:none}
+ #project-list{grid-template-columns:1fr;gap:6px}
+ .library-controls{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+ .library-search{grid-column:1/-1;height:43px}
+ .library-controls select,.library-controls>input:not([type=search]){width:100%;height:42px}
+ .library-workspace{grid-template-columns:minmax(0,1fr);gap:10px;min-height:0}
+ .asset-list{max-height:38vh;padding:0}
+ .asset-preview-pane{min-height:330px}
+ .preview-pane-content{min-height:220px}
+ .preview-media{max-height:55vh}.preview-media img{max-height:52vh}
+ .preview-pdf{height:55vh;min-height:300px}
+ .preview-pane-actions .btn{min-height:42px}
+ .settings-section{padding:14px}
+ .settings-action{min-height:70px}
+ .home-footer-note{align-items:flex-start;margin-top:26px}
+ .hub-header .btn{height:40px;min-height:40px;padding:0 11px;font-size:11px}
+ .topbar{gap:5px}.topbar-actions{gap:0}
+}
 </style></head><body>
 <main id="hub" class="screen active">
 <header class="hub-header">
   <div class="brand"><img src="./assets/icon.svg" alt=""><span>Flowiq <b>Studio</b></span></div>
-  <div class="hub-header-actions"><span class="local-status"><i></i> Salvo neste dispositivo</span><button class="btn primary" id="btn-new"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Novo projeto</button></div>
+  <div class="hub-header-actions"><span class="local-status"><i></i> Armazenamento local</span><button class="btn primary" id="btn-new"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span>Novo projeto</span></button></div>
 </header>
 <section class="hub-main">
-  <div class="hub-welcome"><div><span class="eyebrow">SEU WORKSPACE</span><h1>O que vamos criar hoje?</h1><p>Seus projetos e recursos, organizados em um só lugar.</p></div><div class="welcome-mark" aria-hidden="true"><span></span><span></span><span></span></div></div>
   <nav class="hub-nav" aria-label="Navegação principal">
-    <button id="hub-tab-home" data-hub-view="home" aria-selected="true"><span>⌂</span> Início</button>
-    <button id="hub-tab-projects" data-hub-view="projects" aria-selected="false"><span>▦</span> Projetos</button>
-    <button id="hub-tab-library" data-hub-view="library" aria-selected="false"><span>▤</span> Biblioteca</button>
+    <button id="hub-tab-home" data-hub-view="home" aria-selected="true"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-6v-7h-4v7H4a1 1 0 0 1-1-1z"/></svg><span>Início</span></button>
+    <button id="hub-tab-projects" data-hub-view="projects" aria-selected="false"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="8" height="7" rx="1.5"/><rect x="13" y="4" width="8" height="7" rx="1.5"/><rect x="3" y="13" width="8" height="7" rx="1.5"/><rect x="13" y="13" width="8" height="7" rx="1.5"/></svg><span>Projetos</span></button>
+    <button id="hub-tab-library" data-hub-view="library" aria-selected="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v17H6.5A2.5 2.5 0 0 1 4 17.5z"/><path d="M4 17.5A2.5 2.5 0 0 1 6.5 15H20M8 7h8M8 10h6"/></svg><span>Biblioteca</span></button>
+    <button id="hub-tab-settings" data-hub-view="settings" aria-selected="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7Z"/><path d="m19.4 15 .1.1 1.1.9-1.4 2.4-1.4-.5a7.8 7.8 0 0 1-1.5.9l-.3 1.5h-2.8l-.3-1.5a7.8 7.8 0 0 1-1.5-.9l-1.4.5-1.4-2.4 1.1-.9a7 7 0 0 1 0-1.8l-1.1-.9 1.4-2.4 1.4.5a7.8 7.8 0 0 1 1.5-.9l.3-1.5h2.8l.3 1.5a7.8 7.8 0 0 1 1.5.9l1.4-.5 1.4 2.4-1.1.9a7 7 0 0 1 0 1.8Z" transform="translate(-1 -1)"/></svg><span>Configurações</span></button>
   </nav>
   <section id="hub-home-view" class="hub-view active">
-    <div class="home-stats">
-      <div class="home-stat"><span>PROJETOS</span><strong id="home-project-count">0</strong><small>Criações neste dispositivo</small></div>
-      <div class="home-stat"><span>ARQUIVOS</span><strong id="home-asset-count">0</strong><small>Recursos na biblioteca</small></div>
-      <button class="home-stat home-stat-action" id="home-open-library"><span>BIBLIOTECA</span><strong>Organizar arquivos <b>↗</b></strong><small>Imagens, áudio, vídeo e mais</small></button>
-    </div>
-    <div class="home-section-heading"><div><span class="eyebrow">CONTINUE DE ONDE PAROU</span><h2>Projetos recentes</h2></div><button class="text-action" id="home-all-projects">Ver todos <span>→</span></button></div>
+    <div class="hub-welcome"><div><span class="eyebrow">FLOWIQ STUDIO</span><h1>Seu espaço de criação.</h1><p>Crie interfaces, organize recursos e construa suas ideias.</p></div></div>
+    <div class="home-section-heading"><div><span class="eyebrow">SEU TRABALHO</span><h2>Projetos recentes</h2></div></div>
     <div id="home-recent-list" class="home-recent-list"><div class="empty">Carregando projetos…</div></div>
-    <div class="home-footer-note"><span class="local-lock">◈</span><span><strong>Seus dados ficam no seu dispositivo.</strong><small>Exporte um backup para guardar uma cópia fora do navegador.</small></span><button class="text-action" id="home-backup">Fazer backup →</button></div>
+    <div class="home-footer-note"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 5 6v5c0 4.5 2.8 8 7 10 4.2-2 7-5.5 7-10V6z"/><path d="m9 12 2 2 4-4"/></svg><span><strong>Seus projetos ficam neste dispositivo.</strong><small>Use Configurações para exportar uma cópia ou restaurar seus dados.</small></span></div>
   </section>
   <section id="hub-projects-view" class="hub-view">
-    <div class="hub-section-heading"><div><span class="eyebrow">SEU TRABALHO</span><h2>Todos os projetos</h2><small id="project-count">0 projetos</small></div><button class="btn primary" id="projects-new">＋ Novo projeto</button></div>
-    <div class="project-tools"><span>Ordenados pelos mais recentes</span><details class="hub-tools-menu" id="hub-tools-menu"><summary>Importar e backup <span>⌄</span></summary><div class="hub-tools-content"><button id="btn-backup-export">Exportar tudo</button><button id="btn-backup-import">Restaurar backup</button><button id="btn-import">Importar projeto</button></div></details></div>
-    <input type="file" id="file-input" accept=".flowiq,.flowiq-backup,.json,application/json,application/vnd.flowiq.backup+json" hidden>
-    <input type="file" id="backup-file-input" accept=".flowiq-backup,application/vnd.flowiq.backup+json,.json" hidden>
+    <div class="hub-section-heading"><div><span class="eyebrow">WORKSPACE</span><h2>Projetos</h2><small id="project-count">0 projetos</small></div></div>
+    <div class="project-tools"><label class="project-search"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 5 5"/></svg><input id="project-search" type="search" placeholder="Buscar projetos..." aria-label="Buscar projetos"></label><span>Mais recentes</span></div>
     <div id="project-list"><div class="empty">Carregando projetos…</div></div>
   </section>
   <section id="hub-library-view" class="hub-view">
-    <div class="hub-section-heading"><div><span class="eyebrow">RECURSOS DO STUDIO</span><h2>Biblioteca</h2><small id="library-summary-text">Carregando arquivos…</small></div><button class="btn primary" id="asset-upload-button">＋ Adicionar arquivos</button><input type="file" id="asset-file-input" accept="image/*,video/*,audio/*,font/*,.woff,.woff2,.ttf,.otf,.pdf,.json,.svg" multiple hidden></div>
-    <div class="library-controls"><label class="library-search"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 5 5"/></svg><input type="search" id="asset-search" placeholder="Buscar arquivos pelo nome..." aria-label="Buscar arquivos"></label><select id="asset-folder-filter" aria-label="Filtrar pasta"><option value="">Todas as pastas</option></select><input id="asset-folder-name" maxlength="48" placeholder="Pasta para novos envios" aria-label="Pasta para novos arquivos"></div>
-    <div id="asset-list"><div class="empty">Sua biblioteca está vazia. Adicione imagens, vídeos, áudios ou outros arquivos.</div></div>
-    <p class="library-note">Arquivos guardados localmente neste navegador. Inclua a biblioteca nos backups para não perder seus recursos.</p>
+    <div class="hub-section-heading"><div><span class="eyebrow">ASSETS</span><h2>Biblioteca</h2><small id="library-summary-text">Carregando arquivos…</small></div><button class="btn primary" id="asset-upload-button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4m-4 4 4-4 4 4"/><path d="M4 15v5h16v-5"/></svg><span>Adicionar arquivos</span></button><input type="file" id="asset-file-input" accept="image/*,video/*,audio/*,font/*,.woff,.woff2,.ttf,.otf,.pdf,.json,.svg,.txt" multiple hidden></div>
+    <div class="library-controls"><label class="library-search"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 5 5"/></svg><input type="search" id="asset-search" placeholder="Buscar arquivos..." aria-label="Buscar arquivos"></label><select id="asset-folder-filter" aria-label="Filtrar pasta"><option value="">Todas as pastas</option></select><input id="asset-folder-name" maxlength="48" placeholder="Pasta ao enviar" aria-label="Pasta para novos arquivos"></div>
+    <div class="library-workspace"><div id="asset-list" class="asset-list"><div class="empty">Sua biblioteca está vazia.</div></div><aside id="asset-preview-pane" class="asset-preview-pane"><div class="preview-empty"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m4 17 5-5 4 4 3-3 4 4"/></svg><strong>Pré-visualização</strong><span>Selecione um arquivo para ver os detalhes e o conteúdo.</span></div></aside></div>
+    <p class="library-note">Os arquivos são armazenados localmente e incluídos nos backups completos.</p>
+  </section>
+  <section id="hub-settings-view" class="hub-view">
+    <div class="hub-section-heading"><div><span class="eyebrow">PREFERÊNCIAS</span><h2>Configurações do Studio</h2><small>Personalize o editor e gerencie seus dados.</small></div></div>
+    <div class="settings-layout">
+      <section class="settings-section"><div class="settings-section-heading"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7Z"/><path d="m19 13 2 1-2 3-2-.5-1.5.8-.5 2h-3l-.5-2-1.5-.8-2 .5-2-3 2-1v-2l-2-1 2-3 2 .5 1.5-.8.5-2h3l.5 2 1.5.8 2-.5 2 3-2 1z"/></svg><div><strong>Editor</strong><small>Comportamento padrão do palco 2D</small></div></div>
+        <label class="setting-row"><span><strong>Mostrar grade</strong><small>Exibir a grade de alinhamento no palco.</small></span><input type="checkbox" id="pref-grid"></label>
+        <label class="setting-row"><span><strong>Alinhamento inteligente</strong><small>Guias ajudam a alinhar objetos durante o movimento.</small></span><input type="checkbox" id="pref-smart-align"></label>
+      </section>
+      <section class="settings-section"><div class="settings-section-heading"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/><circle cx="8" cy="7" r="2"/><circle cx="15" cy="12" r="2"/><circle cx="10" cy="17" r="2"/></svg><div><strong>Dados e armazenamento</strong><small>Importação, exportação e cópias de segurança</small></div></div>
+        <div class="storage-summary"><span>Projetos</span><strong id="settings-project-count">0</strong><span>Arquivos</span><strong id="settings-asset-count">0</strong><span>Espaço utilizado</span><strong id="settings-storage-size">0 B</strong></div>
+        <div class="settings-actions"><button class="settings-action" id="settings-export-backup"><span class="settings-action-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m-4-4 4 4 4-4"/><path d="M5 17v3h14v-3"/></svg></span><span><strong>Exportar tudo</strong><small>Projetos, biblioteca e configurações compatíveis.</small></span><svg class="settings-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></button>
+        <button class="settings-action" id="settings-restore-backup"><span class="settings-action-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4m-4 4 4-4 4 4"/><path d="M5 14v6h14v-6"/></svg></span><span><strong>Restaurar backup</strong><small>Adicionar dados de um arquivo de backup.</small></span><svg class="settings-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></button>
+        <button class="settings-action" id="settings-import-project"><span class="settings-action-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h7l2 2h7v12H4z"/><path d="M12 10v6m-3-3 3 3 3-3"/></svg></span><span><strong>Importar projeto</strong><small>Adicionar um projeto Flowiq existente.</small></span><svg class="settings-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></button>
+        <button class="settings-action" id="settings-export-project"><span class="settings-action-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m-4-4 4 4 4-4"/><path d="M5 17v3h14v-3"/></svg></span><span><strong>Exportar projeto atual</strong><small>Salvar o projeto aberto e os arquivos que ele utiliza.</small></span><svg class="settings-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></button></div>
+        <input type="file" id="file-input" accept=".flowiq,.flowiq-backup,.json,application/json,application/vnd.flowiq.backup+json" hidden><input type="file" id="backup-file-input" accept=".flowiq-backup,application/vnd.flowiq.backup+json,.json" hidden>
+      </section>
+      <section class="settings-section settings-about"><div class="settings-section-heading"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5m0-8h.01"/></svg><div><strong>Sobre o Flowiq Studio</strong><small id="settings-version">Versão 2026.11.16.55</small></div></div><p>Um ambiente mobile-first para criar interfaces 2D, organizar recursos e construir experiências interativas.</p></section>
+    </div>
   </section>
 </section>
-</main><main id="workspace" class="screen"><header class="topbar"><div class="topbar-brand"><img src="./assets/icon.svg" alt="">Flowiq Studio</div><span class="build-tag" title="Versão do Studio">v2026.11.16.54</span><div class="breadcrumb">/ <span id="project-title">Projeto</span></div><div class="topbar-spacer"></div><div class="topbar-actions"><button class="icon-action" id="btn-fullscreen" title="Tela cheia" aria-label="Ativar tela cheia" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3H3v5M16 3h5v5M3 16v5h5M21 16v5h-5"/></svg></button><button class="icon-action" id="btn-hub" title="Projetos" aria-label="Projetos"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7.5h6l2 2h8v9H4z"/><path d="M4 7.5V5h6l2 2"/></svg></button><button class="icon-action" id="btn-export" title="Exportar" aria-label="Exportar" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m-4-4 4 4 4-4"/><path d="M5 17v3h14v-3"/></svg></button><button class="icon-action primary" id="btn-save" title="Salvar" aria-label="Salvar" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h12l3 3v13H4V4z"/><path d="M8 4v6h8V4M8 20v-6h8v6"/></svg></button></div></header>
+</main><main id="workspace" class="screen"><header class="topbar"><div class="topbar-brand"><img src="./assets/icon.svg" alt="">Flowiq Studio</div><span class="build-tag" title="Versão do Studio">v2026.11.16.55</span><div class="breadcrumb">/ <span id="project-title">Projeto</span></div><div class="topbar-spacer"></div><div class="topbar-actions"><button class="icon-action" id="btn-fullscreen" title="Tela cheia" aria-label="Ativar tela cheia" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3H3v5M16 3h5v5M3 16v5h5M21 16v5h-5"/></svg></button><button class="icon-action" id="btn-hub" title="Projetos" aria-label="Projetos"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7.5h6l2 2h8v9H4z"/><path d="M4 7.5V5h6l2 2"/></svg></button><button class="icon-action" id="btn-settings" title="Configurações do Studio" aria-label="Configurações do Studio"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7Z"/><path d="m19 13 2 1-2 3-2-.5-1.5.8-.5 2h-3l-.5-2-1.5-.8-2 .5-2-3 2-1v-2l-2-1 2-3 2 .5 1.5-.8.5-2h3l.5 2 1.5.8 2-.5 2 3-2 1z"/></svg></button><button class="icon-action" id="btn-export" title="Exportar" aria-label="Exportar" disabled hidden></button><button class="icon-action primary" id="btn-save" title="Salvar" aria-label="Salvar" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h12l3 3v13H4V4z"/><path d="M8 4v6h8V4M8 20v-6h8v6"/></svg></button></div></header>
 <div class="editor-layout"><aside class="side-panel explorer" id="explorer"><div class="panel-header"><h2>Explorer</h2><button data-close-panel aria-label="Fechar Explorer"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button></div><div class="panel-content"><div class="explorer-search"><input id="tree-search" type="search" placeholder="Buscar objetos..." aria-label="Buscar objetos"></div><div class="explorer-toolbar"><small>HIERARCHY</small><div class="explorer-toolbar-actions"><button class="icon-action" id="open-project-library" title="Abrir biblioteca de arquivos" aria-label="Abrir biblioteca de arquivos"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7h7l2 2h9v10H3z"/><path d="M3 7V5h7l2 2"/></svg></button><button class="icon-action instance-add" id="open-instances" title="Adicionar instância" aria-label="Adicionar instância"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button></div></div><div id="tree" role="tree" aria-label="Hierarquia do projeto"></div><section class="instance-library" id="instance-library" aria-label="Biblioteca de instâncias" hidden><header><strong>Inserir instância</strong><button class="icon-action" id="close-instances" aria-label="Fechar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button></header><p id="instance-parent-label">Adicionar em Projeto</p><div class="instance-category"><small>INTERFACE</small><button data-instance="Frame"><span class="instance-symbol" data-instance-icon="Frame"></span><span><b>Frame</b><small>Container visual</small></span></button><button data-instance="TextButton"><span class="instance-symbol" data-instance-icon="TextButton"></span><span><b>TextButton</b><small>Botão com texto</small></span></button><button data-instance="TextLabel"><span class="instance-symbol" data-instance-icon="TextLabel"></span><span><b>TextLabel</b><small>Texto</small></span></button></div><div class="instance-category"><small>MÍDIA</small><button data-instance="ImageLabel"><span class="instance-symbol" data-instance-icon="ImageLabel"></span><span><b>ImageLabel</b><small>Imagem</small></span></button></div></section></div></aside>
 <section class="stage-area"><div class="stage-toolbar"><strong id="stage-mode-label">PALCO 2D</strong><button class="panel-toggle" id="show-explorer" type="button" aria-pressed="true">Explorer</button><span>Arraste para posicionar</span><div class="spacer"></div><div class="history-buttons" aria-label="Histórico"><button class="icon-action" id="undo-action" title="Desfazer (Ctrl+Z)" aria-label="Desfazer"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14 4 9l5-5"/><path d="M4 9h9a7 7 0 0 1 0 14h-2"/></svg></button><button class="icon-action" id="redo-action" title="Refazer (Ctrl+Shift+Z)" aria-label="Refazer"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 14 5-5-5-5"/><path d="M20 9h-9a7 7 0 0 0 0 14h2"/></svg></button></div><div class="stage-arrange-tools"><button class="icon-action" id="btn-grid" type="button" aria-label="Mostrar ou ocultar grade" aria-pressed="true" title="Grade visível"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h16v16H4zM4 10h16M4 16h16M10 4v16M16 4v16"/></svg></button><div class="stage-mode-switch" role="group" aria-label="Modo de posicionamento"><button class="mode-option" id="btn-free" type="button" aria-pressed="false" title="Posicionamento livre">Livre</button><button class="mode-option is-active" id="btn-align" type="button" aria-pressed="true" title="Alinhamento inteligente">Alinhar</button></div></div><button class="panel-toggle" id="show-inspector" type="button" aria-pressed="true">Properties</button><div class="stage-zoom" aria-label="Zoom do palco"><button class="icon-action" id="zoom-out" aria-label="Diminuir zoom" title="Diminuir zoom"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/></svg></button><output id="zoom-level">100%</output><button class="icon-action" id="zoom-in" aria-label="Aumentar zoom" title="Aumentar zoom"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button><button class="icon-action fit-action" id="zoom-fit" title="Ajustar ao palco" aria-label="Ajustar ao palco"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3H3v5M16 3h5v5M3 16v5h5M21 16v5h-5"/></svg></button></div><button class="btn preview-trigger" id="btn-play"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8 5 11 7-11 7z"/></svg><span>Prévia</span></button></div><div class="stage-scroll" id="stage-scroll"><div id="stage-wrap"><div id="canvas"><div class="empty-canvas">Seu palco está vazio.<br>Adicione um Frame para começar.</div></div></div></div><section class="console" id="console-panel" aria-label="Console"><div class="console-header"><strong>Console</strong><div class="console-actions"><button id="clear-console" class="btn"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M10 11v6m4-6v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg> Limpar</button></div></div><div id="console-log" aria-live="polite"></div></section></section>
 <aside class="side-panel inspector" id="inspector"><div class="panel-header"><h2>Properties</h2><button data-close-panel aria-label="Fechar Properties"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button></div><div class="panel-content" id="inspector-content"><p class="muted">Selecione um objeto para editar.</p></div></aside></div><div class="drawer-backdrop" id="drawer-backdrop"></div><nav class="mobile-nav" aria-label="Painéis do editor"><button type="button" data-panel="explorer" aria-controls="explorer" aria-expanded="false"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 5h16v14H4zM9 5v14M9 9h11M9 14h11"/></svg></span><span class="nav-label">Explorer</span></button><button type="button" data-panel="inspector" aria-controls="inspector" aria-expanded="false"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3v3m0 12v3M3 12h3m12 0h3M5.6 5.6l2.1 2.1m8.6 8.6 2.1 2.1m0-12.8-2.1 2.1m-8.6 8.6-2.1 2.1"/><circle cx="12" cy="12" r="4"/></svg></span><span class="nav-label">Properties</span></button><button type="button" data-panel="console" aria-controls="console-panel" aria-expanded="false"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m5 6 5 6-5 6M12 18h7"/></svg></span><span class="nav-label">Console</span></button></nav></main>
@@ -458,7 +631,7 @@ button,input,textarea{font:inherit}button{cursor:pointer}.screen{display:none;wi
   });
   window.addEventListener('load', async () => {
     try {
-      const registration = await navigator.serviceWorker.register('./sw.js?v=2026.11.16.54', { updateViaCache: 'none' });
+      const registration = await navigator.serviceWorker.register('./sw.js?v=2026.11.16.55', { updateViaCache: 'none' });
       if (registration.waiting) registration.waiting.postMessage({ type: 'SKIP_WAITING' });
       await registration.update();
       window.addEventListener('pageshow', () => registration.update().catch(() => {}));
@@ -513,4 +686,4 @@ button,input,textarea{font:inherit}button{cursor:pointer}.screen{display:none;wi
 })();
 </script>
 
-<script type="module" src="./js/studio.js?v=2026.11.16.54"></script></body></html>
+<script type="module" src="./js/studio.js?v=2026.11.16.55"></script></body></html>
