@@ -44,6 +44,7 @@
             align-items: center; 
             flex-shrink: 0;
             height: 50px;
+            z-index: 10;
         }
 
         h1 { 
@@ -61,7 +62,7 @@
             background: var(--bg-card);
             border: 1px solid var(--border-subtle);
             color: var(--text-main);
-            padding: 5px 10px;
+            padding: 6px 12px;
             border-radius: 8px;
             font-size: 0.75rem;
             cursor: pointer;
@@ -76,7 +77,7 @@
 
         .card { background: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); padding: 16px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2); }
 
-        .btn { background: var(--accent); color: white; border: none; padding: 12px 18px; border-radius: var(--radius-md); font-weight: 500; font-size: 0.9rem; width: 100%; cursor: pointer; text-align: center; }
+        .btn { background: var(--accent); color: white; border: none; padding: 12px 18px; border-radius: var(--radius-md); font-weight: 500; font-size: 0.9rem; width: 100%; cursor: pointer; text-align: center; z-index: 5; }
         .btn:active { background: var(--accent-hover); }
 
         .btn-secondary { background: var(--bg-card); border: 1px solid var(--border-subtle); color: var(--text-main); }
@@ -98,12 +99,11 @@
             padding: 10px;
         }
 
-        /* Viewport do Celular Virtual Ajustado */
         .phone-viewport { 
             width: 100%; 
             max-width: 260px; 
             height: 100%; 
-            max-height: 420px; 
+            max-height: 400px; 
             background: #000; 
             border: 2px solid #2a3142; 
             border-radius: 24px; 
@@ -114,27 +114,28 @@
 
         .ui-element { position: absolute; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; color: white; box-sizing: border-box; }
 
-        /* Barra de Ferramentas Inferior Fixa Garantida */
+        /* Barra de Navegação Inferior Fixa */
         .studio-nav { 
             background: var(--bg-surface);
             border-top: 1px solid var(--border-subtle); 
             display: flex; 
             justify-content: space-around; 
+            align-items: center;
             padding: 8px 0; 
             flex-shrink: 0;
-            height: 55px;
-            z-index: 40;
+            height: 60px;
+            z-index: 100;
         }
-        .nav-btn { background: none; border: none; color: var(--text-muted); font-size: 0.7rem; font-weight: 500; display: flex; flex-direction: column; align-items: center; gap: 2px; cursor: pointer; }
+        .nav-btn { background: none; border: none; color: var(--text-muted); font-size: 0.7rem; font-weight: 500; display: flex; flex-direction: column; align-items: center; gap: 2px; cursor: pointer; padding: 6px 12px; }
         .nav-btn.active { color: var(--accent); }
 
-        /* Gavetas Deslizantes */
+        /* Gavetas Deslizantes com z-index alto garantido */
         .studio-drawer { 
             position: absolute; 
             bottom: 0; 
             left: 0; 
             width: 100%; 
-            max-height: 55%; 
+            max-height: 60%; 
             background: var(--bg-surface); 
             border-top: 1px solid var(--border-subtle); 
             border-radius: var(--radius-lg) var(--radius-lg) 0 0; 
@@ -142,18 +143,18 @@
             display: none; 
             flex-direction: column; 
             gap: 10px; 
-            z-index: 50; 
+            z-index: 200; 
             overflow-y: auto; 
-            box-shadow: 0 -10px 30px rgba(0,0,0,0.6); 
+            box-shadow: 0 -10px 30px rgba(0,0,0,0.8); 
         }
         .studio-drawer.open { display: flex; }
 
-        .tree-item { padding: 6px 10px; background: var(--bg-card); border-radius: 6px; margin-bottom: 4px; display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem; border: 1px solid var(--border-subtle); }
+        .tree-item { padding: 8px 12px; background: var(--bg-card); border-radius: 6px; margin-bottom: 4px; display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem; border: 1px solid var(--border-subtle); cursor: pointer; }
     </style>
 </head>
 <body>
     <header>
-        <h1>⚡ Flowiq <span style="font-size: 0.65rem; color: var(--text-muted); background: var(--bg-card); padding: 2px 6px; border-radius: 10px;">v0.7</span></h1>
+        <h1>⚡ Flowiq <span style="font-size: 0.65rem; color: var(--text-muted); background: var(--bg-card); padding: 2px 6px; border-radius: 10px;">v0.8</span></h1>
         <div class="header-actions">
             <button class="fs-btn" onclick="toggleFullScreen()">⛶ Tela Cheia</button>
         </div>
@@ -177,12 +178,12 @@
             </div>
         </div>
 
-        <!-- WORKWORKSPACE DO ESTÚDIO -->
+        <!-- WORKSPACE DO ESTÚDIO -->
         <div id="workspaceScreen" class="screen">
             <div class="workspace-header">
-                <button class="btn btn-secondary" style="width: auto; padding: 3px 8px; font-size: 0.75rem;" onclick="returnToHub()">← Voltar</button>
+                <button class="btn btn-secondary" style="width: auto; padding: 4px 10px; font-size: 0.75rem;" onclick="returnToHub()">← Voltar</button>
                 <span id="currentProjectTitle" style="font-weight: 600;">Projeto</span>
-                <button class="btn" style="width: auto; padding: 3px 10px; font-size: 0.75rem; background: var(--success);" onclick="alert('Modo Play: Executando!')">▶ Play</button>
+                <button class="btn" style="width: auto; padding: 4px 12px; font-size: 0.75rem; background: var(--success);" onclick="alert('Modo Play: Executando interface com sucesso!')">▶ Play</button>
             </div>
 
             <div class="workspace-body">
@@ -193,10 +194,10 @@
                 <div id="explorerDrawer" class="studio-drawer">
                     <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-subtle); padding-bottom: 6px;">
                         <strong style="font-size: 0.85rem;">Explorer (Hierarquia)</strong>
-                        <button onclick="toggleDrawer(null)" style="background:none; border:none; color:var(--text-muted); font-size:1rem;">✕</button>
+                        <button onclick="toggleDrawer(null)" style="background:none; border:none; color:var(--text-muted); font-size:1.1rem; padding:4px;">✕</button>
                     </div>
-                    <button class="btn" style="font-size: 0.8rem; padding: 8px;" onclick="addInstance('Frame')">+ Adicionar Frame</button>
-                    <button class="btn" style="font-size: 0.8rem; padding: 8px; background: var(--bg-card); border: 1px solid var(--border-subtle);" onclick="addInstance('TextButton')">+ Adicionar Botão</button>
+                    <button class="btn" style="font-size: 0.85rem; padding: 10px;" onclick="addInstance('Frame')">+ Adicionar Frame</button>
+                    <button class="btn" style="font-size: 0.85rem; padding: 10px; background: var(--bg-card); border: 1px solid var(--border-subtle);" onclick="addInstance('TextButton')">+ Adicionar Botão</button>
                     <div id="instanceTree" style="font-size: 0.8rem; color: var(--text-muted); background: var(--bg-card); padding: 8px; border-radius: var(--radius-md); max-height: 140px; overflow-y: auto;">
                         <div>📁 ScreenRoot (Raiz)</div>
                     </div>
@@ -206,24 +207,24 @@
                 <div id="propertiesDrawer" class="studio-drawer">
                     <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-subtle); padding-bottom: 6px;">
                         <strong style="font-size: 0.85rem;">Propriedades</strong>
-                        <button onclick="toggleDrawer(null)" style="background:none; border:none; color:var(--text-muted); font-size:1rem;">✕</button>
+                        <button onclick="toggleDrawer(null)" style="background:none; border:none; color:var(--text-muted); font-size:1.1rem; padding:4px;">✕</button>
                     </div>
-                    <p style="font-size: 0.8rem; color: var(--text-muted);" id="propDetails">Selecione um elemento para editar.</p>
+                    <div style="font-size: 0.8rem; color: var(--text-muted);" id="propDetails">Selecione um elemento para editar.</div>
                 </div>
             </div>
 
             <!-- Barra de Navegação Inferior -->
             <div class="studio-nav">
                 <button class="nav-btn" onclick="toggleDrawer('explorerDrawer')">
-                    <span style="font-size: 1rem;">📂</span>
+                    <span style="font-size: 1.1rem;">📂</span>
                     <span>Explorer</span>
                 </button>
                 <button class="nav-btn" onclick="toggleDrawer('propertiesDrawer')">
-                    <span style="font-size: 1rem;">⚙️</span>
+                    <span style="font-size: 1.1rem;">⚙️</span>
                     <span>Propriedades</span>
                 </button>
                 <button class="nav-btn" onclick="alert('Editor de scripts em desenvolvimento.')">
-                    <span style="font-size: 1rem;">💻</span>
+                    <span style="font-size: 1.1rem;">💻</span>
                     <span>Scripts</span>
                 </button>
             </div>
@@ -237,7 +238,7 @@
         function toggleFullScreen() {
             if (!document.fullscreenElement) {
                 document.documentElement.requestFullscreen().catch(err => {
-                    alert("Tela cheia indisponível neste navegador.");
+                    alert("Para tela cheia, toque em 'Adicionar à tela inicial' no menu do navegador.");
                 });
             } else {
                 if (document.exitFullscreen) {
@@ -279,7 +280,7 @@
                         <strong style="font-size: 0.85rem; color: var(--text-main);">${p.name}</strong>
                         <div style="font-size: 0.65rem; color: var(--text-muted);">Criado em: ${p.created}</div>
                     </div>
-                    <button style="background: rgba(99, 102, 241, 0.15); border: 1px solid rgba(99, 102, 241, 0.3); color: #818cf8; padding: 6px 12px; border-radius: 8px; font-size: 0.75rem;" onclick="openProject(${p.id})">Abrir</button>
+                    <button style="background: rgba(99, 102, 241, 0.15); border: 1px solid rgba(99, 102, 241, 0.3); color: #818cf8; padding: 6px 12px; border-radius: 8px; font-size: 0.75rem; cursor:pointer;" onclick="openProject(${p.id})">Abrir</button>
                 </div>
             `).join('');
         }
@@ -287,8 +288,12 @@
         function openProject(id) {
             const projects = JSON.parse(localStorage.getItem('flowiq_projects') || '[]');
             currentProject = projects.find(p => p.id === id);
-            if (!currentProject) return;
+            if (!currentProject) {
+                alert("Erro ao abrir projeto.");
+                return;
+            }
 
+            localStorage.setItem('flowiq_active_id', currentProject.id);
             document.getElementById('currentProjectTitle').innerText = currentProject.name;
             document.getElementById('hubScreen').classList.remove('active');
             document.getElementById('workspaceScreen').classList.add('active');
@@ -298,6 +303,8 @@
 
         function returnToHub() {
             saveCurrentProject();
+            localStorage.removeItem('flowiq_active_id');
+            currentProject = null;
             document.getElementById('workspaceScreen').classList.remove('active');
             document.getElementById('hubScreen').classList.add('active');
             loadProjects();
@@ -315,7 +322,10 @@
         }
 
         function addInstance(type) {
-            if (!currentProject) return;
+            if (!currentProject) {
+                alert("Nenhum projeto ativo.");
+                return;
+            }
             const newId = Date.now();
             const newObj = {
                 id: newId,
@@ -331,6 +341,7 @@
             saveCurrentProject();
             renderViewport();
             renderExplorerTree();
+            toggleDrawer(null); // Fecha a gaveta após adicionar para ver o resultado
         }
 
         function renderViewport() {
@@ -366,7 +377,7 @@
                 html += `
                     <div class="tree-item" onclick="selectInstance(${obj.id})">
                         <span>📄 ${obj.name}</span>
-                        <span style="color: var(--text-muted); font-size: 0.7rem;">✏️</span>
+                        <span style="color: var(--text-muted); font-size: 0.7rem;">✏️ Editar</span>
                     </div>
                 `;
             });
@@ -377,9 +388,12 @@
             const obj = currentProject.instances.find(i => i.id === id);
             if (!obj) return;
             document.getElementById('propDetails').innerHTML = `
-                <b>Selecionado:</b> ${obj.name}<br>
-                <b>Tipo:</b> ${obj.type}<br>
-                <b>Cor:</b> <input type="color" value="${obj.bg}" onchange="updateObjProp(${obj.id}, 'bg', this.value)">
+                <div style="margin-bottom: 8px;"><b>Selecionado:</b> ${obj.name}</div>
+                <div style="margin-bottom: 8px;"><b>Tipo:</b> ${obj.type}</div>
+                <div style="display:flex; align-items:center; gap:8px;">
+                    <b>Cor:</b> 
+                    <input type="color" value="${obj.bg}" onchange="updateObjProp(${obj.id}, 'bg', this.value)" style="background:none; border:none; width:30px; height:30px; cursor:pointer;">
+                </div>
             `;
             toggleDrawer('propertiesDrawer');
         }
@@ -393,8 +407,29 @@
             }
         }
 
-        loadProjects();
+        function toggleDrawer(drawerId) {
+            document.querySelectorAll('.studio-drawer').forEach(d => {
+                if (d.id === drawerId) {
+                    d.classList.toggle('open');
+                } else {
+                    d.classList.remove('open');
+                }
+            });
+        }
+
+        // Restaura projeto ativo se houver ao recarregar
+        window.onload = function() {
+            loadProjects();
+            const activeId = localStorage.getItem('flowiq_active_id');
+            if (activeId) {
+                const projects = JSON.parse(localStorage.getItem('flowiq_projects') || '[]');
+                const found = projects.find(p => p.id == activeId);
+                if (found) {
+                    openProject(found.id);
+                }
+            }
+        };
     </script>
 </body>
-                            </html>
-                            
+    </html>
+    
