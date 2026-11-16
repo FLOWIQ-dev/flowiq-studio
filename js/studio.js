@@ -1,7 +1,7 @@
-import { DataModel, Instance } from './datamodel.js?v=2026.11.16.55';
-import { VirtualFS } from './vfs.js?v=2026.11.16.55';
-import { createProjectRecord, normalizeProject, FlowiqRuntime } from './engine.js?v=2026.11.16.55';
-import { createBackupFile, inspectBackupFile, restoreBackup } from './backup.js?v=2026.11.16.55';
+import { DataModel, Instance } from './datamodel.js?v=2026.11.16.58';
+import { VirtualFS } from './vfs.js?v=2026.11.16.58';
+import { createProjectRecord, normalizeProject, FlowiqRuntime } from './engine.js?v=2026.11.16.58';
+import { createBackupFile, inspectBackupFile, restoreBackup } from './backup.js?v=2026.11.16.58';
 
 const $ = (id) => document.getElementById(id);
 const esc = (value) => String(value ?? '').replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -69,7 +69,9 @@ class StudioApp {
     $('btn-library-nav').onclick = async () => { await this.save(); $('workspace').classList.remove('active'); $('hub').classList.add('active'); await this.loadHub(); this.showHubView('library'); };
     $('hub-return-project').onclick = () => this.returnToEditor();
     $('preview-exit').onclick = () => this.play(false);
-    document.addEventListener('pointerdown',event=>{if(event.target.closest('[data-color-id]')||event.target.closest('[data-color-popover]'))return;document.querySelectorAll('[data-color-popover]').forEach(pop=>pop.hidden=true);document.querySelectorAll('[data-color-toggle]').forEach(btn=>btn.setAttribute('aria-expanded','false'));});
+    document.addEventListener('pointerdown',event=>{if(event.target.closest('[data-color-id]')||event.target.closest('[data-color-popover]'))return;document.querySelectorAll('[data-color-popover]').forEach(pop=>{pop.hidden=true;pop.remove();});document.querySelectorAll('[data-color-toggle]').forEach(btn=>btn.setAttribute('aria-expanded','false'));});
+    document.addEventListener('scroll',()=>{document.querySelectorAll('[data-color-popover]').forEach(pop=>{pop.hidden=true;pop.remove();});document.querySelectorAll('[data-color-toggle]').forEach(btn=>btn.setAttribute('aria-expanded','false'));},true);
+    window.addEventListener('resize',()=>{document.querySelectorAll('[data-color-popover]').forEach(pop=>{pop.hidden=true;pop.remove();});document.querySelectorAll('[data-color-toggle]').forEach(btn=>btn.setAttribute('aria-expanded','false'));});
     document.querySelectorAll('[data-workspace-nav]').forEach(button=>button.addEventListener('click',()=>{document.querySelectorAll('[data-workspace-nav]').forEach(item=>item.classList.toggle('active',item===button));}));
     $('settings-return-project').onclick = () => this.returnToEditor();
     $('btn-save').onclick = () => this.save();
@@ -167,7 +169,7 @@ class StudioApp {
     $('settings-export-project').disabled=!this.project;
     $('settings-export-project').classList.toggle('is-disabled',!this.project);
     $('settings-export-project').querySelector('small').textContent=this.project?'Salvar '+this.project.name+' e os arquivos que ele utiliza.':'Abra um projeto para habilitar esta opção.';
-    $('settings-version').textContent='Versão 2026.11.16.55';
+    $('settings-version').textContent='Versão 2026.11.16.58';
     $('settings-return-project').hidden=!this.project;
     this.applyPreferences();
   }
@@ -326,7 +328,7 @@ class StudioApp {
       const use=node?'<button class="btn primary" data-library-use="'+esc(a.id)+'">Usar</button>':'';
       return '<article class="browser-file-row"><div class="browser-file-thumb">'+thumb+'</div><button class="browser-file-info" data-library-preview="'+esc(a.id)+'"><strong>'+esc(a.name)+'</strong><small>'+esc(a.folder||'Sem pasta')+' · '+this.formatBytes(a.size||0)+'</small></button><div class="browser-file-actions">'+use+'<button class="btn" data-library-rename="'+esc(a.id)+'" aria-label="Renomear arquivo">Renomear</button><button class="btn" data-library-download="'+esc(a.id)+'" aria-label="Baixar arquivo">Baixar</button><button class="btn danger" data-library-delete="'+esc(a.id)+'" aria-label="Excluir arquivo">Excluir</button></div></article>';
     }).join('');
-    $('modal-content').innerHTML='<header class="asset-browser-head"><div><h2>Arquivos do projeto</h2><p>'+(node?'Escolha uma imagem para o objeto selecionado.':'Biblioteca local do Flowiq Studio')+'</p></div><button class="icon-action" id="close-asset-browser" aria-label="Fechar biblioteca">×</button></header><div class="asset-browser-tools"><input id="browser-asset-search" type="search" placeholder="Buscar por nome..." value="'+esc(state.query)+'"><select id="browser-asset-folder"><option value="">Todas as pastas</option>'+folders.map(f=>'<option value="'+esc(f)+'" '+(state.folder===f?'selected':'')+'>'+esc(f)+'</option>').join('')+'</select><button class="btn primary" id="browser-asset-upload">Adicionar arquivos</button></div><div class="asset-browser-path"><span>Biblioteca</span><span>›</span><strong>'+(state.folder?esc(state.folder):'Todos os arquivos')+'</strong><small>'+filtered.length+' itens</small></div><div class="asset-browser-list">'+(rows||'<div class="empty">'+(this.assets.length?'Nenhum arquivo corresponde a esta busca.': 'Nenhum arquivo ainda. Adicione imagens, vídeos ou outros recursos.')+'</div>')+'</div><p class="asset-browser-foot">Os arquivos permanecem neste navegador. Renomear não altera os objetos que já os utilizam.</p>';
+    $('modal-content').innerHTML='<header class="asset-browser-head"><div><h2>Arquivos do projeto</h2><p>'+(node?'Escolha uma imagem para o objeto selecionado.':'Biblioteca local do Flowiq Studio')+'</p></div><button class="icon-action" id="close-asset-browser" aria-label="Fechar biblioteca"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button></header><div class="asset-browser-tools"><input id="browser-asset-search" type="search" placeholder="Buscar por nome..." value="'+esc(state.query)+'"><select id="browser-asset-folder"><option value="">Todas as pastas</option>'+folders.map(f=>'<option value="'+esc(f)+'" '+(state.folder===f?'selected':'')+'>'+esc(f)+'</option>').join('')+'</select><button class="btn primary" id="browser-asset-upload">Adicionar arquivos</button></div><div class="asset-browser-path"><span>Biblioteca</span><span>›</span><strong>'+(state.folder?esc(state.folder):'Todos os arquivos')+'</strong><small>'+filtered.length+' itens</small></div><div class="asset-browser-list">'+(rows||'<div class="empty">'+(this.assets.length?'Nenhum arquivo corresponde a esta busca.': 'Nenhum arquivo ainda. Adicione imagens, vídeos ou outros recursos.')+'</div>')+'</div><p class="asset-browser-foot">Os arquivos permanecem neste navegador. Renomear não altera os objetos que já os utilizam.</p>';
     $('modal-content').classList.add('asset-browser-modal');
     $('close-asset-browser').onclick=()=>{this.assetBrowser=null;this.hideModal();};
     $('browser-asset-search').oninput=e=>{state.query=e.target.value.trim().toLocaleLowerCase('pt-BR');this.renderProjectLibraryBrowser(node);const input=$('browser-asset-search');input.focus();input.setSelectionRange(input.value.length,input.value.length);};
@@ -365,7 +367,7 @@ class StudioApp {
     else if(/(json|text|svg|xml)/i.test(mime)||/\.(json|svg|txt|xml)$/i.test(asset.name)){
       try{const raw=await asset.blob.text();body='<pre class="asset-viewer-text">'+esc(raw.slice(0,30000))+'</pre>';}catch{}
     }
-    $('modal-content').innerHTML='<header class="asset-browser-head"><div><h2>'+esc(asset.name)+'</h2><p>'+esc(asset.mime||'Arquivo')+' · '+this.formatBytes(asset.size||0)+'</p></div><button class="icon-action" id="close-asset-preview" aria-label="Fechar">×</button></header>'+body+'<div class="modal-actions asset-viewer-actions">'+(backToBrowser?'<button class="btn" id="back-asset-browser">Voltar aos arquivos</button>':'')+'<button class="btn" id="preview-asset-rename">Renomear</button><button class="btn primary" id="preview-asset-download">Baixar arquivo</button></div>';
+    $('modal-content').innerHTML='<header class="asset-browser-head"><div><h2>'+esc(asset.name)+'</h2><p>'+esc(asset.mime||'Arquivo')+' · '+this.formatBytes(asset.size||0)+'</p></div><button class="icon-action" id="close-asset-preview" aria-label="Fechar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button></header>'+body+'<div class="modal-actions asset-viewer-actions">'+(backToBrowser?'<button class="btn" id="back-asset-browser">Voltar aos arquivos</button>':'')+'<button class="btn" id="preview-asset-rename">Renomear</button><button class="btn primary" id="preview-asset-download">Baixar arquivo</button></div>';
     $('modal-content').classList.add('asset-browser-modal');
     $('close-asset-preview').onclick=()=>{if(backToBrowser)this.renderProjectLibraryBrowser(node);else this.hideModal();};
     $('preview-asset-download').onclick=()=>this.downloadAsset(id);
@@ -1113,15 +1115,16 @@ class StudioApp {
       control.dataset.bound='true';
       const id=control.dataset.colorId,pop=control.querySelector('[data-color-popover]'),square=control.querySelector('[data-color-square]'),hue=control.querySelector('[data-color-hue]'),hex=control.querySelector('[data-color-hex]'),preview=control.querySelector('[data-color-preview]'),rgbInputs=[...control.querySelectorAll('[data-color-rgb]')],trigger=control.querySelector('[data-color-toggle]');
       let current=control.dataset.colorValue||'#FFFFFF',rgb=hexToRgb(current),hsv=rgbToHsv(rgb.r,rgb.g,rgb.b),historyStarted=false,dragging=false;
+      const close=()=>{pop.hidden=true;pop.remove();trigger.setAttribute('aria-expanded','false');};
       const place=()=>{
-        const r=trigger.getBoundingClientRect(),w=Math.min(284,window.innerWidth-24),h=Math.min(pop.scrollHeight||360,Math.floor(window.innerHeight*.7));
+        const r=trigger.getBoundingClientRect(),w=Math.min(300,window.innerWidth-24),h=Math.min(pop.scrollHeight||380,Math.floor(window.innerHeight*.7));
         const left=Math.max(12,Math.min(window.innerWidth-w-12,r.left));
         let top=r.bottom+8;
         if(top+h>window.innerHeight-12)top=r.top-h-8;
         top=Math.max(12,Math.min(window.innerHeight-h-12,top));
-        pop.style.width=w+'px';pop.style.left=left+'px';pop.style.top=top+'px';
+        pop.style.position='fixed';pop.style.width=w+'px';pop.style.maxHeight=Math.floor(window.innerHeight*.7)+'px';pop.style.left=left+'px';pop.style.top=top+'px';
       };
-      const update=(value,commit=false)=>{
+      const update=value=>{
         value=color(value,'#FFFFFF').toUpperCase();
         if(value!==current&&!historyStarted){this.pushHistory();historyStarted=true;}
         current=value;rgb=hexToRgb(value);hsv=rgbToHsv(rgb.r,rgb.g,rgb.b);
@@ -1136,37 +1139,60 @@ class StudioApp {
         square.style.setProperty('--val',((1-hsv.v)*100)+'%');
         if(setters[id])setters[id](value);
         this.renderCanvas();
-        if(commit)this.scheduleSave();
       };
-      const close=()=>{pop.hidden=true;trigger.setAttribute('aria-expanded','false');};
       trigger.setAttribute('aria-expanded','false');
       trigger.onclick=()=>{
-        const opening=pop.hidden;
-        document.querySelectorAll('[data-color-popover]').forEach(p=>{p.hidden=true;});
-        document.querySelectorAll('[data-color-toggle]').forEach(b=>b.setAttribute('aria-expanded','false'));
+        const opening=pop.parentNode!==document.body||pop.hidden;
+        document.querySelectorAll('[data-color-popover]').forEach(other=>{other.hidden=true;other.remove();});
+        document.querySelectorAll('[data-color-toggle]').forEach(button=>button.setAttribute('aria-expanded','false'));
         if(!opening)return;
-        historyStarted=false;pop.hidden=false;trigger.setAttribute('aria-expanded','true');
+        historyStarted=false;
+        document.body.appendChild(pop);
+        pop.hidden=false;
+        trigger.setAttribute('aria-expanded','true');
         requestAnimationFrame(place);
       };
-      control.querySelectorAll('[data-color-preset]').forEach(button=>button.onclick=()=>update(button.dataset.colorPreset,true));
+      control.querySelectorAll('[data-color-preset]').forEach(button=>button.onclick=()=>{update(button.dataset.colorPreset);this.scheduleSave();});
       hue.oninput=()=>{hsv.h=Number(hue.value);update(hsvToHex(hsv.h,hsv.s,hsv.v));};
       hue.onchange=()=>this.scheduleSave();
-      hex.onchange=()=>{if(/^#[0-9a-f]{6}$/i.test(hex.value))update(hex.value,true);else hex.value=current;};
+      hex.onchange=()=>{if(/^#[0-9a-f]{6}$/i.test(hex.value)){update(hex.value);this.scheduleSave();}else hex.value=current;};
       rgbInputs.forEach(input=>input.onchange=()=>{
         const values=['r','g','b'].map(k=>Number(control.querySelector('[data-color-rgb="'+k+'"]').value));
-        update(rgbToHex(...values),true);
+        update(rgbToHex(...values));this.scheduleSave();
       });
       const setSquare=e=>{
-        const r=square.getBoundingClientRect();
-        hsv.s=Math.max(0,Math.min(1,(e.clientX-r.left)/Math.max(1,r.width)));
-        hsv.v=1-Math.max(0,Math.min(1,(e.clientY-r.top)/Math.max(1,r.height)));
+        const rect=square.getBoundingClientRect();
+        const x=Math.max(0,Math.min(rect.width,e.clientX-rect.left));
+        const y=Math.max(0,Math.min(rect.height,e.clientY-rect.top));
+        hsv.s=rect.width?x/rect.width:0;
+        hsv.v=rect.height?1-y/rect.height:0;
         update(hsvToHex(hsv.h,hsv.s,hsv.v));
       };
-      square.onpointerdown=e=>{dragging=true;square.setPointerCapture(e.pointerId);setSquare(e);e.preventDefault();};
+      square.onpointerdown=e=>{
+        if(e.pointerType==='mouse'&&e.button!==0)return;
+        dragging=true;
+        try{square.setPointerCapture(e.pointerId);}catch{}
+        setSquare(e);e.preventDefault();
+      };
       square.onpointermove=e=>{if(dragging)setSquare(e);};
-      const finishDrag=()=>{if(dragging){dragging=false;this.scheduleSave();}};
-      square.onpointerup=finishDrag;square.onpointercancel=finishDrag; square.onlostpointercapture=finishDrag;
+      const finish=()=>{if(!dragging)return;dragging=false;this.scheduleSave();};
+      square.onpointerup=finish;square.onpointercancel=finish;square.onlostpointercapture=finish;
       pop.addEventListener('keydown',e=>{if(e.key==='Escape'){close();trigger.focus();}});
+    });
+  }
+  enhanceSelects(root){
+    // Native select controls are deliberate: browser/Android pickers are reliable,
+    // keyboard accessible, and cannot be clipped by transformed scrolling panels.
+    root.querySelectorAll('select').forEach(select=>{
+      const wrapper=select.closest('.studio-select');
+      if(wrapper)wrapper.replaceWith(select);
+      select.classList.remove('studio-select-native');
+      select.removeAttribute('aria-hidden');
+      select.style.removeProperty('position');
+      select.style.removeProperty('width');
+      select.style.removeProperty('height');
+      select.style.removeProperty('opacity');
+      select.style.removeProperty('pointer-events');
     });
   }
 
