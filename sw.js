@@ -3,11 +3,11 @@ const APP_FILES = [
   './',
   './index.html',
   './manifest.json',
-  './js/studio.js?v=2026.11.16.50',
-  './js/datamodel.js?v=2026.11.16.50',
-  './js/vfs.js?v=2026.11.16.50',
-  './js/backup.js?v=2026.11.16.50',
-  './js/engine.js?v=2026.11.16.50',
+  './js/studio.js?v=2026.11.16.51',
+  './js/datamodel.js?v=2026.11.16.51',
+  './js/vfs.js?v=2026.11.16.51',
+  './js/backup.js?v=2026.11.16.51',
+  './js/engine.js?v=2026.11.16.51',
   './assets/icon.svg'
 ];
 
