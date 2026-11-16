@@ -374,8 +374,8 @@ class FlowiqStudio {
     const mode = rotate ? 'rotate' : resize ? 'resize' : 'move';
     const rect = target.getBoundingClientRect();
     const startAngle = Math.atan2(event.clientY - (rect.top + rect.height / 2), event.clientX - (rect.left + rect.width / 2));
-    this.history.checkpoint(this.scene.snapshot());
     this.drag = {
+      historyRecorded: false,
       id: node.id, pointerId: event.pointerId, mode, direction: resize,
       startX: event.clientX, startY: event.clientY,
       x: Number(node.props.x) || 0, y: Number(node.props.y) || 0,
@@ -392,6 +392,7 @@ class FlowiqStudio {
       const dy = (moveEvent.clientY - drag.startY) / this.zoom;
       if (Math.abs(dx) + Math.abs(dy) > 2) drag.moved = true;
       if (!drag.moved) return;
+      if (!drag.historyRecorded) { this.history.checkpoint(this.scene.snapshot()); drag.historyRecorded = true; }
       const current = this.scene.get(drag.id);
       if (!current) return;
       if (drag.mode === 'move') {
@@ -427,7 +428,8 @@ class FlowiqStudio {
       window.removeEventListener('pointercancel', end);
       const changed = this.drag.moved;
       this.drag = null;
-      if (changed) { this.scheduleSave(); this.renderEditor(); }
+      if (changed) this.scheduleSave();
+      this.renderEditor();
     };
     window.addEventListener('pointermove', move);
     window.addEventListener('pointerup', end);
@@ -436,7 +438,10 @@ class FlowiqStudio {
 
   setZoom(value) {
     this.zoom = value;
-    $('scene-zoom').style.transform = 'scale(' + this.zoom + ')';
+    $('scene-zoom').style.width = (960 * this.zoom) + 'px';
+    $('scene-zoom').style.height = (640 * this.zoom) + 'px';
+    $('scene').style.transform = 'scale(' + this.zoom + ')';
+    $('scene').style.transformOrigin = 'top left';
     $('zoom-value').textContent = Math.round(this.zoom * 100) + '%';
   }
 
