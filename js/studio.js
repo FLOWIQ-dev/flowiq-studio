@@ -1,5 +1,5 @@
-import { DataModel, Instance } from './datamodel.js?v=2026.11.16.22';
-import { VirtualFS } from './vfs.js?v=2026.11.16.22';
+import { DataModel, Instance } from './datamodel.js?v=2026.11.16.23';
+import { VirtualFS } from './vfs.js?v=2026.11.16.23';
 
 const $ = (id) => document.getElementById(id);
 const esc = (value) => String(value ?? '').replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -203,7 +203,7 @@ class StudioApp {
     this.refresh();
   }
 
-  isMobile() { return window.matchMedia('(max-width: 760px)').matches; }
+  isMobile() { return window.matchMedia('(max-width: 820px)').matches; }
 
   openPanel(which) {
     if (!this.isMobile()) return;
