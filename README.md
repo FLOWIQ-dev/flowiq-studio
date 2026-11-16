@@ -1,23 +1,36 @@
 # Flowiq Studio
 
-IDE 2D mobile-first, sem dependências de CDN. O Studio usa ES Modules, IndexedDB (com fallback local), importação/exportação `.flowiq` e pré-visualização Play.
+Editor mobile-first para criar interfaces 2D, organizar objetos, editar propriedades e testar interações.
 
-## Executar
+## Estrutura
 
-Sirva esta pasta por HTTP/HTTPS. Para desenvolvimento local, por exemplo:
+- `index.html`: shell semântico e pontos de montagem.
+- `css/studio.css`: sistema visual responsivo único.
+- `js/app.js`: coordenação da aplicação e navegação.
+- `js/core/`: estado e histórico.
+- `js/data/`: modelo de cena e persistência IndexedDB.
+- `js/editor/`: renderização da hierarquia, palco e Inspector.
+- `js/runtime/`: execução isolada da prévia e ações declarativas.
+- `sw.js`: cache offline versionado.
+
+## Desenvolvimento
+
+Sirva a pasta por HTTP ou HTTPS:
 
 ```bash
 python -m http.server 8080
 ```
 
-Abra `http://localhost:8080`. Em hospedagem estática, publique o conteúdo desta pasta na raiz do site (GitHub Pages funciona com ES Modules e Service Worker em HTTPS).
+Abra `http://localhost:8080`.
 
 ## Atalhos
 
-- `Ctrl/Cmd + S`: salvar projeto.
-- Explorer: selecionar instâncias e adicionar Frames/Botões.
-- Inspector: editar posição, tamanho, cores, texto e visibilidade.
-- Play: pré-visualizar sem alterar o documento de autoria.
-- Importar/Exportar: transportar projetos em `.flowiq` (JSON).
+- `Ctrl/Cmd + S`: salvar.
+- `Ctrl/Cmd + Z`: desfazer.
+- `Ctrl/Cmd + Shift + Z` ou `Ctrl/Cmd + Y`: refazer.
+- `Ctrl/Cmd + D`: duplicar objeto.
+- `Delete` / `Backspace`: excluir objeto.
 
-Os projetos são armazenados localmente no navegador/dispositivo. Exporte backups para não depender de um único dispositivo.
+## Armazenamento
+
+Esta reconstrução usa um banco IndexedDB novo chamado `flowiq-studio-next`. Os dados da estrutura anterior não são migrados. Os projetos e arquivos permanecem no dispositivo. A exportação de backup reúne projetos e biblioteca em um único arquivo com verificação SHA-256.
