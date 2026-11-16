@@ -7,7 +7,6 @@ import { Runtime } from './runtime/runtime.js';
 
 const $ = id => document.getElementById(id);
 const makeId = () => crypto.randomUUID?.() || 'flowiq_' + Date.now().toString(36) + Math.random().toString(36).slice(2);
-const clone = value => structuredClone(value);
 
 class FlowiqStudio {
   constructor() {
