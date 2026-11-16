@@ -1,6 +1,4 @@
-
-const CACHE_NAME = 'flowiq-studio-v1';
-
+const CACHE_NAME = 'flowiq-studio-v2';
 const APP_FILES = [
   './',
   './index.html',
@@ -23,8 +21,7 @@ self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys()
       .then((keys) => Promise.all(
-        keys
-          .filter((key) => key !== CACHE_NAME)
+        keys.filter((key) => key.startsWith('flowiq-studio-') && key !== CACHE_NAME)
           .map((key) => caches.delete(key))
       ))
       .then(() => self.clients.claim())
@@ -33,51 +30,25 @@ self.addEventListener('activate', (event) => {
 
 self.addEventListener('fetch', (event) => {
   const request = event.request;
-
   if (request.method !== 'GET') return;
-
   const url = new URL(request.url);
-
   if (url.origin !== self.location.origin) return;
 
-  if (request.mode === 'navigate') {
-    event.respondWith(
-      fetch(request)
-        .then((response) => {
-          const copy = response.clone();
-
-          caches.open(CACHE_NAME)
-            .then((cache) => cache.put('./index.html', copy));
-
-          return response;
-        })
-        .catch(async () => {
-          return await caches.match('./index.html') ||
-            Response.error();
-        })
-    );
-
-    return;
-  }
-
-  event.respondWith(
-    caches.match(request)
-      .then((cached) => {
-        if (cached) return cached;
-
-        return fetch(request).then((response) => {
-          if (
-            response.ok &&
-            response.type === 'basic'
-          ) {
-            const copy = response.clone();
-
-            caches.open(CACHE_NAME)
-              .then((cache) => cache.put(request, copy));
-          }
-
-          return response;
-        });
-      })
-  );
+  // Always ask the network for the newest app shell and modules first.
+  // Keep the last good response only as an offline fallback.
+  event.respondWith((async () => {
+    const cache = await caches.open(CACHE_NAME);
+    const cacheKey = request.mode === 'navigate' ? './index.html' : request;
+    try {
+      const fresh = await fetch(request, { cache: 'no-cache' });
+      if (fresh && fresh.ok && fresh.type === 'basic') {
+        await cache.put(cacheKey, fresh.clone());
+      }
+      return fresh;
+    } catch (error) {
+      const cached = await cache.match(cacheKey);
+      if (cached) return cached;
+      return Response.error();
+    }
+  })());
 });
