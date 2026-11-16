@@ -94,6 +94,7 @@ export class Database {
 
   async exportAll() {
     const [projects, assets] = await Promise.all([this.listProjects(), this.listAssets()]);
+    if (projects.length > 300 || assets.length > 3000) throw new Error('A quantidade de itens excede o limite do backup.');
     const encoded = [];
     let total = 0;
     for (const asset of assets) {
@@ -127,10 +128,13 @@ export class Database {
       if (!project?.id || !project?.name || !Array.isArray(project.scene)) throw new Error('Um projeto do backup está inválido.');
       new Scene(project.scene);
       if (project.events != null && !Array.isArray(project.events)) throw new Error('Eventos do projeto inválidos.');
-      return { ...project, id: makeId(), name: String(project.name).slice(0, 64), createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
+      return { ...project, id: makeId(), name: String(project.name).slice(0, 64), events: Array.isArray(project.events) ? project.events.filter(item => item && typeof item === 'object' && !Array.isArray(item)) : [], scripts: Array.isArray(project.scripts) ? project.scripts.filter(item => item && typeof item === 'object' && !Array.isArray(item)) : [], animations: Array.isArray(project.animations) ? project.animations.filter(item => item && typeof item === 'object' && !Array.isArray(item)) : [], settings: project.settings && typeof project.settings === 'object' && !Array.isArray(project.settings) ? project.settings : {}, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
     });
     const assetIds = new Map();
+    const seenAssetIds = new Set();
     const assets = data.assets.map(asset => {
+      if (seenAssetIds.has(asset?.id)) throw new Error('O backup contém identificadores de arquivos duplicados.');
+      seenAssetIds.add(asset?.id);
       if (!asset?.id || typeof asset.data !== 'string' || asset.data.length > 20 * 1024 * 1024) throw new Error('Um arquivo do backup está inválido.');
       const binary = atob(asset.data);
       if (binary.length > 12 * 1024 * 1024) throw new Error('Um arquivo ultrapassa 12 MB.');
