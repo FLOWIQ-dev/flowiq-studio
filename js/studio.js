@@ -1,7 +1,7 @@
-import { DataModel, Instance } from './datamodel.js?v=2026.11.16.60';
-import { VirtualFS } from './vfs.js?v=2026.11.16.60';
-import { createProjectRecord, normalizeProject, FlowiqRuntime } from './engine.js?v=2026.11.16.60';
-import { createBackupFile, inspectBackupFile, restoreBackup } from './backup.js?v=2026.11.16.60';
+import { DataModel, Instance } from './datamodel.js?v=2026.11.16.61';
+import { VirtualFS } from './vfs.js?v=2026.11.16.61';
+import { createProjectRecord, normalizeProject, FlowiqRuntime } from './engine.js?v=2026.11.16.61';
+import { createBackupFile, inspectBackupFile, restoreBackup } from './backup.js?v=2026.11.16.61';
 
 const $ = (id) => document.getElementById(id);
 const esc = (value) => String(value ?? '').replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -65,7 +65,8 @@ class StudioApp {
 
   bind() {
     $('btn-new').onclick = () => this.createProject();
-    $('btn-hub').onclick = async () => { await this.save(); await this.toHub(); };
+    const hubButton=$('btn-hub');
+    if(hubButton)hubButton.onclick=async()=>{await this.save();await this.toHub();};
     $('btn-library-nav').onclick = async () => { await this.save(); $('workspace').classList.remove('active'); $('hub').classList.add('active'); await this.loadHub(); this.showHubView('library'); };
     $('hub-return-project').onclick = () => this.returnToEditor();
     $('preview-exit').onclick = () => this.play(false);
@@ -169,7 +170,7 @@ class StudioApp {
     $('settings-export-project').disabled=!this.project;
     $('settings-export-project').classList.toggle('is-disabled',!this.project);
     $('settings-export-project').querySelector('small').textContent=this.project?'Salvar '+this.project.name+' e os arquivos que ele utiliza.':'Abra um projeto para habilitar esta opção.';
-    $('settings-version').textContent='Versão 2026.11.16.60';
+    $('settings-version').textContent='Versão 2026.11.16.61';
     $('settings-return-project').hidden=!this.project;
     this.applyPreferences();
   }
