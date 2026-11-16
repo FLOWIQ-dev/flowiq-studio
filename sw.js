@@ -1,61 +1,41 @@
-const CACHE_NAME = 'flowiq-studio-v51-2026-11-16-72';
-const APP_FILES = [
+const CACHE = 'flowiq-studio-clean-v73';
+const FILES = [
   './',
   './index.html',
-  './css/studio.css?v=2026.11.16.72',
   './manifest.json',
-  './js/studio.js?v=2026.11.16.72',
-  './js/datamodel.js?v=2026.11.16.72',
-  './js/vfs.js?v=2026.11.16.72',
-  './js/backup.js?v=2026.11.16.72',
-  './js/engine.js?v=2026.11.16.72',
+  './css/studio.css?v=2026.11.16.73',
+  './js/app.js?v=2026.11.16.73',
+  './js/core/store.js',
+  './js/core/history.js',
+  './js/data/model.js',
+  './js/data/database.js',
+  './js/editor/view.js',
+  './js/runtime/runtime.js',
   './assets/icon.svg'
 ];
 
-self.addEventListener('install', (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then((cache) => cache.addAll(APP_FILES))
-      .then(() => self.skipWaiting())
-  );
+self.addEventListener('install', event => {
+  event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(FILES)).then(() => self.skipWaiting()));
 });
 
-self.addEventListener('message', (event) => {
-  if (event.data?.type === 'SKIP_WAITING') self.skipWaiting();
+self.addEventListener('activate', event => {
+  event.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(key => key.startsWith('flowiq-studio-') && key !== CACHE).map(key => caches.delete(key)))).then(() => self.clients.claim()));
 });
 
-self.addEventListener('activate', (event) => {
-  event.waitUntil(
-    caches.keys()
-      .then((keys) => Promise.all(
-        keys.filter((key) => key.startsWith('flowiq-studio-') && key !== CACHE_NAME)
-          .map((key) => caches.delete(key))
-      ))
-      .then(() => self.clients.claim())
-  );
-});
-
-self.addEventListener('fetch', (event) => {
+self.addEventListener('fetch', event => {
   const request = event.request;
   if (request.method !== 'GET') return;
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return;
-
   event.respondWith((async () => {
-    const cache = await caches.open(CACHE_NAME);
-    const cacheKey = request.mode === 'navigate'
-      ? new Request(new URL('./index.html', self.location.href).href)
-      : request;
+    const cache = await caches.open(CACHE);
+    const key = request.mode === 'navigate' ? new Request(new URL('./index.html', self.location.href)) : request;
     try {
-      const fresh = await fetch(request, { cache: 'no-store' });
-      if (fresh && fresh.ok && fresh.type === 'basic') {
-        await cache.put(cacheKey, fresh.clone());
-      }
-      return fresh;
-    } catch (error) {
-      const cached = await cache.match(cacheKey);
-      if (cached) return cached;
-      return Response.error();
+      const response = await fetch(request, { cache: 'no-store' });
+      if (response.ok && response.type === 'basic') await cache.put(key, response.clone());
+      return response;
+    } catch {
+      return (await cache.match(key)) || Response.error();
     }
   })());
 });
