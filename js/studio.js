@@ -788,7 +788,7 @@ class StudioApp {
     if(!this.project)return;
     this.playMode=typeof force==='boolean'?force:!this.playMode;
     if(this.playMode)this.runtime.start(this.project);
-    else this.runtime.stop();
+    else { this.runtime.stop(); this.model = this.runtime.model; }
     this.closePanels();
     $('workspace').classList.toggle('preview-mode',this.playMode);
     $('btn-play').innerHTML=this.playMode?'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5 3 12l6 7M4 12h10a6 6 0 0 1 0 12h-2"/></svg><span>Editor</span>':'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8 5 11 7-11 7z"/></svg><span>Prévia</span>';
