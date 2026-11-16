@@ -320,8 +320,12 @@ class StudioApp {
     if(!d.moved&&distance<8)return;
     if(!d.moved){d.moved=true;d.historyRecorded=false;}
     if(!d.historyRecorded){this.pushHistory();d.historyRecorded=true;}
-    const dx=(event.clientX-d.startX)/(d.scaleX||1),dy=(event.clientY-d.startY)/(d.scaleY||1);
+    let dx=(event.clientX-d.startX)/(d.scaleX||1),dy=(event.clientY-d.startY)/(d.scaleY||1);
     const p=d.node.properties;
+    if(d.mode==='resize'){
+      const a=-(d.baseRotation||0)*Math.PI/180,c=Math.cos(a),s=Math.sin(a);
+      const localX=dx*c-dy*s,localY=dx*s+dy*c;dx=localX;dy=localY;
+    }
     if(d.mode==='rotate'){
       const angle=Math.atan2(event.clientY-d.centerY,event.clientX-d.centerX)*180/Math.PI;
       p.rotation=((d.baseRotation+angle-d.startAngle)%360+360)%360;
@@ -335,7 +339,11 @@ class StudioApp {
       if(dir.includes('s'))h=Math.max(24,d.baseH+dy);
       if(dir.includes('w')){w=Math.max(24,d.baseW-dx);x=d.baseX+d.baseW-w;}
       if(dir.includes('n')){h=Math.max(24,d.baseH-dy);y=d.baseY+d.baseH-h;}
-      p.positionX=Math.round(x);p.positionY=Math.round(y);p.width=Math.round(w);p.height=Math.round(h);
+      const localShiftX=x-d.baseX,localShiftY=y-d.baseY;
+      const angle=(d.baseRotation||0)*Math.PI/180,cos=Math.cos(angle),sin=Math.sin(angle);
+      p.positionX=Math.round(d.baseX+localShiftX*cos-localShiftY*sin);
+      p.positionY=Math.round(d.baseY+localShiftX*sin+localShiftY*cos);
+      p.width=Math.round(w);p.height=Math.round(h);
       d.el.style.left=p.positionX+'px';d.el.style.top=p.positionY+'px';d.el.style.width=p.width+'px';d.el.style.height=p.height+'px';
       const width=$('p-w'),height=$('p-h'),px=$('p-x'),py=$('p-y');
       if(width)width.value=p.width;if(height)height.value=p.height;if(px)px.value=p.positionX;if(py)py.value=p.positionY;
