@@ -284,7 +284,7 @@ class FlowiqStudio {
   updateProperty(key, value) {
     const node = this.scene.get(this.store.state.selectedId);
     if (!node) return;
-    this.history.checkpoint(this.scene.snapshot());
+    this.history.checkpoint(this.historySnapshot());
     if (key === 'name') node.name = String(value).trim().slice(0, 64) || node.type;
     else if (['x', 'y'].includes(key)) node.props[key] = Math.max(-2000, Math.min(4000, Number(value) || 0));
     else if (['width', 'height'].includes(key)) node.props[key] = Math.max(1, Math.min(2000, Number(value) || 1));
