@@ -6,12 +6,13 @@ export class Instance {
         this.parent = null;
         this.children = [];
         this.properties = {
-            backgroundColor: className === 'Frame' ? '#3b82f6' : '#10b981',
-            width: '80%',
-            height: '45px',
-            top: '30px',
-            left: '10%',
-            text: className === 'TextButton' ? 'Novo Botão' : ''
+            positionX: 20,
+            positionY: 20,
+            width: 200,
+            height: 120,
+            backgroundColor: className === 'Frame' ? '#1e293b' : '#3b82f6',
+            textColor: '#ffffff',
+            text: className === 'TextButton' ? 'Botão Interativo' : ''
         };
     }
 
@@ -30,6 +31,13 @@ export class Instance {
         if (index !== -1) {
             this.children.splice(index, 1);
             child.parent = null;
+        }
+    }
+
+    destroy() {
+        this.children.forEach(c => c.destroy());
+        if (this.parent) {
+            this.parent.removeChild(this);
         }
     }
 
@@ -53,5 +61,15 @@ export class Instance {
         }
         return inst;
     }
-  }
+}
 
+export class DataModel {
+    constructor() {
+        this.root = new Instance('DataModel', 'Workspace');
+    }
+
+    loadFromJSON(arrayData) {
+        this.root.children = [];
+        arrayData.forEach(data => Instance.fromJSON(data, this.root));
+    }
+}
