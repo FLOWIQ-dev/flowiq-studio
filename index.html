@@ -4,18 +4,18 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#101827">
-  <meta name="flowiq-build" content="2026.11.16.73">
+  <meta name="flowiq-build" content="2026.11.16.74">
   <meta name="description" content="Flowiq Studio, editor mobile-first de interfaces 2D.">
   <title>Flowiq Studio</title>
   <link rel="manifest" href="./manifest.json">
   <link rel="icon" href="./assets/icon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="./css/studio.css?v=2026.11.16.73">
+  <link rel="stylesheet" href="./css/studio.css?v=2026.11.16.74">
 </head>
 <body>
   <main id="screen-home" class="screen home-screen">
     <header class="app-header">
       <a class="brand" href="./" aria-label="Flowiq Studio início"><img src="./assets/icon.svg" alt=""><span>Flowiq <b>Studio</b></span></a>
-      <div class="header-actions"><span class="storage-indicator"><i></i> Neste dispositivo</span><button id="home-library" class="button subtle">Biblioteca</button><button id="home-settings" class="button subtle" aria-label="Configurações">Configurações</button><button id="create-project" class="button primary">＋ Novo projeto</button></div>
+      <div class="header-actions"><span class="storage-indicator"><i></i> Neste dispositivo</span><button id="home-library" class="button subtle">Biblioteca</button><button id="home-settings" class="button subtle" aria-label="Configurações">Configurações</button><button id="create-project" class="button primary"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg> Novo projeto</button></div>
     </header>
     <section class="home-content">
       <div class="welcome-block"><span class="eyebrow">AMBIENTE DE CRIAÇÃO 2D</span><h1>Seus projetos começam aqui.</h1><p>Um espaço organizado para construir interfaces, testar ideias e dar vida às suas experiências.</p></div>
@@ -27,13 +27,13 @@
 
   <main id="screen-editor" class="screen editor-screen" hidden>
     <header class="editor-header">
-      <div class="editor-brand"><button id="back-home" class="icon-button" aria-label="Voltar aos projetos" title="Voltar">←</button><img src="./assets/icon.svg" alt=""><strong>Flowiq Studio</strong></div>
+      <div class="editor-brand"><button id="back-home" class="icon-button" aria-label="Voltar aos projetos" title="Voltar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6M9 12h11"/></svg></button><img src="./assets/icon.svg" alt=""><strong>Flowiq Studio</strong></div>
       <div class="project-identity"><span class="project-dot"></span><strong id="project-name">Projeto</strong><span id="save-state" data-state="saved">Salvo</span></div>
-      <div class="editor-actions"><button id="editor-library" class="icon-button" title="Biblioteca" aria-label="Biblioteca">▤</button><button id="undo" class="icon-button" title="Desfazer" aria-label="Desfazer" disabled>↶</button><button id="redo" class="icon-button" title="Refazer" aria-label="Refazer" disabled>↷</button><button id="save-project" class="button subtle">Salvar</button><button id="preview" class="button primary">▶ Prévia</button></div>
+      <div class="editor-actions"><button id="editor-library" class="icon-button" title="Biblioteca" aria-label="Biblioteca"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v14H4zM8 9h8M8 13h8"/></svg></button><button id="undo" class="icon-button" title="Desfazer" aria-label="Desfazer" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14 4 9l5-5M4 9h10a6 6 0 0 1 0 12h-2"/></svg></button><button id="redo" class="icon-button" title="Refazer" aria-label="Refazer" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 14 5-5-5-5m5 5H10a6 6 0 0 0 0 12h2"/></svg></button><button id="save-project" class="button subtle">Salvar</button><button id="preview" class="button primary"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8 5 12 7-12 7z"/></svg> Prévia</button></div>
     </header>
     <div id="editor-shell" class="editor-shell" data-panel="stage">
       <aside class="editor-panel explorer-panel">
-        <div class="panel-title"><div><span class="eyebrow">CENA</span><h2>Hierarquia</h2></div><button id="add-object" class="icon-button accent" aria-label="Adicionar objeto" title="Adicionar objeto">＋</button></div>
+        <div class="panel-title"><div><span class="eyebrow">CENA</span><h2>Hierarquia</h2></div><button id="add-object" class="icon-button accent" aria-label="Adicionar objeto" title="Adicionar objeto"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button></div>
         <div id="add-menu" class="add-menu" hidden>
           <span class="eyebrow">ADICIONAR OBJETO</span>
           <button data-add-type="Frame"><b>▣</b><span>Frame<small>Container visual</small></span></button>
@@ -45,7 +45,7 @@
       </aside>
 
       <section class="stage-panel">
-        <div class="stage-toolbar"><div><span class="eyebrow">EDITOR VISUAL</span><strong>Palco 2D</strong><small id="scene-size">960 × 640</small></div><div class="stage-tools"><button id="zoom-out" class="icon-button" aria-label="Diminuir zoom">−</button><output id="zoom-value">100%</output><button id="zoom-in" class="icon-button" aria-label="Aumentar zoom">＋</button><button id="zoom-fit" class="icon-button" aria-label="Ajustar ao espaço">⛶</button></div></div>
+        <div class="stage-toolbar"><div><span class="eyebrow">EDITOR VISUAL</span><strong>Palco 2D</strong><small id="scene-size">960 × 640</small></div><div class="stage-tools"><button id="zoom-out" class="icon-button" aria-label="Diminuir zoom"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/></svg></button><output id="zoom-value">100%</output><button id="zoom-in" class="icon-button" aria-label="Aumentar zoom">＋</button><button id="zoom-fit" class="icon-button" aria-label="Ajustar ao espaço"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3H3v5M16 3h5v5M3 16v5h5M21 16v5h-5"/></svg></button></div></div>
         <div id="stage-viewport" class="stage-viewport"><div id="scene-zoom" class="scene-zoom"><div id="scene" class="scene-canvas" aria-label="Palco de criação"></div></div></div>
         <div class="stage-footer"><span>Arraste os objetos para posicionar</span><span>Ctrl + Z para desfazer</span></div>
       </section>
@@ -65,7 +65,7 @@
   </main>
 
   <main id="screen-library" class="screen secondary-screen" hidden>
-    <header class="app-header"><div class="brand"><img src="./assets/icon.svg" alt=""><span>Flowiq <b>Studio</b></span><span class="crumb">/ Biblioteca</span></div><div class="header-actions"><button id="library-back" class="button subtle">← Voltar</button><button id="add-assets" class="button primary">＋ Adicionar arquivos</button></div></header>
+    <header class="app-header"><div class="brand"><img src="./assets/icon.svg" alt=""><span>Flowiq <b>Studio</b></span><span class="crumb">/ Biblioteca</span></div><div class="header-actions"><button id="library-back" class="button subtle">← Voltar</button><button id="add-assets" class="button primary"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg> Adicionar arquivos</button></div></header>
     <section class="secondary-content"><span class="eyebrow">RECURSOS DO PROJETO</span><h1>Biblioteca</h1><p>Arquivos de imagem, áudio e vídeo disponíveis no seu dispositivo.</p><input id="asset-upload" type="file" accept="image/*,video/*,audio/*,font/*,.woff,.woff2,.ttf,.otf,.svg,.pdf,.json,.txt" multiple hidden><div id="asset-list" class="asset-list"><p class="empty-state">Nenhum arquivo adicionado.</p></div></section>
   </main>
 
@@ -78,7 +78,7 @@
     </section>
   </main>
 
-  <main id="preview-screen" class="preview-screen" hidden><header><div><span class="live-indicator"></span><strong>Prévia</strong><small id="preview-name">Projeto</small></div><button id="stop-preview" class="button subtle">× Fechar prévia</button></header><div class="preview-viewport"><div id="preview-scene" class="scene-canvas"></div></div></main>
+  <main id="preview-screen" class="preview-screen" hidden><header><div><span class="live-indicator"></span><strong>Prévia</strong><small id="preview-name">Projeto</small></div><button id="stop-preview" class="button subtle"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg> Fechar prévia</button></header><div class="preview-viewport"><div id="preview-scene" class="scene-canvas"></div></div></main>
   <div id="dialog" class="dialog-layer" hidden></div>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
   <script>
@@ -91,12 +91,12 @@
       });
       window.addEventListener('load', async () => {
         try {
-          const registration = await navigator.serviceWorker.register('./sw.js?v=2026.11.16.73', { updateViaCache: 'none' });
+          const registration = await navigator.serviceWorker.register('./sw.js?v=2026.11.16.74', { updateViaCache: 'none' });
           await registration.update();
         } catch (error) { console.warn('Flowiq: cache offline indisponível.', error); }
       });
     }
   </script>
-  <script type="module" src="./js/app.js?v=2026.11.16.73"></script>
+  <script type="module" src="./js/app.js?v=2026.11.16.74"></script>
 </body>
 </html>
