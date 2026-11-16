@@ -60,6 +60,8 @@ class StudioApp {
     $('zoom-in').onclick = () => this.setZoom(this.zoom + 0.1);
     $('zoom-out').onclick = () => this.setZoom(this.zoom - 0.1);
     $('zoom-fit').onclick = () => this.fitCanvas();
+    $('show-explorer').onclick = () => this.toggleDesktopPanel('explorer');
+    $('show-inspector').onclick = () => this.toggleDesktopPanel('inspector');
     $('btn-grid').onclick = () => { this.gridVisible=!this.gridVisible; $('stage-scroll').classList.toggle('grid-hidden',!this.gridVisible); $('btn-grid').setAttribute('aria-pressed',String(this.gridVisible)); $('btn-grid').title=this.gridVisible?'Grade visível':'Grade oculta'; };
     const setPositionMode=enabled=>{this.smartAlign=enabled;$('btn-align').setAttribute('aria-pressed',String(enabled));$('btn-free').setAttribute('aria-pressed',String(!enabled));$('btn-align').classList.toggle('is-active',enabled);$('btn-free').classList.toggle('is-active',!enabled);$('btn-align').title=enabled?'Alinhamento inteligente ativo':'Ativar alinhamento inteligente';$('btn-free').title=enabled?'Ativar posicionamento totalmente livre':'Posicionamento totalmente livre ativo';if(!enabled)this.clearAlignmentGuides();};$('btn-align').onclick=()=>setPositionMode(true);$('btn-free').onclick=()=>setPositionMode(false);
 
@@ -225,6 +227,15 @@ class StudioApp {
   }
 
   isMobile() { return window.matchMedia('(max-width: 820px)').matches; }
+
+  toggleDesktopPanel(which) {
+    if(this.isMobile()) return;
+    const layout=$('workspace').querySelector('.editor-layout');
+    const key=which==='explorer'?'explorer-collapsed':'inspector-collapsed';
+    const hidden=layout.classList.toggle(key);
+    $('show-'+which)?.setAttribute('aria-pressed',String(!hidden));
+    requestAnimationFrame(()=>{this.renderSelectionHandles();this.updateRotateHandlePlacement();});
+  }
 
   openPanel(which) {
     if (!this.isMobile()) return;
