@@ -35,7 +35,7 @@ export class Database {
         resolve(db);
       };
       request.onerror = () => { this.#dbPromise = null; reject(request.error || new Error('Não foi possível iniciar o banco local.')); };
-      request.onblocked = () => reject(new Error('Feche outras abas do Flowiq Studio e tente novamente.'));
+      request.onblocked = () => { this.#dbPromise = null; reject(new Error('Feche outras abas do Flowiq Studio e tente novamente.')); };
     });
     return this.#dbPromise;
   }
@@ -110,7 +110,9 @@ export class Database {
     if (!crypto.subtle) throw new Error('Este navegador não oferece verificação de integridade.');
     const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(JSON.stringify(core)));
     const checksum = [...new Uint8Array(digest)].map(byte => byte.toString(16).padStart(2, '0')).join('');
-    return new Blob([JSON.stringify({ ...core, integrity: { algorithm: 'SHA-256', digest: checksum } })], { type: 'application/vnd.flowiq.backup+json' });
+    const backup = new Blob([JSON.stringify({ ...core, integrity: { algorithm: 'SHA-256', digest: checksum } })], { type: 'application/vnd.flowiq.backup+json' });
+    if (backup.size > 40 * 1024 * 1024) throw new Error('O backup ultrapassa 40 MB. Reduza a biblioteca e tente novamente.');
+    return backup;
   }
 
   async importAll(file) {
