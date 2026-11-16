@@ -594,15 +594,6 @@ class StudioApp {
     requestAnimationFrame(()=>{this.renderSelectionHandles();this.updateRotateHandlePlacement();});
   }
 
-  openPanel(which) {
-    if (!this.isMobile()) return;
-    const panel=$(which); if(!panel)return;
-    this.closePanels();
-    panel.classList.add('mobile-open');
-    $('drawer-backdrop').classList.add('show');
-    const tab=document.querySelector('[data-panel="'+which+'"]');
-    if(tab){tab.classList.add('active');tab.setAttribute('aria-expanded','true');}
-  }
 
   focusNode(node) {
     this.closePanels();
