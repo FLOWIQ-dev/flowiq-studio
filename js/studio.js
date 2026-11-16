@@ -1,7 +1,7 @@
-import { DataModel, Instance } from './datamodel.js?v=2026.11.16.49';
-import { VirtualFS } from './vfs.js?v=2026.11.16.49';
-import { createProjectRecord, normalizeProject, FlowiqRuntime } from './engine.js?v=2026.11.16.49';
-import { createBackupFile, inspectBackupFile, restoreBackup } from './backup.js?v=2026.11.16.49';
+import { DataModel, Instance } from './datamodel.js?v=2026.11.16.50';
+import { VirtualFS } from './vfs.js?v=2026.11.16.50';
+import { createProjectRecord, normalizeProject, FlowiqRuntime } from './engine.js?v=2026.11.16.50';
+import { createBackupFile, inspectBackupFile, restoreBackup } from './backup.js?v=2026.11.16.50';
 
 const $ = (id) => document.getElementById(id);
 const esc = (value) => String(value ?? '').replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -25,6 +25,10 @@ class StudioApp {
     this.model = new DataModel();
     this.runtime = new FlowiqRuntime({ model:this.model, onChange:()=>this.renderCanvas(), onLog:message=>this.log(message,'warn') });
     this.projects = [];
+    this.assetUrls = new Map();
+    this.assets = [];
+    this.assetSearch = '';
+    this.assetFolder = '';
     this.project = null;
     this.selected = null;
     this.expandedNodes = new Set();
@@ -56,6 +60,13 @@ class StudioApp {
     $('btn-import').onclick = () => $('file-input').click();
     $('btn-backup-export').onclick = () => this.exportFullBackup();
     $('btn-backup-import').onclick = () => $('backup-file-input').click();
+    $('hub-tab-projects').onclick = () => this.showHubView('projects');
+    $('hub-tab-library').onclick = () => this.showHubView('library');
+    $('asset-upload-button').onclick = () => $('asset-file-input').click();
+    $('asset-file-input').onchange = e => this.uploadAssets(e.target.files);
+    $('asset-search').oninput = e => { this.assetSearch=e.target.value.trim().toLocaleLowerCase('pt-BR'); this.renderLibrary(); };
+    $('asset-folder-filter').onchange = e => { this.assetFolder=e.target.value; this.renderLibrary(); };
+    $('asset-folder-create').onclick = () => this.createAssetFolder();
     $('backup-file-input').onchange = (e) => this.importFullBackup(e.target.files?.[0]);
     $('file-input').onchange = (e) => this.importProject(e.target.files?.[0]);
     $('open-instances').onclick = () => this.toggleInstanceLibrary();
@@ -103,7 +114,7 @@ class StudioApp {
   }
 
   async loadHub() {
-    try { this.projects = await this.vfs.getProjects(); this.renderHub(); }
+    try { this.projects = await this.vfs.getProjects(); this.renderHub(); this.assets = await this.vfs.getAssets(); this.renderLibrary(); }
     catch (e) { this.log('Falha ao abrir armazenamento: ' + e.message, 'error'); $('project-list').innerHTML = '<div class="empty">Não foi possível acessar os projetos. Verifique se o navegador permite armazenamento local.</div>'; }
   }
 
@@ -117,6 +128,89 @@ class StudioApp {
     list.querySelectorAll('[data-delete]').forEach(b => b.onclick = () => this.deleteProject(b.dataset.delete));
   }
 
+  showHubView(view) {
+    const library = view === 'library';
+    $('hub-projects-view').classList.toggle('active', !library);
+    $('hub-library-view').classList.toggle('active', library);
+    $('hub-tab-projects').setAttribute('aria-selected', String(!library));
+    $('hub-tab-library').setAttribute('aria-selected', String(library));
+    $('btn-new').hidden = library;
+    if (library) this.refreshLibrary();
+  }
+
+  async refreshLibrary() {
+    try { this.assets = await this.vfs.getAssets(); this.renderLibrary(); }
+    catch (error) { $('asset-list').innerHTML = '<div class="empty">Não foi possível abrir a biblioteca: '+esc(error.message)+'</div>'; }
+  }
+
+  formatBytes(bytes) {
+    if (bytes < 1024) return bytes+' B';
+    if (bytes < 1048576) return (bytes/1024).toFixed(1)+' KB';
+    return (bytes/1048576).toFixed(2)+' MB';
+  }
+
+  renderLibrary() {
+    const total = this.assets.reduce((sum, asset) => sum + (Number(asset.size)||0), 0);
+    $('library-summary-text').textContent = this.assets.length+' arquivos · '+this.formatBytes(total)+' utilizados neste navegador';
+    const folders = [...new Set(this.assets.map(a => a.folder).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'pt-BR'));
+    const select=$('asset-folder-filter'), previous=this.assetFolder;
+    select.innerHTML='<option value="">Todas as pastas</option>'+folders.map(f=>'<option value="'+esc(f)+'">'+esc(f)+'</option>').join('');
+    if(folders.includes(previous))select.value=previous;else this.assetFolder='';
+    const filtered=this.assets.filter(a=>(!this.assetFolder||a.folder===this.assetFolder)&&(!this.assetSearch||(a.name+' '+a.mime+' '+(a.folder||'')).toLocaleLowerCase('pt-BR').includes(this.assetSearch)));
+    const list=$('asset-list');
+    if(!filtered.length){list.innerHTML='<div class="empty">'+(this.assets.length?'Nenhum arquivo corresponde à busca.':'Sua biblioteca está vazia. Adicione imagens, vídeos, áudios ou outros arquivos.')+'</div>';return;}
+    list.innerHTML=filtered.map(a=>{
+      let preview='<span class="asset-file-icon">📄</span>';
+      if(a.mime?.startsWith('image/'))preview='<img src="'+this.assetUrl(a)+'" alt="">';
+      else if(a.mime?.startsWith('video/'))preview='<video src="'+this.assetUrl(a)+'" muted playsinline preload="metadata"></video>';
+      else if(a.mime?.startsWith('audio/'))preview='<span class="asset-file-icon">🎵</span>';
+      else if(a.mime?.includes('font'))preview='<span class="asset-file-icon">🔤</span>';
+      return '<article class="asset-card"><div class="asset-preview">'+preview+'</div><div class="asset-info"><strong title="'+esc(a.name)+'">'+esc(a.name)+'</strong><small>'+esc(a.folder||'Sem pasta')+' · '+this.formatBytes(a.size||0)+'</small></div><div class="asset-actions"><button class="btn" data-asset-open="'+esc(a.id)+'">Abrir</button><button class="btn danger" data-asset-delete="'+esc(a.id)+'">Excluir</button></div></article>';
+    }).join('');
+    list.querySelectorAll('[data-asset-open]').forEach(b=>b.onclick=()=>this.openAsset(b.dataset.assetOpen));
+    list.querySelectorAll('[data-asset-delete]').forEach(b=>b.onclick=()=>this.deleteAsset(b.dataset.assetDelete));
+  }
+
+  assetUrl(asset) {
+    if(!this.assetUrls.has(asset.id))this.assetUrls.set(asset.id,URL.createObjectURL(asset.blob));
+    return this.assetUrls.get(asset.id);
+  }
+
+  async uploadAssets(fileList) {
+    const files=[...(fileList||[])]; if(!files.length)return;
+    const folder=$('asset-folder-name').value.trim().slice(0,48),button=$('asset-upload-button');
+    button.disabled=true;let added=0,errors=[];
+    try {
+      for(const file of files) {
+        if(!file.size){errors.push(file.name+': arquivo vazio');continue;}
+        if(file.size>12*1024*1024){errors.push(file.name+': limite de 12 MB por arquivo');continue;}
+        if(!(/^(image|video|audio|font)\//i.test(file.type)||/\.(woff2?|ttf|otf|pdf|json|svg)$/i.test(file.name))){errors.push(file.name+': tipo não permitido');continue;}
+        await this.vfs.saveAsset({id:this.makeId(),name:file.name,mime:file.type||'application/octet-stream',blob:file,folder});added++;
+      }
+      await this.refreshLibrary();
+      alert(added+' arquivo(s) adicionado(s).'+(errors.length?'\n\nNão adicionados:\n'+errors.join('\n'):''));
+    }catch(error){alert('Falha ao adicionar arquivos: '+error.message);}
+    finally{button.disabled=false;$('asset-file-input').value='';}
+  }
+
+  createAssetFolder() {
+    const name=$('asset-folder-name').value.trim().slice(0,48);
+    if(!name){$('asset-folder-name').focus();return;}
+    this.assetFolder=name;this.renderLibrary();
+    $('asset-folder-filter').value=name;
+  }
+
+  openAsset(id) {
+    const asset=this.assets.find(a=>a.id===id);if(!asset)return;
+    const a=document.createElement('a');a.href=this.assetUrl(asset);a.target='_blank';a.rel='noopener';a.click();
+  }
+
+  async deleteAsset(id) {
+    const asset=this.assets.find(a=>a.id===id);if(!asset)return;
+    if(!confirm('Excluir "'+asset.name+'"? Esta ação não pode ser desfeita.'))return;
+    try { await this.vfs.deleteAsset(id);const url=this.assetUrls.get(id);if(url)URL.revokeObjectURL(url);this.assetUrls.delete(id);await this.refreshLibrary(); }
+    catch(error){alert('Não foi possível excluir o arquivo: '+error.message);}
+  }
   createProject() {
     $('modal-content').innerHTML = `<h2>Novo projeto</h2><div class="field"><label>Nome do projeto</label><input id="new-name" maxlength="48" value="Meu Sistema OS" placeholder="Ex.: NeoOS"></div><div class="modal-actions"><button class="btn" id="cancel-modal">Cancelar</button><button class="btn primary" id="confirm-create">Criar projeto</button></div>`;
     $('modal').classList.add('open');
