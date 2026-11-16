@@ -559,10 +559,14 @@ class StudioApp {
   }
 
   async openProject(id) {
+    if(this.openingProject)return;
+    this.openingProject=true;
     const loading=$('project-loading');
     const loadingStarted=Date.now();
     loading?.classList.add('show');
     try {
+      // Prepare the project while the Home screen remains active. The editor is
+      // revealed only after the loading layer has been visible for its full delay.
       const p = await this.vfs.getProject(id);
       if (!p) throw new Error('Projeto não encontrado.');
       this.project = normalizeProject(p);
@@ -574,22 +578,29 @@ class StudioApp {
       $('tree-search').value = '';
       this.undoStack = []; this.redoStack = [];
       this.playMode = false;
-      $('hub').classList.remove('active'); $('workspace').classList.add('active');
       $('btn-save').disabled = false; $('btn-export').disabled = false;
       $('project-title').textContent = p.name;
       document.querySelectorAll('[data-workspace-nav]').forEach(item=>item.classList.toggle('active',item.dataset.workspaceNav==='editor'));
       this.closePanels(); this.refresh(); this.applyPreferences();
-      const remaining=Math.max(0,2000-(Date.now()-loadingStarted));
+      const remaining=Math.max(0,2200-(Date.now()-loadingStarted));
       if(remaining)await new Promise(resolve=>setTimeout(resolve,remaining));
-    } catch (e) { this.log('Não foi possível abrir o projeto: '+e.message,'error'); }
-    finally { loading?.classList.remove('show'); }
+      $('hub').classList.remove('active');
+      $('workspace').classList.add('active');
+      await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
+    } catch (e) {
+      this.project=null;
+      this.notify('Não foi possível abrir o projeto: '+(e?.message||'erro desconhecido'));
+    } finally {
+      loading?.classList.remove('show');
+      this.openingProject=false;
+    }
   }
 
   async leaveProject() {
     if(!this.project)return this.toHub();
     const choice=await new Promise(resolve=>{
       this.modalResolve=resolve;
-      $('modal-content').innerHTML='<h2>Voltar à tela inicial?</h2><p class="dialog-message">Deseja salvar as alterações deste projeto antes de sair?</p><div class="modal-actions" style="flex-wrap:wrap"><button class="btn" id="leave-cancel">Continuar editando</button><button class="btn danger" id="leave-discard">Sair sem salvar</button><button class="btn primary" id="leave-save">Salvar e voltar</button></div>';
+      $('modal-content').innerHTML='<div class="leave-dialog"><h2>Voltar à tela inicial?</h2><p class="dialog-message">Deseja salvar as alterações deste projeto antes de sair?</p><div class="modal-actions leave-dialog-actions"><button class="btn primary" id="leave-save">Salvar e voltar</button><button class="btn danger" id="leave-discard">Sair sem salvar</button><button class="btn" id="leave-cancel">Continuar editando</button></div></div>';
       $('modal').classList.add('open');
       const finish=value=>{if(this.modalResolve!==resolve)return;this.modalResolve=null;$('modal').classList.remove('open');resolve(value);};
       $('leave-cancel').onclick=()=>finish('cancel');
