@@ -96,6 +96,7 @@ test('stylesheet braces are balanced and only one layout sheet is loaded', async
 
 test('service worker precaches every module used by the new application', async () => {
   const worker = await readFile(new URL('../sw.js', import.meta.url), 'utf8');
-  const files = [...worker.matchAll(/'\.\/([^']+)'/g)].map(match => match[1].split('?')[0]);
+  const list = worker.match(/const FILES = \[([\s\S]*?)\];/)?.[1] || '';
+  const files = [...list.matchAll(/'\.\/([^']+)'/g)].map(match => match[1].split('?')[0]).filter(Boolean);
   for (const path of files) await readFile(new URL('../' + path, import.meta.url));
 });
