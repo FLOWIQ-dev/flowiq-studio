@@ -1,7 +1,7 @@
-import { DataModel, Instance } from './datamodel.js?v=2026.11.16.51';
-import { VirtualFS } from './vfs.js?v=2026.11.16.51';
-import { createProjectRecord, normalizeProject, FlowiqRuntime } from './engine.js?v=2026.11.16.51';
-import { createBackupFile, inspectBackupFile, restoreBackup } from './backup.js?v=2026.11.16.51';
+import { DataModel, Instance } from './datamodel.js?v=2026.11.16.52';
+import { VirtualFS } from './vfs.js?v=2026.11.16.52';
+import { createProjectRecord, normalizeProject, FlowiqRuntime } from './engine.js?v=2026.11.16.52';
+import { createBackupFile, inspectBackupFile, restoreBackup } from './backup.js?v=2026.11.16.52';
 
 const $ = (id) => document.getElementById(id);
 const esc = (value) => String(value ?? '').replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -1028,6 +1028,11 @@ class StudioApp {
   async importFullBackup(file) {
     if(!file)return;
     try{
+      const raw=JSON.parse((await file.text()).replace(/^\\uFEFF/,''));
+      if(raw?.format==='flowiq-studio'||raw?.project||Array.isArray(raw?.data)){
+        await this.importProject(file);
+        return;
+      }
       const data=await inspectBackupFile(file);
       const date=data.createdAt?new Date(data.createdAt).toLocaleString('pt-BR'):'não informada';
       const ok=confirm('Backup validado com sucesso!\n\nData: '+date+'\nProjetos: '+data.projectCount+'\nArquivos da biblioteca: '+data.assetCount+'\nTamanho: '+(data.totalBytes/1048576).toFixed(2)+' MB\n\nOs dados serão adicionados aos atuais. Nada será sobrescrito. IDs repetidos serão recriados.\n\nDeseja restaurar?');
@@ -1071,7 +1076,8 @@ class StudioApp {
   async importProject(file) {
     if(!file)return;
     try {
-      const raw=JSON.parse(await file.text());
+      const raw=JSON.parse((await file.text()).replace(/^\\uFEFF/,''));
+      if(raw?.format==='flowiq-studio-backup'){await this.importFullBackup(file);return;}
       const p=raw.project || raw;
       if(!p || !Array.isArray(p.data))throw new Error('Arquivo não contém um projeto Flowiq válido.');
       const existing=Array.isArray(raw.assets)?raw.assets:[];
