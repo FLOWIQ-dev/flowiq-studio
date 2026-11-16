@@ -257,13 +257,16 @@ class StudioApp {
 
   startDrag(event) {
     if (!this.project || this.playMode || event.button !== 0) return;
-    if (window.matchMedia('(max-width: 760px)').matches) return;
+    const isMobile = window.matchMedia('(max-width: 760px)').matches;
     const handle=event.target.closest('[data-resize]');
     const el=handle?[...$('canvas').querySelectorAll('[data-node-id]')].find(item=>item.dataset.nodeId===handle.dataset.nodeId):event.target.closest('[data-node-id]');
     if(!el)return;
     const node=this.model.find(el.dataset.nodeId);if(!node)return;
+    // No celular, o primeiro toque seleciona. O próximo arrasta; as alças redimensionam.
+    if(isMobile && !handle && this.selected !== node){this.select(node);return;}
     this.selected=node;
     const parent=el.parentElement,parentRect=parent.getBoundingClientRect();
+    try{$('canvas').setPointerCapture(event.pointerId);}catch(_){}
     this.drag={node,el,mode:handle?'resize':'move',direction:handle?.dataset.resize||'',startX:event.clientX,startY:event.clientY,
       baseX:Number(node.properties.positionX)||0,baseY:Number(node.properties.positionY)||0,
       baseW:Math.max(1,Number(node.properties.width)||1),baseH:Math.max(1,Number(node.properties.height)||1),
@@ -299,13 +302,12 @@ class StudioApp {
 
   renderSelectionHandles(){
     const canvas=$('canvas');canvas.querySelector('.selection-box')?.remove();
-    if (window.matchMedia('(max-width: 760px)').matches) return;
     if(!this.selected||this.playMode)return;
     const el=[...canvas.querySelectorAll('[data-node-id]')].find(item=>item.dataset.nodeId===this.selected.id);if(!el)return;
     const overlay=document.createElement('div'),cr=canvas.getBoundingClientRect(),r=el.getBoundingClientRect();
     overlay.className='selection-box';overlay.style.left=((r.left-cr.left)/this.zoom)+'px';overlay.style.top=((r.top-cr.top)/this.zoom)+'px';
     overlay.style.width=(r.width/this.zoom)+'px';overlay.style.height=(r.height/this.zoom)+'px';
-    ['nw','n','ne','e','se','s','sw','w'].forEach(dir=>{const h=document.createElement('button');h.type='button';h.className='resize-handle';h.dataset.resize=dir;h.dataset.nodeId=this.selected.id;h.setAttribute('aria-label','Redimensionar '+dir);overlay.append(h);});
+    ['nw','n','ne','e','se','s','sw','w'].forEach(dir=>{const h=document.createElement('button');h.type='button';h.className='resize-handle';h.dataset.resize=dir;h.dataset.nodeId=this.selected.id;h.setAttribute('aria-label','Redimensionar '+dir);h.setAttribute('tabindex','0');overlay.append(h);});
     canvas.append(overlay);
   }
 
