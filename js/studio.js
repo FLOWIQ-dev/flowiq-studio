@@ -1026,14 +1026,33 @@ class StudioApp {
     finally{$('backup-file-input').value='';}
   }
 
-  exportProject() {
+  async exportProject() {
     if(!this.project)return;
-    const sourceModel=this.playMode?this.runtime.editorModel:this.model;
-    const payload={format:'flowiq-studio',version:2,project:normalizeProject({...this.project,data:(sourceModel||this.model).toJSON()})};
-    const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
-    const url=URL.createObjectURL(blob); const a=document.createElement('a');
-    a.href=url;a.download=(this.project.name.replace(/[^a-z0-9-_]+/gi,'_')||'projeto')+'.flowiq';a.click();URL.revokeObjectURL(url);
-    this.log('Projeto exportado.','ok');
+    try {
+      const sourceModel=this.playMode?this.runtime.editorModel:this.model;
+      const data=(sourceModel||this.model).toJSON();
+      const used=new Set();
+      const scan=nodes=>{for(const node of nodes||[]){if(node?.properties?.assetId)used.add(node.properties.assetId);scan(node?.children);}};
+      scan(data);
+      const stored=await this.vfs.getAssets();
+      const assets=[];
+      let total=0;
+      for(const asset of stored.filter(item=>used.has(item.id))){
+        if(!(asset.blob instanceof Blob))throw new Error('Não foi possível ler o asset '+asset.name+'.');
+        if(asset.blob.size>12*1024*1024)throw new Error('O asset '+asset.name+' excede o limite de exportação.');
+        total+=asset.blob.size;if(total>16*1024*1024)throw new Error('Os assets deste projeto excedem 16 MB.');
+        const bytes=new Uint8Array(await asset.blob.arrayBuffer());let binary='';
+        for(let i=0;i<bytes.length;i+=32768)binary+=String.fromCharCode(...bytes.subarray(i,i+32768));
+        assets.push({id:asset.id,name:asset.name,mime:asset.mime,size:asset.blob.size,folder:asset.folder||'',data:btoa(binary)});
+      }
+      if(assets.length!==used.size)throw new Error('Este projeto referencia um arquivo que não está mais na biblioteca. Repare a imagem antes de exportar.');
+      const payload={format:'flowiq-studio',version:3,project:normalizeProject({...this.project,data}),assets};
+      const blob=new Blob([JSON.stringify(payload)],{type:'application/json'});
+      const url=URL.createObjectURL(blob),a=document.createElement('a');
+      a.href=url;a.download=(this.project.name.replace(/[^a-z0-9-_]+/gi,'_')||'projeto')+'.flowiq';
+      document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),30000);
+      this.log('Projeto e '+assets.length+' asset(s) exportados.','ok');
+    }catch(error){alert('Não foi possível exportar o projeto: '+error.message);}
   }
 
   async importProject(file) {
@@ -1042,13 +1061,35 @@ class StudioApp {
       const raw=JSON.parse(await file.text());
       const p=raw.project || raw;
       if(!p || !Array.isArray(p.data))throw new Error('Arquivo não contém um projeto Flowiq válido.');
-      const imported=createProjectRecord({...p,id:this.makeId(),name:String(p.name||file.name.replace(/\.(flowiq|json)$/i,'')).slice(0,64)||'Projeto importado',updatedAt:new Date().toISOString()});
+      const existing=Array.isArray(raw.assets)?raw.assets:[];
+      if(existing.length>500)throw new Error('O projeto contém assets demais.');
+      const ids=new Set(),idMap=new Map(),restoredAssets=[];
+      let total=0;
+      for(const item of existing){
+        if(!item||typeof item.id!=='string'||!item.id||typeof item.data!=='string'||typeof item.name!=='string')throw new Error('Um asset do projeto está inválido.');
+        if(ids.has(item.id))throw new Error('O pacote contém IDs de assets duplicados.');
+        ids.add(item.id);
+        if(!/^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/.test(item.data))throw new Error('Conteúdo de asset inválido.');
+        const binary=atob(item.data),bytes=new Uint8Array(binary.length);
+        for(let i=0;i<binary.length;i++)bytes[i]=binary.charCodeAt(i);
+        if(bytes.length!==Number(item.size)||bytes.length>12*1024*1024)throw new Error('Tamanho de asset inconsistente.');
+        total+=bytes.length;if(total>16*1024*1024)throw new Error('Os assets excedem o limite de 16 MB.');
+        const newId=this.makeId();idMap.set(item.id,newId);
+        const mime=String(item.mime||'application/octet-stream').slice(0,120);
+        restoredAssets.push({id:newId,name:item.name.slice(0,180),mime,size:bytes.length,folder:String(item.folder||'').slice(0,48),createdAt:new Date().toISOString(),blob:new Blob([bytes],{type:mime})});
+      }
+      const rewrite=(value,key='')=>{
+        if(typeof value==='string')return key==='assetId'?(idMap.get(value)||value):value;
+        if(Array.isArray(value))return value.map(item=>rewrite(item,key));
+        if(value&&typeof value==='object'){const result={};for(const [k,v] of Object.entries(value))result[k]=rewrite(v,k);return result;}
+        return value;
+      };
+      const imported=createProjectRecord({...p,id:this.makeId(),data:rewrite(p.data),name:String(p.name||file.name.replace(/\.(flowiq|json)$/i,'')).slice(0,64)||'Projeto importado',updatedAt:new Date().toISOString()});
       this.model.loadFromJSON(imported.data);
       imported.data=this.model.toJSON();
-      await this.vfs.saveProject(imported);
+      await this.vfs.restoreBackupData([imported],restoredAssets);
       $('file-input').value='';await this.loadHub();await this.openProject(imported.id);
-
-    } catch(e) { this.log('Falha na importação: '+e.message,'error'); }
+    } catch(e) { alert('Falha na importação: '+e.message+'\n\nNenhum dado foi substituído.');$('file-input').value=''; }
   }
 
   play(force) {
