@@ -1,0 +1,9 @@
+{
+  "name": "flowiq-studio",
+  "private": true,
+  "version": "0.73.0",
+  "type": "module",
+  "scripts": {
+    "test": "node --test"
+  }
+}
