@@ -572,7 +572,7 @@ class StudioApp {
       </details>
       <div class="inspector-actions"><button class="btn" id="duplicate-node">⧉ Duplicar</button><button class="btn danger" id="delete-node">⌫ Excluir</button></div>`;
     const setters={
-      'p-name':v=>{node.name=v;const title=box.querySelector('.properties-object-heading strong');if(title)title.textContent=v;this.renderTree();},
+      'p-name':v=>{node.name=v;const title=box.querySelector('.properties-object-heading strong');if(title)title.textContent=v;this.renderTree();this.scheduleSave();},
       'p-x':v=>p.positionX=Number(v)||0,'p-y':v=>p.positionY=Number(v)||0,'p-w':v=>p.width=Math.max(1,Number(v)||1),'p-h':v=>p.height=Math.max(1,Number(v)||1),'p-rotation':v=>p.rotation=Number(v)||0,
       'p-bg':v=>p.backgroundColor=v,'p-radius':v=>p.borderRadius=Math.max(0,Number(v)||0),'p-border-width':v=>p.borderWidth=Math.min(12,Math.max(0,Number(v)||0)),
       'p-border-color':v=>p.borderColor=v,'p-opacity':v=>p.opacity=Math.min(1,Math.max(0,Number(v)||0)),
