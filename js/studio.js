@@ -65,6 +65,11 @@ class StudioApp {
 
   bind() {
     $('btn-new').onclick = () => this.createProject();
+    const workspaceMenu=$('workspace-menu'),menuTrigger=$('btn-workspace-menu');
+    const closeWorkspaceMenu=()=>{workspaceMenu.hidden=true;menuTrigger.setAttribute('aria-expanded','false');};
+    menuTrigger.onclick=()=>{workspaceMenu.hidden=!workspaceMenu.hidden;menuTrigger.setAttribute('aria-expanded',String(!workspaceMenu.hidden));};
+    workspaceMenu.addEventListener('click',event=>{if(event.target.closest('button'))closeWorkspaceMenu();});
+    document.addEventListener('pointerdown',event=>{if(!workspaceMenu.hidden&&!workspaceMenu.contains(event.target)&&!menuTrigger.contains(event.target))closeWorkspaceMenu();});
     $('btn-hub').onclick = async () => { await this.save(); await this.toHub(); };
     $('btn-library-nav').onclick = async () => { await this.save(); $('workspace').classList.remove('active'); $('hub').classList.add('active'); await this.loadHub(); this.showHubView('library'); };
     $('hub-return-project').onclick = () => this.returnToEditor();
@@ -72,7 +77,6 @@ class StudioApp {
     document.addEventListener('pointerdown',event=>{if(event.target.closest('[data-color-id]')||event.target.closest('[data-color-popover]'))return;document.querySelectorAll('[data-color-popover]').forEach(pop=>{pop.hidden=true;pop.remove();});document.querySelectorAll('[data-color-toggle]').forEach(btn=>btn.setAttribute('aria-expanded','false'));});
     document.addEventListener('scroll',event=>{if(event.target?.closest?.('[data-color-popover]')||document.activeElement?.closest?.('[data-color-popover]'))return;document.querySelectorAll('[data-color-popover]').forEach(pop=>{pop.hidden=true;pop.remove();});document.querySelectorAll('[data-color-toggle]').forEach(btn=>btn.setAttribute('aria-expanded','false'));},true);
     window.addEventListener('resize',()=>{if(document.activeElement?.closest?.('[data-color-popover]'))return;document.querySelectorAll('[data-color-popover]').forEach(pop=>{pop.hidden=true;pop.remove();});document.querySelectorAll('[data-color-toggle]').forEach(btn=>btn.setAttribute('aria-expanded','false'));});
-    document.querySelectorAll('[data-workspace-nav]').forEach(button=>button.addEventListener('click',()=>{document.querySelectorAll('[data-workspace-nav]').forEach(item=>item.classList.toggle('active',item===button));}));
     $('settings-return-project').onclick = () => this.returnToEditor();
     $('btn-save').onclick = () => this.save();
     $('btn-settings').onclick = () => this.openSettingsFromEditor();
@@ -129,7 +133,7 @@ class StudioApp {
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') { e.preventDefault(); this.save(); }
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === '0') { e.preventDefault(); this.fitCanvas(); }
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'd' && this.selected) { e.preventDefault(); this.duplicateSelected(); }
-      if (e.key === 'Escape') { this.closeTreeMenu(); this.closePanels(); this.hideModal(); if (this.playMode) this.play(false); }
+      if (e.key === 'Escape') { closeWorkspaceMenu(); this.closeTreeMenu(); this.closePanels(); this.hideModal(); if (this.playMode) this.play(false); }
       if ((e.key === 'Delete' || e.key === 'Backspace') && this.selected && !['INPUT','TEXTAREA'].includes(document.activeElement.tagName)) this.deleteSelected();
       if (e.key === 'F2' && this.selected && !editingText) this.renameNode(this.selected);
     });
@@ -1168,15 +1172,13 @@ class StudioApp {
         hsv.v=rect.height?1-y/rect.height:0;
         update(hsvToHex(hsv.h,hsv.s,hsv.v));
       };
-      square.onpointerdown=e=>{
-        if(e.pointerType==='mouse'&&e.button!==0)return;
-        dragging=true;
-        try{square.setPointerCapture(e.pointerId);}catch{}
-        setSquare(e);e.preventDefault();
-      };
-      square.onpointermove=e=>{if(dragging)setSquare(e);};
-      const finish=()=>{if(!dragging)return;dragging=false;this.scheduleSave();};
-      square.onpointerup=finish;square.onpointercancel=finish;square.onlostpointercapture=finish;
+      let activePointer=null;
+      square.onpointerdown=e=>{if(e.pointerType==='mouse'&&e.button!==0)return;dragging=true;activePointer=e.pointerId;setSquare(e);e.preventDefault();};
+      const moveSquare=e=>{if(dragging&&e.pointerId===activePointer){setSquare(e);e.preventDefault();}};
+      const finishSquare=e=>{if(!dragging||(e&&e.pointerId!==activePointer))return;dragging=false;activePointer=null;this.scheduleSave();};
+      document.addEventListener('pointermove',moveSquare,{passive:false});
+      document.addEventListener('pointerup',finishSquare);
+      document.addEventListener('pointercancel',finishSquare);
       pop.addEventListener('keydown',e=>{if(e.key==='Escape'){close();trigger.focus();}});
     });
   }
