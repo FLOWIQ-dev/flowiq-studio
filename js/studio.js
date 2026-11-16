@@ -59,7 +59,8 @@ class StudioApp {
 
   bind() {
     $('btn-new').onclick = () => this.createProject();
-    $('btn-hub').onclick = async () => { await this.save(); this.toHub(); };
+    $('btn-hub').onclick = async () => { await this.save(); await this.toHub(); };
+    $('settings-return-project').onclick = () => this.returnToEditor();
     $('btn-save').onclick = () => this.save();
     $('btn-settings').onclick = () => this.openSettingsFromEditor();
     $('settings-export-backup').onclick = () => this.exportFullBackup();
@@ -156,6 +157,7 @@ class StudioApp {
     $('settings-export-project').classList.toggle('is-disabled',!this.project);
     $('settings-export-project').querySelector('small').textContent=this.project?'Salvar '+this.project.name+' e os arquivos que ele utiliza.':'Abra um projeto para habilitar esta opção.';
     $('settings-version').textContent='Versão 2026.11.16.55';
+    $('settings-return-project').hidden=!this.project;
     this.applyPreferences();
   }
 
@@ -240,7 +242,8 @@ class StudioApp {
 
   async renderAssetPreview(asset) {
     const pane=$('asset-preview-pane');if(!pane)return;
-    if(!asset){pane.innerHTML='<div class="preview-empty"><strong>Selecione um arquivo</strong></div>';return;}
+    const requestId=this.previewRequestId=(this.previewRequestId||0)+1;
+    if(!asset){this.previewRequestId++;pane.innerHTML='<div class="preview-empty"><strong>Selecione um arquivo</strong></div>';return;}
     const mime=asset.mime||'',name=asset.name||'',url=(()=>{try{return this.assetUrl(asset)}catch{return null}})();
     const isImage=mime.startsWith('image/')||/\.(png|jpe?g|gif|webp|avif|bmp)$/i.test(name);
     const isVideo=mime.startsWith('video/')||/\.(mp4|webm|mov|m4v)$/i.test(name);
@@ -256,12 +259,13 @@ class StudioApp {
       try{const raw=await asset.blob.text();content='<pre class="preview-code">'+esc(raw.slice(0,60000))+'</pre>';}
       catch{content='<div class="preview-unsupported"><strong>Não foi possível ler o arquivo.</strong></div>';}
     }
+    if(requestId!==this.previewRequestId||this.selectedAssetId!==asset.id)return;
     pane.innerHTML='<div class="preview-pane-heading"><div><strong>'+esc(name)+'</strong><small>'+esc(mime||'Arquivo')+' · '+this.formatBytes(asset.size||0)+'</small></div><button class="icon-action preview-close" id="preview-clear" aria-label="Fechar pré-visualização"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button></div><div class="preview-pane-content">'+content+'</div><div class="preview-pane-actions"><button class="btn" id="preview-rename">Renomear</button><button class="btn danger" id="preview-delete">Excluir</button><button class="btn primary" id="preview-download"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m-4-4 4 4 4-4"/><path d="M5 17v3h14v-3"/></svg>Baixar</button></div>';
     $('preview-clear').onclick=()=>{this.selectedAssetId=null;this.renderLibrary();};
     $('preview-rename').onclick=()=>this.renameAsset(asset.id);
     $('preview-delete').onclick=()=>this.deleteAsset(asset.id);
     $('preview-download').onclick=()=>this.downloadAsset(asset.id);
-    const image=$('asset-preview-image');if(image)image.onerror=()=>{$('asset-preview-pane').querySelector('.preview-pane-content').innerHTML='<div class="preview-unsupported"><strong>Não foi possível exibir a imagem.</strong><span>O arquivo pode estar corrompido ou em um formato não suportado.</span></div>';};
+    const image=$('asset-preview-image');if(image)image.onerror=()=>{const target=$('asset-preview-pane')?.querySelector('.preview-pane-content');if(target)target.innerHTML='<div class="preview-unsupported"><strong>Não foi possível exibir a imagem.</strong><span>O arquivo pode estar corrompido ou em um formato não suportado.</span></div>';};
   }
 
   async refreshLibrary() {
@@ -336,10 +340,10 @@ class StudioApp {
     const folders=[...new Set(this.assets.map(a=>a.folder).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'pt-BR'));
     const filtered=this.assets.filter(a=>(!state.folder||a.folder===state.folder)&&(!state.query||(a.name+' '+a.mime+' '+(a.folder||'')).toLocaleLowerCase('pt-BR').includes(state.query))&&(!state.node||a.mime?.startsWith('image/')));
     const rows=filtered.map(a=>{
-      let thumb='<span>DOC</span>';
-      if(a.mime?.startsWith('image/'))thumb='<img src="'+this.assetUrl(a)+'" alt="">';
-      else if(a.mime?.startsWith('video/'))thumb='<span>VID</span>';
-      else if(a.mime?.startsWith('audio/'))thumb='<span>AUD</span>';
+      let thumb='<span>'+iconMarkup('Frame')+'</span>';
+      if(a.mime?.startsWith('image/')){try{thumb='<img src="'+this.assetUrl(a)+'" alt="">';}catch{thumb='<span>'+iconMarkup('ImageLabel')+'</span>';}}
+      else if(a.mime?.startsWith('video/'))thumb='<span><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m10 9 5 3-5 3z"/></svg></span>';
+      else if(a.mime?.startsWith('audio/'))thumb='<span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg></span>';
       const use=node?'<button class="btn primary" data-library-use="'+esc(a.id)+'">Usar</button>':'';
       return '<article class="browser-file-row"><div class="browser-file-thumb">'+thumb+'</div><button class="browser-file-info" data-library-preview="'+esc(a.id)+'"><strong>'+esc(a.name)+'</strong><small>'+esc(a.folder||'Sem pasta')+' · '+this.formatBytes(a.size||0)+'</small></button><div class="browser-file-actions">'+use+'<button class="btn" data-library-rename="'+esc(a.id)+'" aria-label="Renomear arquivo">Renomear</button><button class="btn" data-library-download="'+esc(a.id)+'" aria-label="Baixar arquivo">Baixar</button><button class="btn danger" data-library-delete="'+esc(a.id)+'" aria-label="Excluir arquivo">Excluir</button></div></article>';
     }).join('');
@@ -543,7 +547,7 @@ class StudioApp {
     this.project = null; this.selected = null; this.playMode = false;
     $('workspace').classList.remove('active'); $('hub').classList.add('active');
     $('btn-save').disabled = true; $('btn-export').disabled = true;
-    this.closePanels(); await this.loadHub();
+    this.closePanels(); await this.loadHub(); this.showHubView('projects');
   }
 
   async save() {
