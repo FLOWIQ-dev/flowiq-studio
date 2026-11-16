@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#0b1220"><meta name="flowiq-build" content="2026.11.16.9"><title>Flowiq Studio</title><link rel="manifest" href="./manifest.json"><link rel="icon" href="./assets/icon.svg" type="image/svg+xml">
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#0b1220"><meta name="flowiq-build" content="2026.11.16.10"><title>Flowiq Studio</title><link rel="manifest" href="./manifest.json"><link rel="icon" href="./assets/icon.svg" type="image/svg+xml">
 <style>
 :root{color-scheme:dark;--bg:#0b1220;--panel:#111c2d;--p2:#19283e;--line:#293950;--txt:#eef4ff;--muted:#91a1ba;--blue:#4d8dff}*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--txt);font:14px Inter,system-ui,sans-serif}button,input,textarea{font:inherit}button{cursor:pointer}.screen{display:none;width:100%;height:100%}.screen.active{display:flex}.btn{border:1px solid var(--line);border-radius:9px;padding:8px 12px;background:var(--p2);color:var(--txt);font-size:12px;font-weight:650}.btn.primary{background:var(--blue);border-color:var(--blue);color:white}.btn.danger{color:#ff9aa5;background:#321c27;border-color:#63313c}.btn:disabled{opacity:.4}.muted{color:var(--muted)}
 #hub{flex-direction:column;overflow:auto;background:radial-gradient(ellipse at 50% -20%,#1d3760,transparent 55%),var(--bg)}.hub-header{height:65px;flex:none;display:flex;align-items:center;justify-content:space-between;padding:0 20px;border-bottom:1px solid var(--line);background:#0c1422}.brand{font-size:17px;font-weight:850}.brand b{display:inline-grid;place-items:center;width:34px;height:34px;margin-right:8px;border-radius:10px;background:linear-gradient(145deg,#559aff,#3159c9)}.hub-main{width:min(100%,1000px);margin:auto;padding:38px 22px}.hub-main h1{font-size:clamp(28px,5vw,42px);margin:0 0 8px}.hub-main>p{color:var(--muted);line-height:1.6}.hub-toolbar{display:flex;align-items:center;justify-content:space-between;margin:28px 0 14px}.hub-toolbar h2{font-size:16px;margin:0}#project-count{font-size:11px;color:var(--muted)}#project-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px}.project-card{padding:17px;border:1px solid var(--line);border-radius:13px;background:linear-gradient(145deg,#172337,#101827)}.project-card h3{overflow-wrap:anywhere}.project-card p{font-size:11px;color:var(--muted)}.project-actions{display:flex;gap:8px}.project-actions .primary{flex:1}.empty{grid-column:1/-1;text-align:center;padding:35px;border:1px dashed var(--line);border-radius:13px;color:var(--muted);line-height:1.8}
@@ -117,6 +117,8 @@
   .field-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
 
+
+
 /* Interaction refinement: precise handles, safer touch, clear preview state. */
 .resize-handle{width:12px;height:12px;border-radius:4px;transition:opacity .12s,transform .12s}
 .resize-handle:active{opacity:.5}
@@ -177,9 +179,48 @@
  .node{touch-action:none!important}
  #canvas{touch-action:pan-x pan-y}
 }
+/* Toolbar pass 10: stable alignment and visible history controls on touch screens. */
+.topbar{align-items:center;min-width:0}
+.topbar-actions{align-items:center;justify-content:flex-end}
+.topbar-actions .btn{min-height:36px;display:inline-flex;align-items:center;justify-content:center}
+.breadcrumb{flex:1}
+.stage-toolbar{align-items:center}
+.history-buttons{align-items:center;justify-content:center}
+.history-buttons .btn{display:inline-flex;align-items:center;justify-content:center;font-size:18px;line-height:1}
+@media(max-width:760px){
+  .topbar{grid-template-columns:minmax(0,1fr) auto;grid-template-rows:22px 26px;align-items:center}
+  .topbar-brand{align-self:center}
+  .breadcrumb{align-self:center;grid-column:1;grid-row:2;line-height:24px}
+  .topbar-actions{align-self:center;justify-self:end;display:flex;gap:6px}
+  .topbar-actions .btn{min-height:40px;padding:7px 10px}
+  .stage-toolbar{
+    display:grid!important;
+    grid-template-columns:auto minmax(0,1fr) auto;
+    grid-template-areas:"history zoom preview";
+    align-items:center;justify-content:stretch;gap:7px!important;
+    min-height:54px!important;padding:6px 8px!important;flex-wrap:nowrap;
+  }
+  .stage-toolbar>strong,.stage-toolbar>span,.stage-toolbar>.spacer{display:none!important}
+  .stage-toolbar .history-buttons{grid-area:history;display:flex!important;gap:3px}
+  .history-buttons .btn{min-width:34px;min-height:36px;padding:4px 6px;font-size:19px}
+  .stage-toolbar .stage-zoom{grid-area:zoom;display:flex;justify-self:center;min-width:0;gap:2px}
+  .stage-zoom .btn{min-width:32px!important;min-height:36px!important;padding:4px 6px!important}
+  .stage-zoom output{min-width:32px!important;font-size:10px}
+  .stage-toolbar #zoom-fit{font-size:9px;padding-inline:5px!important}
+  .stage-toolbar #btn-play{grid-area:preview;justify-self:end;min-width:70px;min-height:40px;padding:6px 8px;font-size:10px}
+}
+@media(max-width:360px){
+  .topbar-actions{gap:4px}
+  .topbar-actions .btn{padding-inline:7px;font-size:10px}
+  .stage-toolbar{gap:4px!important;padding-inline:5px!important}
+  .history-buttons .btn{min-width:31px;min-height:34px}
+  .stage-zoom .btn{min-width:29px!important;padding-inline:4px!important}
+  .stage-zoom output{min-width:28px!important}
+  .stage-toolbar #btn-play{min-width:64px;padding-inline:5px}
+}
 </style></head><body>
 <main id="hub" class="screen active"><header class="hub-header"><div class="brand"><b>F</b>Flowiq Studio</div><button class="btn primary" id="btn-new">＋ Novo projeto</button></header><section class="hub-main"><h1>Crie. Edite. Construa.</h1><p>Seu espaço de criação de interfaces e experiências 2D. Comece um projeto ou continue de onde parou.</p><div class="hub-toolbar"><div><h2>Meus projetos</h2><small id="project-count">0 projetos</small></div><div><button class="btn" id="btn-import">↑ Importar</button><input type="file" id="file-input" accept=".flowiq,.json,application/json" hidden></div></div><div id="project-list"><div class="empty">Carregando projetos…</div></div></section></main>
-<main id="workspace" class="screen"><header class="topbar"><div class="topbar-brand">◈ Flowiq</div><span class="build-tag" title="Versão do Studio">v2026.11.16.9</span><div class="breadcrumb">/ <span id="project-title">Projeto</span></div><div class="topbar-spacer"></div><div class="topbar-actions"><button class="btn" id="btn-hub">Projetos</button><button class="btn" id="btn-export" disabled>Exportar</button><button class="btn primary" id="btn-save" disabled>Salvar</button></div></header>
+<main id="workspace" class="screen"><header class="topbar"><div class="topbar-brand">◈ Flowiq</div><span class="build-tag" title="Versão do Studio">v2026.11.16.10</span><div class="breadcrumb">/ <span id="project-title">Projeto</span></div><div class="topbar-spacer"></div><div class="topbar-actions"><button class="btn" id="btn-hub">Projetos</button><button class="btn" id="btn-export" disabled>Exportar</button><button class="btn primary" id="btn-save" disabled>Salvar</button></div></header>
 <div class="editor-layout"><aside class="side-panel explorer" id="explorer"><div class="panel-header"><h2>Explorer</h2><button data-close-panel>×</button></div><div class="panel-content"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><small class="muted">HIERARQUIA</small><button class="btn" id="add-frame">＋ Frame</button></div><div id="tree"></div><hr class="divider"><div class="field"><label>ADICIONAR OBJETO</label><button class="btn" id="add-button">＋ Botão</button><button class="btn" id="add-label">＋ Texto</button><button class="btn" id="add-image">＋ Imagem</button></div></div></aside>
 <section class="stage-area"><div class="stage-toolbar"><strong id="stage-mode-label">PALCO 2D</strong><span>Arraste para posicionar</span><div class="spacer"></div><div class="history-buttons" aria-label="Histórico"><button class="btn" id="undo-action" title="Desfazer (Ctrl+Z)" aria-label="Desfazer">↶</button><button class="btn" id="redo-action" title="Refazer (Ctrl+Shift+Z)" aria-label="Refazer">↷</button></div><div class="stage-zoom" aria-label="Zoom do palco"><button class="btn" id="zoom-out" aria-label="Diminuir zoom">−</button><output id="zoom-level">100%</output><button class="btn" id="zoom-in" aria-label="Aumentar zoom">＋</button><button class="btn" id="zoom-fit">Ajustar</button></div><button class="btn" id="btn-play">▶ Prévia</button></div><div class="stage-scroll" id="stage-scroll"><div id="stage-wrap"><div id="canvas"><div class="empty-canvas">Seu palco está vazio.<br>Adicione um Frame para começar.</div></div></div></div><section class="console"><div class="console-header"><strong>Console</strong><button id="clear-console" class="btn">Limpar</button></div><div id="console-log" aria-live="polite"></div></section></section>
 <aside class="side-panel inspector" id="inspector"><div class="panel-header"><h2>Propriedades</h2><button data-close-panel>×</button></div><div class="panel-content" id="inspector-content"><p class="muted">Selecione um objeto para editar.</p></div></aside></div><div class="drawer-backdrop" id="drawer-backdrop"></div><nav class="mobile-nav"><button data-panel="explorer"><span>☷</span>Objetos</button><button id="mobile-add"><span>＋</span>Adicionar</button><button data-panel="inspector"><span>⚙</span>Editar</button><button id="mobile-play"><span>▶</span>Prévia</button></nav></main>
@@ -195,7 +236,7 @@
   });
   window.addEventListener('load', async () => {
     try {
-      const registration = await navigator.serviceWorker.register('./sw.js?v=2026.11.16.9', { updateViaCache: 'none' });
+      const registration = await navigator.serviceWorker.register('./sw.js?v=2026.11.16.10', { updateViaCache: 'none' });
       if (registration.waiting) registration.waiting.postMessage({ type: 'SKIP_WAITING' });
       await registration.update();
       window.addEventListener('pageshow', () => registration.update().catch(() => {}));
@@ -209,4 +250,4 @@
 })();
 </script>
 
-<script type="module" src="./js/studio.js?v=2026.11.16.9"></script></body></html>
+<script type="module" src="./js/studio.js?v=2026.11.16.10"></script></body></html>

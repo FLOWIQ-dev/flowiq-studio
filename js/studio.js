@@ -1,5 +1,5 @@
-import { DataModel, Instance } from './datamodel.js?v=2026.11.16.5';
-import { VirtualFS } from './vfs.js?v=2026.11.16.5';
+import { DataModel, Instance } from './datamodel.js?v=2026.11.16.10';
+import { VirtualFS } from './vfs.js?v=2026.11.16.10';
 
 const $ = (id) => document.getElementById(id);
 const esc = (value) => String(value ?? '').replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -247,7 +247,7 @@ class StudioApp {
       if (node.className === 'TextButton' && this.playMode) {
         el.type = 'button'; el.onclick = () => this.log('Ação executada: '+node.name,'ok');
       } else if (!this.playMode) {
-        el.onclick = (e) => { e.stopPropagation(); this.select(node); };
+        el.onclick = (e) => { e.stopPropagation(); if(this.selected!==node)this.select(node); };
       }
       parentEl.append(el);
       if (node.className === 'Frame') node.children.forEach(child => renderNode(child,el));
@@ -265,8 +265,12 @@ class StudioApp {
     if(!el)return;
     const node=this.model.find(el.dataset.nodeId);if(!node)return;
     if(this.selected!==node){
-      this.selected=node;
-      this.renderTree();this.renderInspector();this.renderCanvas();
+      this.select(node);
+      const now=Date.now();
+      this.lastTap={id:node.id,time:now};
+      clearTimeout(this.lastTapTimer);
+      this.lastTapTimer=setTimeout(()=>{this.lastTap=null;},380);
+      return;
     }
     const activeEl=[...$('canvas').querySelectorAll('[data-node-id]')].find(item=>item.dataset.nodeId===node.id);
     if(!activeEl)return;
