@@ -81,6 +81,22 @@
   <main id="preview-screen" class="preview-screen" hidden><header><div><span class="live-indicator"></span><strong>Prévia</strong><small id="preview-name">Projeto</small></div><button id="stop-preview" class="button subtle">× Fechar prévia</button></header><div class="preview-viewport"><div id="preview-scene" class="scene-canvas"></div></div></main>
   <div id="dialog" class="dialog-layer" hidden></div>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <script>
+    if ('serviceWorker' in navigator) {
+      let reloaded = false;
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+        if (reloaded) return;
+        reloaded = true;
+        location.reload();
+      });
+      window.addEventListener('load', async () => {
+        try {
+          const registration = await navigator.serviceWorker.register('./sw.js?v=2026.11.16.73', { updateViaCache: 'none' });
+          await registration.update();
+        } catch (error) { console.warn('Flowiq: cache offline indisponível.', error); }
+      });
+    }
+  </script>
   <script type="module" src="./js/app.js?v=2026.11.16.73"></script>
 </body>
 </html>
