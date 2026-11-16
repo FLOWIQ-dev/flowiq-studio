@@ -1,7 +1,7 @@
-import { DataModel, Instance } from './datamodel.js?v=2026.11.16.69';
-import { VirtualFS } from './vfs.js?v=2026.11.16.69';
-import { createProjectRecord, normalizeProject, FlowiqRuntime } from './engine.js?v=2026.11.16.69';
-import { createBackupFile, inspectBackupFile, restoreBackup } from './backup.js?v=2026.11.16.69';
+import { DataModel, Instance } from './datamodel.js?v=2026.11.16.70';
+import { VirtualFS } from './vfs.js?v=2026.11.16.70';
+import { createProjectRecord, normalizeProject, FlowiqRuntime } from './engine.js?v=2026.11.16.70';
+import { createBackupFile, inspectBackupFile, restoreBackup } from './backup.js?v=2026.11.16.70';
 
 const $ = (id) => document.getElementById(id);
 const esc = (value) => String(value ?? '').replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -185,7 +185,7 @@ class StudioApp {
     $('settings-export-project').disabled=!this.project;
     $('settings-export-project').classList.toggle('is-disabled',!this.project);
     $('settings-export-project').querySelector('small').textContent=this.project?'Salvar '+this.project.name+' e os arquivos que ele utiliza.':'Abra um projeto para habilitar esta opção.';
-    $('settings-version').textContent='Versão 2026.11.16.69';
+    $('settings-version').textContent='Versão 2026.11.16.70';
     this.applyPreferences();
   }
 
@@ -207,7 +207,7 @@ class StudioApp {
 
   async openLibrary() {
     if(this.playMode)this.play(false);
-    if(!$('library-screen').classList.contains('active'))this.libraryReturnTo=$('workspace').classList.contains('active')?'editor':'hub';
+    if(!$('library-screen').classList.contains('active'))this.libraryReturnTo=$('workspace').classList.contains('active')?'editor':($('hub-settings-view').classList.contains('active')?'settings':'hub');
     if(this.project)await this.save();
     $('workspace').classList.remove('active');$('hub').classList.remove('active');
     $('library-screen').classList.add('active');
@@ -218,7 +218,7 @@ class StudioApp {
   async closeLibrary() {
     $('library-screen').classList.remove('active');
     if(this.libraryReturnTo==='editor'&&this.project){$('workspace').classList.add('active');this.refresh();this.applyPreferences();requestAnimationFrame(()=>this.fitCanvas());}
-    else{$('hub').classList.add('active');this.showHubView('home');}
+    else{$('hub').classList.add('active');this.showHubView(this.libraryReturnTo==='settings'?'settings':'home');}
   }
 
   toggleFocusMode(force) {
@@ -579,7 +579,7 @@ class StudioApp {
       $('project-title').textContent = p.name;
       document.querySelectorAll('[data-workspace-nav]').forEach(item=>item.classList.toggle('active',item.dataset.workspaceNav==='editor'));
       this.closePanels(); this.refresh(); this.applyPreferences();
-      const remaining=Math.max(0,3000-(Date.now()-loadingStarted));
+      const remaining=Math.max(0,2000-(Date.now()-loadingStarted));
       if(remaining)await new Promise(resolve=>setTimeout(resolve,remaining));
     } catch (e) { this.log('Não foi possível abrir o projeto: '+e.message,'error'); }
     finally { loading?.classList.remove('show'); }
