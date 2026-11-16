@@ -171,6 +171,8 @@ button,input,textarea{font:inherit}button{cursor:pointer}.screen{display:none;wi
   .panel-header{height:48px;min-height:48px;padding:0 13px}
   .panel-header button{width:40px;height:40px;display:inline-flex;align-items:center;justify-content:center;font-size:21px;line-height:1}
   .panel-content{min-width:0;max-width:100%;padding:11px 13px calc(16px + env(safe-area-inset-bottom));overflow-y:auto;-webkit-overflow-scrolling:touch}
+  .drawer-backdrop{display:block;position:absolute;inset:0 0 calc(64px + env(safe-area-inset-bottom));z-index:35;background:#080b1099;opacity:0;visibility:hidden;transition:opacity .16s,visibility .16s}
+  .drawer-backdrop.show{opacity:1;visibility:visible}
   .explorer-search input{height:44px;font-size:13px}
   .explorer-toolbar .instance-add{width:44px;height:44px}
   .tree-row{min-height:44px;gap:6px;padding:4px 7px;font-size:12px}
