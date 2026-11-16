@@ -8,7 +8,7 @@ button:disabled{opacity:.38;cursor:not-allowed}
 [hidden]{display:none!important}
 .screen{min-height:100dvh}
 .eyebrow{display:block;color:#7f96b5;font-size:10px;font-weight:700;letter-spacing:.16em}
-.brand{display:flex;align-items:center;gap:10px;color:var(--text);font-family:Manrope,sans-serif;font-size:16px;font-weight:600;text-decoration:none;white-space:nowrap}
+.brand{display:flex;align-items:center;gap:10px;color:var(--text);font-family:Inter,ui-sans-serif,sans-serif;font-size:16px;font-weight:600;text-decoration:none;white-space:nowrap}
 .brand img,.editor-brand img{width:28px;height:28px;object-fit:contain}
 .brand b{color:#82b8ff;font-weight:800}
 .crumb{margin-left:5px;color:var(--muted);font:500 13px 'DM Sans',sans-serif}
@@ -103,7 +103,7 @@ button:disabled{opacity:.38;cursor:not-allowed}
 .stage-toolbar{display:flex;align-items:center;justify-content:space-between;padding:0 18px;border-bottom:1px solid var(--line-soft);background:#101a29}
 .stage-toolbar>div:first-child{display:grid;grid-template-columns:auto auto;align-items:center;gap:4px 10px}
 .stage-toolbar .eyebrow{grid-column:1/-1;font-size:9px}
-.stage-toolbar strong{font:700 13px Manrope,sans-serif}
+.stage-toolbar strong{font:700 13px Inter,ui-sans-serif,sans-serif}
 .stage-toolbar small{color:var(--muted);font-size:10px}
 .stage-tools{display:flex;align-items:center;gap:5px}
 .stage-tools .icon-button{width:30px;min-width:30px;min-height:30px;border-radius:8px;background:transparent}
@@ -149,7 +149,7 @@ button:disabled{opacity:.38;cursor:not-allowed}
 .preview-screen{position:fixed;inset:0;z-index:100;background:#0a111c;display:grid;grid-template-rows:58px minmax(0,1fr)}
 .preview-screen>header{display:flex;align-items:center;justify-content:space-between;padding:0 18px;border-bottom:1px solid var(--line)}
 .preview-screen>header>div{display:flex;align-items:center;gap:10px}
-.preview-screen>header strong{font:700 14px Manrope,sans-serif}
+.preview-screen>header strong{font:700 14px Inter,ui-sans-serif,sans-serif}
 .preview-screen>header small{color:var(--muted);font-size:11px}
 .preview-viewport{display:grid;place-items:center;overflow:auto;padding:24px}
 .preview-viewport .scene-canvas{flex-shrink:0}
