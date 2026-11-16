@@ -34,7 +34,8 @@ test('duplicate copies a complete subtree with new IDs', () => {
   assert.equal(copy.children.length, 2);
   assert.notEqual(copy.id, frame.id);
   assert.notEqual(copy.children[0], frame.children[0]);
-  assert.equal(new Set(scene.getAll?.() || [...scene.nodes.keys()]).size, scene.nodes.size);
+  const sourceIds = new Set(scene.descendants(frame.id).map(node => node.id));
+  assert.ok(scene.descendants(copy.id).every(node => !sourceIds.has(node.id)));
 });
 
 test('history restores snapshots in both directions', () => {
@@ -91,4 +92,10 @@ test('stylesheet braces are balanced and only one layout sheet is loaded', async
   const balance = [...css].reduce((sum, char) => sum + (char === '{' ? 1 : char === '}' ? -1 : 0), 0);
   assert.equal(balance, 0);
   assert.equal((html.match(/rel="stylesheet"/g) || []).length, 1);
+});
+
+test('service worker precaches every module used by the new application', async () => {
+  const worker = await readFile(new URL('../sw.js', import.meta.url), 'utf8');
+  const files = [...worker.matchAll(/'\.\/([^']+)'/g)].map(match => match[1].split('?')[0]);
+  for (const path of files) await readFile(new URL('../' + path, import.meta.url));
 });
