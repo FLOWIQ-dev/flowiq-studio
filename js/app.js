@@ -254,7 +254,7 @@ class FlowiqStudio {
 
   addNode(type) {
     if (!COMPONENTS.some(item => item.type === type)) return;
-    this.history.checkpoint(this.scene.snapshot());
+    this.history.checkpoint(this.historySnapshot());
     const parent = this.scene.get(this.store.state.selectedId);
     const node = this.scene.create(type, parent?.type === 'Frame' ? parent.id : null);
     this.select(node.id);
@@ -313,18 +313,28 @@ class FlowiqStudio {
     this.renderEditor();
   }
 
+  historySnapshot() {
+    return { scene: this.scene.snapshot(), events: this.project?.events || [], scripts: this.project?.scripts || [], animations: this.project?.animations || [] };
+  }
+
   undo() {
-    const snapshot = this.history.undo(this.scene.snapshot());
+    const snapshot = this.history.undo(this.historySnapshot());
     if (!snapshot) return;
-    this.scene = new Scene(snapshot);
+    this.scene = new Scene(snapshot.scene);
+    this.project.events = snapshot.events || [];
+    this.project.scripts = snapshot.scripts || [];
+    this.project.animations = snapshot.animations || [];
     this.scheduleSave();
     this.renderEditor();
   }
 
   redo() {
-    const snapshot = this.history.redo(this.scene.snapshot());
+    const snapshot = this.history.redo(this.historySnapshot());
     if (!snapshot) return;
-    this.scene = new Scene(snapshot);
+    this.scene = new Scene(snapshot.scene);
+    this.project.events = snapshot.events || [];
+    this.project.scripts = snapshot.scripts || [];
+    this.project.animations = snapshot.animations || [];
     this.scheduleSave();
     this.renderEditor();
   }
