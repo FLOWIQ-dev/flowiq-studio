@@ -787,7 +787,7 @@ class StudioApp {
   play(force) {
     if(!this.project)return;
     this.playMode=typeof force==='boolean'?force:!this.playMode;
-    if(this.playMode)this.runtime.start(this.project);
+    if(this.playMode){this.project.data=this.model.toJSON();this.runtime.start(this.project);this.model=this.runtime.model;}
     else { this.runtime.stop(); this.model = this.runtime.model; }
     this.closePanels();
     $('workspace').classList.toggle('preview-mode',this.playMode);
