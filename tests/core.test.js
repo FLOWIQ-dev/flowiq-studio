@@ -19,8 +19,9 @@ test('scene creates valid nested objects and serializes without losing identity'
 test('scene rejects cycles and non-container parents', () => {
   const scene = new Scene();
   const frame = scene.create('Frame');
+  const nested = scene.create('Frame', frame.id);
   const button = scene.create('TextButton', frame.id);
-  assert.throws(() => scene.reparent(frame.id, button.id), /ciclo/i);
+  assert.throws(() => scene.reparent(frame.id, nested.id), /ciclo/i);
   assert.throws(() => scene.create('Frame', button.id), /Frame/i);
 });
 
@@ -32,6 +33,7 @@ test('duplicate copies a complete subtree with new IDs', () => {
   const copy = scene.duplicate(frame.id);
   assert.equal(copy.children.length, 2);
   assert.notEqual(copy.id, frame.id);
+  assert.notEqual(copy.children[0], frame.children[0]);
   assert.equal(new Set(scene.getAll?.() || [...scene.nodes.keys()]).size, scene.nodes.size);
 });
 
