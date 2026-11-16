@@ -1,3 +1,5 @@
+import { Scene } from './model.js';
+
 const DB_NAME = 'flowiq-studio-next';
 const DB_VERSION = 1;
 const PROJECTS = 'projects';
@@ -103,7 +105,10 @@ export class Database {
       encoded.push({ id: asset.id, name: asset.name, mime: asset.mime, data: btoa(binary) });
     }
     const core = { format: 'flowiq-studio-next', version: 1, exportedAt: new Date().toISOString(), projects, assets: encoded };
-    return new Blob([JSON.stringify(core)], { type: 'application/vnd.flowiq.backup+json' });
+    if (!crypto.subtle) throw new Error('Este navegador não oferece verificação de integridade.');
+    const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(JSON.stringify(core)));
+    const checksum = [...new Uint8Array(digest)].map(byte => byte.toString(16).padStart(2, '0')).join('');
+    return new Blob([JSON.stringify({ ...core, integrity: { algorithm: 'SHA-256', digest: checksum } })], { type: 'application/vnd.flowiq.backup+json' });
   }
 
   async importAll(file) {
@@ -111,23 +116,41 @@ export class Database {
     let data;
     try { data = JSON.parse((await file.text()).replace(/^\uFEFF/, '')); } catch { throw new Error('O arquivo não contém um backup válido.'); }
     if (data?.format !== 'flowiq-studio-next' || data.version !== 1 || !Array.isArray(data.projects) || !Array.isArray(data.assets)) throw new Error('Formato de backup não reconhecido.');
+    const core = { format: data.format, version: data.version, exportedAt: data.exportedAt, projects: data.projects, assets: data.assets };
+    if (!crypto.subtle || data.integrity?.algorithm !== 'SHA-256') throw new Error('O backup não possui verificação de integridade.');
+    const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(JSON.stringify(core)));
+    const checksum = [...new Uint8Array(digest)].map(byte => byte.toString(16).padStart(2, '0')).join('');
+    if (checksum !== data.integrity.digest) throw new Error('A verificação de integridade do backup falhou.');
     if (data.projects.length > 300 || data.assets.length > 3000) throw new Error('O backup ultrapassa os limites do Studio.');
     const projects = data.projects.map(project => {
       if (!project?.id || !project?.name || !Array.isArray(project.scene)) throw new Error('Um projeto do backup está inválido.');
+      new Scene(project.scene);
+      if (project.events != null && !Array.isArray(project.events)) throw new Error('Eventos do projeto inválidos.');
       return { ...project, id: crypto.randomUUID(), name: String(project.name).slice(0, 64), createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
     });
+    const assetIds = new Map();
     const assets = data.assets.map(asset => {
       if (!asset?.id || typeof asset.data !== 'string' || asset.data.length > 20 * 1024 * 1024) throw new Error('Um arquivo do backup está inválido.');
       const binary = atob(asset.data);
       if (binary.length > 12 * 1024 * 1024) throw new Error('Um arquivo ultrapassa 12 MB.');
       const bytes = Uint8Array.from(binary, char => char.charCodeAt(0));
-      return { id: crypto.randomUUID(), name: String(asset.name || 'Arquivo').slice(0, 180), blob: new Blob([bytes], { type: String(asset.mime || 'application/octet-stream') }) };
+      const id = crypto.randomUUID();
+      assetIds.set(asset.id, id);
+      return { id, name: String(asset.name || 'Arquivo').slice(0, 180), blob: new Blob([bytes], { type: String(asset.mime || 'application/octet-stream') }) };
     });
+    const rewriteAssets = value => {
+      if (Array.isArray(value)) return value.map(rewriteAssets);
+      if (!value || typeof value !== 'object') return value;
+      const out = {};
+      for (const [key, item] of Object.entries(value)) out[key] = key === 'assetId' && typeof item === 'string' ? (assetIds.get(item) || '') : rewriteAssets(item);
+      return out;
+    };
+    const normalizedProjects = projects.map(project => rewriteAssets(project));
     const db = await this.open();
     await new Promise((resolve, reject) => {
       const tx = db.transaction([PROJECTS, ASSETS], 'readwrite');
       const p = tx.objectStore(PROJECTS), a = tx.objectStore(ASSETS);
-      projects.forEach(item => p.add(item));
+      normalizedProjects.forEach(item => p.add(item));
       assets.forEach(item => a.add({ ...item, mime: item.blob.type, size: item.blob.size, createdAt: new Date().toISOString() }));
       tx.oncomplete = resolve;
       tx.onerror = () => reject(tx.error || new Error('Não foi possível restaurar o backup.'));
