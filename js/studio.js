@@ -181,8 +181,7 @@ class StudioApp {
     $('settings-export-project').disabled=!this.project;
     $('settings-export-project').classList.toggle('is-disabled',!this.project);
     $('settings-export-project').querySelector('small').textContent=this.project?'Salvar '+this.project.name+' e os arquivos que ele utiliza.':'Abra um projeto para habilitar esta opção.';
-    $('settings-version').textContent='Versão 2026.11.16.61';
-    $('settings-return-project').hidden=!this.project;
+    $('settings-version').textContent='Versão 2026.11.16.64';
     this.applyPreferences();
   }
 
@@ -204,7 +203,7 @@ class StudioApp {
 
   async openLibrary() {
     if(this.playMode)this.play(false);
-    this.libraryReturnTo=$('workspace').classList.contains('active')?'editor':'hub';
+    if(!$('library-screen').classList.contains('active'))this.libraryReturnTo=$('workspace').classList.contains('active')?'editor':'hub';
     if(this.project)await this.save();
     $('workspace').classList.remove('active');$('hub').classList.remove('active');
     $('library-screen').classList.add('active');
@@ -319,7 +318,7 @@ class StudioApp {
       catch{content='<div class="preview-unsupported"><strong>Não foi possível ler o arquivo.</strong></div>';}
     }
     if(requestId!==this.previewRequestId||this.selectedAssetId!==asset.id)return;
-    document.body.classList.add('asset-viewer-open');pane.classList.add('asset-preview-open');pane.setAttribute('role','dialog');pane.setAttribute('aria-label','Visualizador de arquivos');pane.innerHTML='<div class="preview-pane-heading"><div><strong>'+esc(name)+'</strong><small>'+esc(mime||'Arquivo')+' · '+this.formatBytes(asset.size||0)+'</small></div><button class="icon-action preview-close" id="preview-clear" aria-label="Fechar pré-visualização"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button></div><div class="preview-pane-content">'+content+'</div><div class="preview-pane-actions"><button class="btn" id="preview-rename">Renomear</button><button class="btn danger" id="preview-delete">Excluir</button><button class="btn primary" id="preview-download"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m-4-4 4 4 4-4"/><path d="M5 17v3h14v-3"/></svg>Baixar</button></div>';
+    document.body.classList.add('asset-viewer-open');pane.classList.add('asset-preview-open');pane.setAttribute('role','dialog');pane.setAttribute('aria-label','Visualizador de arquivos');pane.innerHTML='<div class="preview-pane-heading"><div><strong>'+esc(name)+'</strong><small>'+esc(mime||'Arquivo')+' · '+this.formatBytes(asset.size||0)+'</small></div><button class="icon-action preview-close" id="preview-clear" aria-label="Fechar pré-visualização"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button></div><div class="preview-pane-content">'+content+'</div><div class="preview-pane-actions"><button class="btn" id="preview-rename">Renomear</button><button class="btn" id="preview-move">Mover</button><button class="btn danger" id="preview-delete">Excluir</button><button class="btn primary" id="preview-download"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m-4-4 4 4 4-4"/><path d="M5 17v3h14v-3"/></svg>Baixar</button></div>';
     $('preview-clear').onclick=()=>{pane.classList.remove('asset-preview-open');document.body.classList.remove('asset-viewer-open');pane.removeAttribute('role');this.selectedAssetId=null;this.renderLibrary();};
     $('preview-rename').onclick=()=>this.renameAsset(asset.id);
     $('preview-move').onclick=()=>this.moveAsset(asset.id);
