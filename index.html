@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#0b1220"><meta name="flowiq-build" content="2026.11.16.6"><title>Flowiq Studio</title><link rel="manifest" href="./manifest.json"><link rel="icon" href="./assets/icon.svg" type="image/svg+xml">
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#0b1220"><meta name="flowiq-build" content="2026.11.16.7"><title>Flowiq Studio</title><link rel="manifest" href="./manifest.json"><link rel="icon" href="./assets/icon.svg" type="image/svg+xml">
 <style>
 :root{color-scheme:dark;--bg:#0b1220;--panel:#111c2d;--p2:#19283e;--line:#293950;--txt:#eef4ff;--muted:#91a1ba;--blue:#4d8dff}*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--txt);font:14px Inter,system-ui,sans-serif}button,input,textarea{font:inherit}button{cursor:pointer}.screen{display:none;width:100%;height:100%}.screen.active{display:flex}.btn{border:1px solid var(--line);border-radius:9px;padding:8px 12px;background:var(--p2);color:var(--txt);font-size:12px;font-weight:650}.btn.primary{background:var(--blue);border-color:var(--blue);color:white}.btn.danger{color:#ff9aa5;background:#321c27;border-color:#63313c}.btn:disabled{opacity:.4}.muted{color:var(--muted)}
 #hub{flex-direction:column;overflow:auto;background:radial-gradient(ellipse at 50% -20%,#1d3760,transparent 55%),var(--bg)}.hub-header{height:65px;flex:none;display:flex;align-items:center;justify-content:space-between;padding:0 20px;border-bottom:1px solid var(--line);background:#0c1422}.brand{font-size:17px;font-weight:850}.brand b{display:inline-grid;place-items:center;width:34px;height:34px;margin-right:8px;border-radius:10px;background:linear-gradient(145deg,#559aff,#3159c9)}.hub-main{width:min(100%,1000px);margin:auto;padding:38px 22px}.hub-main h1{font-size:clamp(28px,5vw,42px);margin:0 0 8px}.hub-main>p{color:var(--muted);line-height:1.6}.hub-toolbar{display:flex;align-items:center;justify-content:space-between;margin:28px 0 14px}.hub-toolbar h2{font-size:16px;margin:0}#project-count{font-size:11px;color:var(--muted)}#project-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px}.project-card{padding:17px;border:1px solid var(--line);border-radius:13px;background:linear-gradient(145deg,#172337,#101827)}.project-card h3{overflow-wrap:anywhere}.project-card p{font-size:11px;color:var(--muted)}.project-actions{display:flex;gap:8px}.project-actions .primary{flex:1}.empty{grid-column:1/-1;text-align:center;padding:35px;border:1px dashed var(--line);border-radius:13px;color:var(--muted);line-height:1.8}
@@ -69,9 +69,56 @@
   .resize-handle{display:none!important}
 }
 @media(prefers-reduced-motion:reduce){.side-panel{transition:none}}
+
+/* Mobile editor: direct manipulation with deliberate touch targets. */
+@media(max-width:760px){
+  .topbar{height:54px;padding:0 10px;gap:8px}
+  .topbar-brand{font-size:15px}
+  .topbar-actions .btn{min-height:40px;padding:8px 10px;font-size:11px}
+  .stage-toolbar{height:auto;min-height:48px;padding:6px 10px;gap:7px;flex-wrap:wrap}
+  .stage-toolbar>strong{font-size:10px}
+  .stage-toolbar .stage-zoom{gap:4px}
+  .stage-zoom .btn{min-width:40px;min-height:40px;padding:7px}
+  .stage-zoom output{min-width:38px;font-size:11px}
+  #btn-play{min-height:40px;padding:7px 10px}
+  .stage-scroll{padding:14px 12px 24px;touch-action:pan-x pan-y}
+  #stage-wrap{justify-content:flex-start;min-height:0;width:max-content;min-width:100%}
+  #canvas{width:390px;max-width:none;min-width:390px;height:640px;border-radius:12px;touch-action:pan-x pan-y;overflow:hidden}
+  .node{touch-action:pan-x pan-y;cursor:pointer}
+  .node.selected{touch-action:none;outline:2px solid #60a5fa!important;outline-offset:1px}
+  .selection-box{display:block!important;z-index:20;pointer-events:none}
+  .resize-handle{display:block!important;width:30px;height:30px;border:2px solid #fff;border-radius:9px;background:#3985ff;box-shadow:0 2px 8px #000b;pointer-events:auto;touch-action:none}
+  .resize-handle[data-resize="n"],.resize-handle[data-resize="s"]{width:38px;height:28px}
+  .resize-handle[data-resize="e"],.resize-handle[data-resize="w"]{width:28px;height:38px}
+  .side-panel{bottom:calc(72px + env(safe-area-inset-bottom));height:min(72dvh,620px);border-radius:20px 20px 0 0}
+  .panel-header{height:56px;min-height:56px;padding:0 16px}
+  .panel-header h2{font-size:13px}
+  .panel-content{padding:14px 16px calc(20px + env(safe-area-inset-bottom))}
+  .field{gap:7px;margin-bottom:14px}
+  .field label{font-size:11px}
+  .field input,.field textarea{min-height:48px;padding:10px 12px;font-size:14px}
+  .field input[type=color]{height:48px}
+  .field-grid{gap:10px}
+  .property-group{margin:12px 0;padding:0 12px 12px}
+  .property-group summary{min-height:48px;font-size:13px}
+  .tree-row{min-height:48px;padding:8px 10px;font-size:13px}
+  .panel-content .btn,.inspector-actions .btn{min-height:46px;font-size:13px}
+  .mobile-nav{height:calc(72px + env(safe-area-inset-bottom));grid-template-columns:repeat(4,minmax(0,1fr));padding:6px 8px calc(6px + env(safe-area-inset-bottom));gap:5px}
+  .mobile-nav button{min-height:58px;border-radius:12px;font-size:11px}
+  .mobile-nav button span{font-size:20px;margin-bottom:4px}
+  .console{height:64px}
+  .console-header{height:26px}
+  #console-log{font-size:9px}
+}
+@media(max-width:390px){
+  #canvas{width:360px;min-width:360px}
+  .topbar-actions #btn-hub{font-size:0;min-width:40px}
+  .topbar-actions #btn-hub:after{content:'⌂';font-size:18px}
+  .field-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
 </style></head><body>
 <main id="hub" class="screen active"><header class="hub-header"><div class="brand"><b>F</b>Flowiq Studio</div><button class="btn primary" id="btn-new">＋ Novo projeto</button></header><section class="hub-main"><h1>Crie. Edite. Construa.</h1><p>Seu espaço de criação de interfaces e experiências 2D. Comece um projeto ou continue de onde parou.</p><div class="hub-toolbar"><div><h2>Meus projetos</h2><small id="project-count">0 projetos</small></div><div><button class="btn" id="btn-import">↑ Importar</button><input type="file" id="file-input" accept=".flowiq,.json,application/json" hidden></div></div><div id="project-list"><div class="empty">Carregando projetos…</div></div></section></main>
-<main id="workspace" class="screen"><header class="topbar"><div class="topbar-brand">◈ Flowiq</div><span class="build-tag" title="Versão do Studio">v2026.11.16.6</span><div class="breadcrumb">/ <span id="project-title">Projeto</span></div><div class="topbar-spacer"></div><div class="topbar-actions"><button class="btn" id="btn-hub">Projetos</button><button class="btn" id="btn-export" disabled>Exportar</button><button class="btn primary" id="btn-save" disabled>Salvar</button></div></header>
+<main id="workspace" class="screen"><header class="topbar"><div class="topbar-brand">◈ Flowiq</div><span class="build-tag" title="Versão do Studio">v2026.11.16.7</span><div class="breadcrumb">/ <span id="project-title">Projeto</span></div><div class="topbar-spacer"></div><div class="topbar-actions"><button class="btn" id="btn-hub">Projetos</button><button class="btn" id="btn-export" disabled>Exportar</button><button class="btn primary" id="btn-save" disabled>Salvar</button></div></header>
 <div class="editor-layout"><aside class="side-panel explorer" id="explorer"><div class="panel-header"><h2>Explorer</h2><button data-close-panel>×</button></div><div class="panel-content"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><small class="muted">HIERARQUIA</small><button class="btn" id="add-frame">＋ Frame</button></div><div id="tree"></div><hr class="divider"><div class="field"><label>ADICIONAR OBJETO</label><button class="btn" id="add-button">＋ Botão</button><button class="btn" id="add-label">＋ Texto</button><button class="btn" id="add-image">＋ Imagem</button></div></div></aside>
 <section class="stage-area"><div class="stage-toolbar"><strong>PALCO 2D</strong><span>Arraste para posicionar</span><div class="spacer"></div><div class="history-buttons" aria-label="Histórico"><button class="btn" id="undo-action" title="Desfazer (Ctrl+Z)" aria-label="Desfazer">↶</button><button class="btn" id="redo-action" title="Refazer (Ctrl+Shift+Z)" aria-label="Refazer">↷</button></div><div class="stage-zoom" aria-label="Zoom do palco"><button class="btn" id="zoom-out" aria-label="Diminuir zoom">−</button><output id="zoom-level">100%</output><button class="btn" id="zoom-in" aria-label="Aumentar zoom">＋</button><button class="btn" id="zoom-fit">Ajustar</button></div><button class="btn" id="btn-play">▶ Prévia</button></div><div class="stage-scroll" id="stage-scroll"><div id="stage-wrap"><div id="canvas"><div class="empty-canvas">Seu palco está vazio.<br>Adicione um Frame para começar.</div></div></div></div><section class="console"><div class="console-header"><strong>Console</strong><button id="clear-console" class="btn">Limpar</button></div><div id="console-log" aria-live="polite"></div></section></section>
 <aside class="side-panel inspector" id="inspector"><div class="panel-header"><h2>Propriedades</h2><button data-close-panel>×</button></div><div class="panel-content" id="inspector-content"><p class="muted">Selecione um objeto para editar.</p></div></aside></div><div class="drawer-backdrop" id="drawer-backdrop"></div><nav class="mobile-nav"><button data-panel="explorer"><span>☷</span>Objetos</button><button id="mobile-add"><span>＋</span>Adicionar</button><button data-panel="inspector"><span>⚙</span>Editar</button><button id="mobile-play"><span>▶</span>Prévia</button></nav></main>
@@ -87,7 +134,7 @@
   });
   window.addEventListener('load', async () => {
     try {
-      const registration = await navigator.serviceWorker.register('./sw.js?v=2026.11.16.6', { updateViaCache: 'none' });
+      const registration = await navigator.serviceWorker.register('./sw.js?v=2026.11.16.7', { updateViaCache: 'none' });
       if (registration.waiting) registration.waiting.postMessage({ type: 'SKIP_WAITING' });
       await registration.update();
       window.addEventListener('pageshow', () => registration.update().catch(() => {}));
@@ -101,4 +148,4 @@
 })();
 </script>
 
-<script type="module" src="./js/studio.js?v=2026.11.16.6"></script></body></html>
+<script type="module" src="./js/studio.js?v=2026.11.16.7"></script></body></html>
