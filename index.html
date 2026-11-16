@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flowiq Studio - Mobile OS Engine</title>
+    <style>
+        :root {
+            --bg-dark: #0f172a;
+            --bg-panel: #1e293b;
+            --accent: #3b82f6;
+            --text: #f8fafc;
+            --text-secondary: #94a3b8;
+            --border: #334155;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+        body { background-color: var(--bg-dark); color: var(--text); height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+        header { background-color: var(--bg-panel); border-bottom: 1px solid var(--border); padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; }
+        h1 { font-size: 1.1rem; font-weight: 600; color: var(--accent); display: flex; align-items: center; gap: 8px; }
+        .main-container { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+        .hub-screen { padding: 20px; display: flex; flex-direction: column; gap: 16px; overflow-y: auto; height: 100%; }
+        .card { background-color: var(--bg-panel); border: 1px solid var(--border); border-radius: 12px; padding: 16px; }
+        .btn { background-color: var(--accent); color: white; border: none; padding: 12px 20px; border-radius: 8px; font-weight: 600; font-size: 1rem; width: 100%; cursor: pointer; text-align: center; }
+        .btn:active { opacity: 0.8; }
+        .project-list { display: flex; flex-direction: column; gap: 10px; margin-top: 10px; }
+        .project-item { background-color: rgba(255,255,255,0.03); border: 1px solid var(--border); padding: 12px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>⚡ Flowiq Studio <span style="font-size: 0.7rem; background: var(--border); padding: 2px 6px; border-radius: 4px;">v0.1</span></h1>
+        <span style="font-size: 0.8rem; color: var(--text-secondary);">Mobile Engine</span>
+    </header>
+
+    <div class="main-container">
+        <!-- Tela Inicial: Hub de Projetos -->
+        <div id="hubScreen" class="hub-screen">
+            <div class="card">
+                <h2 style="font-size: 1rem; margin-bottom: 8px;">Meus Projetos (OS)</h2>
+                <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 16px;">Crie e gerencie seus sistemas operacionais 2D.</p>
+                <button class="btn" onclick="createNewProject()">+ Novo Projeto OS</button>
+            </div>
+
+            <div class="card" style="flex: 1;">
+                <h3 style="font-size: 0.95rem; margin-bottom: 8px;">Projetos Salvos</h3>
+                <div id="projectList" class="project-list">
+                    <p style="color: var(--text-secondary); font-size: 0.85rem; text-align: center; padding: 20px;">Nenhum projeto criado ainda.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function createNewProject() {
+            const projectName = prompt("Nome do seu Sistema Operacional (ex: NeoOS):", "MeuOS");
+            if (!projectName) return;
+            
+            const projects = JSON.parse(localStorage.getItem('flowiq_projects') || '[]');
+            projects.push({ id: Date.now(), name: projectName, created: new Date().toLocaleDateString() });
+            localStorage.setItem('flowiq_projects', JSON.stringify(projects));
+            
+            loadProjects();
+        }
+
+        function loadProjects() {
+            const list = document.getElementById('projectList');
+            const projects = JSON.parse(localStorage.getItem('flowiq_projects') || '[]');
+            
+            if (projects.length === 0) {
+                list.innerHTML = `<p style="color: var(--text-secondary); font-size: 0.85rem; text-align: center; padding: 20px;">Nenhum projeto criado ainda.</p>`;
+                return;
+            }
+
+            list.innerHTML = projects.map(p => `
+                <div class="project-item">
+                    <div>
+                        <strong>${p.name}</strong>
+                        <div style="font-size: 0.75rem; color: var(--text-secondary);">Criado em: ${p.created}</div>
+                    </div>
+                    <button style="background:transparent; border:1px solid var(--accent); color:var(--accent); padding:6px 12px; border-radius:6px;" onclick="alert('Abrindo projeto ${p.name}...')">Abrir</button>
+                </div>
+            `).join('');
+        }
+
+        loadProjects();
+    </script>
+</body>
+</html>
