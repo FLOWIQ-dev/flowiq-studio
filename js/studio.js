@@ -1,8 +1,20 @@
-import { DataModel, Instance } from './datamodel.js?v=2026.11.16.20';
-import { VirtualFS } from './vfs.js?v=2026.11.16.20';
+import { DataModel, Instance } from './datamodel.js?v=2026.11.16.21';
+import { VirtualFS } from './vfs.js?v=2026.11.16.21';
 
 const $ = (id) => document.getElementById(id);
 const esc = (value) => String(value ?? '').replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+const iconMarkup = (type) => {
+  const paths = {
+    Project:'<path d="M3.5 7h6l2 2h9v10h-17z"/><path d="M3.5 7V5h6l2 2"/>',
+    Frame:'<rect x="3.5" y="3.5" width="17" height="17" rx="2"/><path d="M8 8h8v8H8z"/>',
+    TextButton:'<rect x="3" y="5" width="18" height="14" rx="3"/><path d="M8 9h8M12 9v6m-3 0h6"/>',
+    TextLabel:'<path d="M4 6h16M12 6v13M8 19h8"/>',
+    ImageLabel:'<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9" r="1.5"/><path d="m4 17 5-5 3 3 3-4 5 6"/>'
+  };
+  return '<svg viewBox="0 0 24 24" aria-hidden="true">'+(paths[type]||paths.Frame)+'</svg>';
+};
+
 const color = (value, fallback) => /^#[0-9a-f]{6}$/i.test(String(value || '')) ? value : fallback;
 
 class StudioApp {
@@ -39,6 +51,7 @@ class StudioApp {
     $('open-instances').onclick = () => this.toggleInstanceLibrary();
     $('close-instances').onclick = () => this.closeInstanceLibrary();
     $('instance-library').querySelectorAll('[data-instance]').forEach(button => button.onclick = () => this.add(button.dataset.instance));
+    $('instance-library').querySelectorAll('[data-instance-icon]').forEach(icon => { icon.innerHTML = iconMarkup(icon.dataset.instanceIcon); });
     $('tree-search').oninput = (e) => { this.treeQuery = e.target.value.trim().toLocaleLowerCase('pt-BR'); this.renderTree(); };
     $('btn-play').onclick = () => this.play();
     $('zoom-in').onclick = () => this.setZoom(this.zoom + 0.1);
@@ -264,11 +277,10 @@ class StudioApp {
       const disclosure=document.createElement('button');disclosure.type='button';disclosure.className='tree-disclosure'+(children.length?'':' spacer');disclosure.textContent=children.length?(expanded?'▾':'▸'):'·';
       disclosure.setAttribute('aria-label',(expanded?'Recolher ':'Expandir ')+(isRoot?'Projeto':node.name));
       disclosure.onclick=event=>{event.stopPropagation();if(isRoot)return;if(this.expandedNodes.has(id))this.expandedNodes.delete(id);else this.expandedNodes.add(id);this.renderTree();};row.append(disclosure);
-      const glyph=isRoot?'P':node.className==='Frame'?'F':node.className==='TextButton'?'B':node.className==='ImageLabel'?'I':'T';
-      const type=document.createElement('span');type.className='tree-type-icon';type.textContent=glyph;type.title=isRoot?'Projeto':node.className;row.append(type);
+      const type=document.createElement('span');type.className='tree-type-icon'+(isRoot?' project-type-icon':'');type.innerHTML=iconMarkup(isRoot?'Project':node.className);type.title=isRoot?'Projeto':node.className;row.append(type);
       const name=document.createElement('span');name.className='node-name';name.textContent=isRoot?(this.project?.name||'Projeto'):node.name;row.append(name);
       if(children.length){const count=document.createElement('span');count.className='tree-count';count.textContent=String(children.length);row.append(count);}
-      const menu=document.createElement('button');menu.type='button';menu.className='tree-menu-trigger';menu.textContent='⋯';menu.title='Ações do objeto';menu.setAttribute('aria-label','Ações de '+(isRoot?'Projeto':node.name));menu.onclick=e=>{e.stopPropagation();this.showTreeMenu(node,menu,isRoot);};row.append(menu);
+      const menu=document.createElement('button');menu.type='button';menu.className='tree-menu-trigger';menu.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg>';menu.title='Ações do objeto';menu.setAttribute('aria-label','Ações de '+(isRoot?'Projeto':node.name));menu.onclick=e=>{e.stopPropagation();this.showTreeMenu(node,menu,isRoot);};row.append(menu);
       if(!isRoot)row.onclick=()=>this.select(node);
       row.addEventListener('dragstart',e=>{if(isRoot)return;this.treeDragId=node.id;row.classList.add('dragging');e.dataTransfer.effectAllowed='move';e.dataTransfer.setData('text/plain',node.id);});
       row.addEventListener('dragend',()=>{this.treeDragId=null;root.querySelectorAll('.dragging,.drop-target').forEach(el=>el.classList.remove('dragging','drop-target'));});
@@ -541,7 +553,7 @@ class StudioApp {
     const field=(label,id,value,type='text',attrs='')=>'<div class="field"><label for="'+id+'">'+label+'</label><input id="'+id+'" type="'+type+'" value="'+esc(value??'')+'" '+attrs+'></div>';
     const select=(label,id,value,options)=>'<div class="field"><label for="'+id+'">'+label+'</label><select id="'+id+'">'+options.map(([v,l])=>'<option value="'+v+'" '+(value===v?'selected':'')+'>'+l+'</option>').join('')+'</select></div>';
     box.innerHTML=`
-      <div class="properties-object-heading"><span class="tree-type-icon">${isFrame?'F':isImage?'I':node.className==='TextButton'?'B':'T'}</span><div><strong>${esc(node.name)}</strong><small>${esc(node.className)}</small></div></div>
+      <div class="properties-object-heading"><span class="tree-type-icon">${iconMarkup(node.className)}</span><div><strong>${esc(node.name)}</strong><small>${esc(node.className)}</small></div></div>
       <div class="field"><label for="p-name">Nome</label><input id="p-name" maxlength="64" value="${esc(node.name)}"></div>
       <details class="property-group" open><summary>Transformação</summary>
         <div class="field-grid">${field('Posição X','p-x',p.positionX??0,'number')}${field('Posição Y','p-y',p.positionY??0,'number')}${field('Largura','p-w',p.width??100,'number','min="1"')}${field('Altura','p-h',p.height??40,'number','min="1"')}${field('Rotação','p-rotation',p.rotation??0,'number')}</div>
