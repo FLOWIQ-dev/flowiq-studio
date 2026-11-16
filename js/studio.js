@@ -1,6 +1,6 @@
-import { DataModel, Instance } from './datamodel.js?v=2026.11.16.44';
-import { VirtualFS } from './vfs.js?v=2026.11.16.44';
-import { createProjectRecord, normalizeProject, FlowiqRuntime } from './engine.js?v=2026.11.16.44';
+import { DataModel, Instance } from './datamodel.js?v=2026.11.16.45';
+import { VirtualFS } from './vfs.js?v=2026.11.16.45';
+import { createProjectRecord, normalizeProject, FlowiqRuntime } from './engine.js?v=2026.11.16.45';
 
 const $ = (id) => document.getElementById(id);
 const esc = (value) => String(value ?? '').replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -208,6 +208,7 @@ class StudioApp {
   }
 
   async toHub() {
+    this.runtime.stop(); this.model = this.runtime.model;
     this.project = null; this.selected = null; this.playMode = false;
     $('workspace').classList.remove('active'); $('hub').classList.add('active');
     $('btn-save').disabled = true; $('btn-export').disabled = true;
