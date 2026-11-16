@@ -199,6 +199,10 @@ class StudioApp {
 
   async deleteAsset(id) {
     const asset=this.assets.find(a=>a.id===id);if(!asset)return;
+    const references=[];
+    const scan=(nodes,projectName)=>{for(const node of nodes||[]){if(node?.properties?.assetId===id)references.push(projectName);scan(node?.children,projectName);}};
+    for(const project of this.projects)scan(project.data,project.name);
+    if(references.length){alert('Este arquivo está sendo usado por '+references.length+' objeto(s) em projetos. Remova a imagem desses componentes antes de excluir o asset.');return;}
     if(!confirm('Excluir "'+asset.name+'"? Esta ação não pode ser desfeita.'))return;
     try { await this.vfs.deleteAsset(id);const url=this.assetUrls.get(id);if(url)URL.revokeObjectURL(url);this.assetUrls.delete(id);await this.refreshLibrary(); }
     catch(error){alert('Não foi possível excluir o arquivo: '+error.message);}
