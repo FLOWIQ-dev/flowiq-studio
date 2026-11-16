@@ -70,8 +70,8 @@ class StudioApp {
     $('hub-return-project').onclick = () => this.returnToEditor();
     $('preview-exit').onclick = () => this.play(false);
     document.addEventListener('pointerdown',event=>{if(event.target.closest('[data-color-id]')||event.target.closest('[data-color-popover]'))return;document.querySelectorAll('[data-color-popover]').forEach(pop=>{pop.hidden=true;pop.remove();});document.querySelectorAll('[data-color-toggle]').forEach(btn=>btn.setAttribute('aria-expanded','false'));});
-    document.addEventListener('scroll',()=>{document.querySelectorAll('[data-color-popover]').forEach(pop=>{pop.hidden=true;pop.remove();});document.querySelectorAll('[data-color-toggle]').forEach(btn=>btn.setAttribute('aria-expanded','false'));},true);
-    window.addEventListener('resize',()=>{document.querySelectorAll('[data-color-popover]').forEach(pop=>{pop.hidden=true;pop.remove();});document.querySelectorAll('[data-color-toggle]').forEach(btn=>btn.setAttribute('aria-expanded','false'));});
+    document.addEventListener('scroll',()=>{if(document.activeElement?.closest?.('[data-color-popover]'))return;document.querySelectorAll('[data-color-popover]').forEach(pop=>{pop.hidden=true;pop.remove();});document.querySelectorAll('[data-color-toggle]').forEach(btn=>btn.setAttribute('aria-expanded','false'));},true);
+    window.addEventListener('resize',()=>{if(document.activeElement?.closest?.('[data-color-popover]'))return;document.querySelectorAll('[data-color-popover]').forEach(pop=>{pop.hidden=true;pop.remove();});document.querySelectorAll('[data-color-toggle]').forEach(btn=>btn.setAttribute('aria-expanded','false'));});
     document.querySelectorAll('[data-workspace-nav]').forEach(button=>button.addEventListener('click',()=>{document.querySelectorAll('[data-workspace-nav]').forEach(item=>item.classList.toggle('active',item===button));}));
     $('settings-return-project').onclick = () => this.returnToEditor();
     $('btn-save').onclick = () => this.save();
@@ -1196,14 +1196,6 @@ class StudioApp {
     });
   }
 
-  enhanceSelects(root){
-    root.querySelectorAll('select').forEach(select=>{let wrap=select.closest('.studio-select'),trigger,menu,label;
-      if(!wrap){wrap=document.createElement('div');wrap.className='studio-select';select.parentNode.insertBefore(wrap,select);wrap.appendChild(select);select.classList.add('studio-select-native');trigger=document.createElement('button');trigger.type='button';trigger.className='studio-select-trigger';trigger.setAttribute('aria-haspopup','listbox');trigger.setAttribute('aria-expanded','false');label=document.createElement('span');trigger.append(label);menu=document.createElement('div');menu.className='studio-select-menu';menu.hidden=true;menu.setAttribute('role','listbox');wrap.append(trigger,menu);trigger.onclick=()=>{const open=menu.hidden;document.querySelectorAll('.studio-select-menu').forEach(m=>m.hidden=true);menu.hidden=!open;if(open){const r=trigger.getBoundingClientRect(),w=r.width,top=Math.min(innerHeight-230,r.bottom+5);menu.style.left=Math.max(8,Math.min(innerWidth-w-8,r.left))+'px';menu.style.top=Math.max(8,top)+'px';menu.style.width=w+'px';trigger.setAttribute('aria-expanded','true');}else trigger.setAttribute('aria-expanded','false');};
-      }else{trigger=wrap.querySelector('.studio-select-trigger');menu=wrap.querySelector('.studio-select-menu');label=trigger.querySelector('span');}
-      menu.replaceChildren();[...select.options].forEach(option=>{const item=document.createElement('button');item.type='button';item.className='studio-select-option';item.textContent=option.textContent;item.setAttribute('role','option');item.onclick=()=>{select.value=option.value;select.dispatchEvent(new Event('change',{bubbles:true}));menu.hidden=true;trigger.setAttribute('aria-expanded','false');};menu.append(item);});
-      const sync=()=>{label.textContent=select.selectedOptions[0]?.textContent||'Selecionar';menu.querySelectorAll('button').forEach((b,i)=>b.setAttribute('aria-selected',String(select.options[i]?.value===select.value)));};if(select.dataset.studioSyncBound!=='true'){select.addEventListener('change',sync);select.dataset.studioSyncBound='true';}sync();
-    });
-  }
 
   async chooseImageAsset(node) { await this.openProjectLibrary(node); }
 
