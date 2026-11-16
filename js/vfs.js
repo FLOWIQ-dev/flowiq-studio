@@ -267,6 +267,33 @@ export class VirtualFS {
     });
   }
 
+  async saveAssets(assets) {
+    if (!Array.isArray(assets)) throw new Error('Lista de arquivos inválida.');
+    const records = assets.map(asset => {
+      if (!asset || typeof asset.id !== 'string' || !asset.id || !(asset.blob instanceof Blob)) {
+        throw new Error('Um dos arquivos selecionados é inválido.');
+      }
+      return {
+        id: asset.id,
+        name: String(asset.name || 'Arquivo').slice(0,180),
+        mime: String(asset.mime || asset.blob.type || 'application/octet-stream').slice(0,120),
+        size: asset.blob.size,
+        createdAt: asset.createdAt || new Date().toISOString(),
+        folder: String(asset.folder || '').trim().slice(0,48),
+        blob: asset.blob
+      };
+    });
+    const db = await this.openDB();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(ASSET_STORE, 'readwrite');
+      const store = tx.objectStore(ASSET_STORE);
+      for (const record of records) store.add(record);
+      tx.oncomplete = () => resolve(records);
+      tx.onerror = () => reject(tx.error || new Error('Falha ao salvar os arquivos da biblioteca.'));
+      tx.onabort = () => reject(tx.error || new Error('Envio cancelado. Nenhum dos arquivos foi salvo.'));
+    });
+  }
+
   async deleteAsset(id) {
     if (!id) throw new Error('Identificador do arquivo não informado.');
     const db = await this.openDB();
