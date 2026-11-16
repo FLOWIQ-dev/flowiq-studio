@@ -9,8 +9,8 @@
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#090e18",
-  "theme_color": "#090e18",
+  "background_color": "#15181d",
+  "theme_color": "#15181d",
   "categories": [
     "development",
     "design",
