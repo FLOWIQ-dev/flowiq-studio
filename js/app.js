@@ -23,6 +23,7 @@ class FlowiqStudio {
     this.previewScene = null;
     this.dialogResolve = null;
     this.search = '';
+    this.guarded = task => (...args) => Promise.resolve(task(...args)).catch(error => this.toast(error.message || 'Ocorreu um erro inesperado.', 'error'));
     this.returnScreen = 'home';
     this.bind();
     this.start();
@@ -42,7 +43,7 @@ class FlowiqStudio {
   }
 
   bind() {
-    const guarded = task => (...args) => Promise.resolve(task(...args)).catch(error => this.toast(error.message || 'Ocorreu um erro inesperado.', 'error'));
+    const guarded = this.guarded;
     $('create-project').addEventListener('click', guarded(() => this.createProject()));
     $('project-search').addEventListener('input', event => { this.search = event.target.value.trim().toLocaleLowerCase('pt-BR'); this.renderProjects(); });
     $('home-library').addEventListener('click', guarded(() => this.openLibrary()));
@@ -157,9 +158,9 @@ class FlowiqStudio {
       const open = this.button('Abrir', 'button primary');
       open.addEventListener('click', () => this.openProject(project.id));
       const rename = this.button('Renomear', 'button subtle');
-      rename.addEventListener('click', guarded(() => this.renameProject(project)));
+      rename.addEventListener('click', this.guarded(() => this.renameProject(project)));
       const remove = this.button('Excluir', 'button subtle danger-text');
-      remove.addEventListener('click', guarded(() => this.deleteProject(project)));
+      remove.addEventListener('click', this.guarded(() => this.deleteProject(project)));
       actions.append(open, rename, remove);
       body.append(name, meta, actions);
       card.append(preview, body);
