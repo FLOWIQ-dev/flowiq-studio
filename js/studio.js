@@ -1,5 +1,5 @@
-import { DataModel, Instance } from './datamodel.js?v=2026.11.16.3';
-import { VirtualFS } from './vfs.js?v=2026.11.16.3';
+import { DataModel, Instance } from './datamodel.js?v=2026.11.16.5';
+import { VirtualFS } from './vfs.js?v=2026.11.16.5';
 
 const $ = (id) => document.getElementById(id);
 const esc = (value) => String(value ?? '').replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -17,6 +17,8 @@ class StudioApp {
     this.saving = false;
     this.playMode = false;
     this.zoom = 1;
+    this.undoStack = [];
+    this.redoStack = [];
     this.bind();
     this.loadHub();
   }
@@ -38,6 +40,8 @@ class StudioApp {
     $('zoom-in').onclick = () => this.setZoom(this.zoom + 0.1);
     $('zoom-out').onclick = () => this.setZoom(this.zoom - 0.1);
     $('zoom-fit').onclick = () => this.fitCanvas();
+    $('undo-action').onclick = () => this.undo();
+    $('redo-action').onclick = () => this.redo();
     $('clear-console').onclick = () => $('console-log').replaceChildren();
     $('drawer-backdrop').onclick = () => this.closePanels();
     document.querySelectorAll('[data-panel]').forEach((b) => { b.setAttribute('aria-expanded', 'false'); b.onclick = () => this.togglePanel(b.dataset.panel); });
@@ -50,6 +54,9 @@ class StudioApp {
     document.addEventListener('pointerup', () => this.endDrag());
     document.addEventListener('pointercancel', () => this.endDrag());
     document.addEventListener('keydown', (e) => {
+      const editingText = ['INPUT','TEXTAREA'].includes(document.activeElement?.tagName);
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z' && !editingText) { e.preventDefault(); e.shiftKey ? this.redo() : this.undo(); }
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'y' && !editingText) { e.preventDefault(); this.redo(); }
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') { e.preventDefault(); this.save(); }
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === '0') { e.preventDefault(); this.fitCanvas(); }
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'd' && this.selected) { e.preventDefault(); this.duplicateSelected(); }
@@ -113,6 +120,7 @@ class StudioApp {
       this.project = p;
       this.model.loadFromJSON(p.data || []);
       this.selected = null;
+      this.undoStack = []; this.redoStack = [];
       this.playMode = false;
       $('hub').classList.remove('active'); $('workspace').classList.add('active');
       $('btn-save').disabled = false; $('btn-export').disabled = false;
@@ -151,6 +159,7 @@ class StudioApp {
 
   add(type) {
     if (!this.project || this.playMode) return;
+    this.pushHistory();
     let parent = this.selected?.className === 'Frame' ? this.selected : this.model.root.children[0];
     if (type === 'Frame' || !parent) parent = this.model.root;
     const count = this.model.getAll().filter(n => n.className === type).length;
@@ -169,6 +178,7 @@ class StudioApp {
     const canvas = $('canvas');
     canvas.style.zoom = String(this.zoom);
     $('zoom-level').textContent = Math.round(this.zoom * 100) + '%';
+    this.renderSelectionHandles();
   }
 
   fitCanvas() {
@@ -181,6 +191,7 @@ class StudioApp {
   duplicateSelected() {
     const source = this.selected;
     if (!source || !source.parent || this.playMode) return;
+    this.pushHistory();
     const cloneTree = (original, parent, isRoot = false) => {
       const copy = new Instance(original.className, original.name + '_copia');
       Object.assign(copy.properties, JSON.parse(JSON.stringify(original.properties)));
@@ -197,7 +208,7 @@ class StudioApp {
     this.scheduleSave();
     this.log(source.name + ' duplicado.', 'ok');
   }
-  refresh() { this.renderTree(); this.renderCanvas(); this.renderInspector(); }
+  refresh() { this.renderTree(); this.renderCanvas(); this.renderInspector(); this.updateHistoryButtons(); }
 
   renderTree() {
     const root = $('tree'); root.replaceChildren();
@@ -240,33 +251,77 @@ class StudioApp {
     };
     this.model.root.children.forEach(node => renderNode(node,canvas));
     if (!canvas.children.length) canvas.innerHTML = '<div class="empty-canvas">Seu palco está vazio.<br>Adicione um Frame para começar.</div>';
+    this.renderSelectionHandles();
   }
 
   startDrag(event) {
     if (!this.project || this.playMode || event.button !== 0) return;
-    const el = event.target.closest('[data-node-id]');
-    if (!el) return;
-    const node = this.model.find(el.dataset.nodeId);
-    if (!node) return;
-    this.selected = node;
-    const parentRect = el.parentElement.getBoundingClientRect();
-    this.drag = {node,el,startX:event.clientX,startY:event.clientY,baseX:Number(node.properties.positionX)||0,baseY:Number(node.properties.positionY)||0,moved:false,scaleX:parentRect.width/(el.parentElement.clientWidth||parentRect.width),scaleY:parentRect.height/(el.parentElement.clientHeight||parentRect.height)};
-    this.renderTree(); this.renderInspector();
-    event.preventDefault();
+    const handle=event.target.closest('[data-resize]');
+    const el=handle?[...$('canvas').querySelectorAll('[data-node-id]')].find(item=>item.dataset.nodeId===handle.dataset.nodeId):event.target.closest('[data-node-id]');
+    if(!el)return;
+    const node=this.model.find(el.dataset.nodeId);if(!node)return;
+    this.selected=node;
+    const parent=el.parentElement,parentRect=parent.getBoundingClientRect();
+    this.drag={node,el,mode:handle?'resize':'move',direction:handle?.dataset.resize||'',startX:event.clientX,startY:event.clientY,
+      baseX:Number(node.properties.positionX)||0,baseY:Number(node.properties.positionY)||0,
+      baseW:Math.max(1,Number(node.properties.width)||1),baseH:Math.max(1,Number(node.properties.height)||1),
+      moved:false,historyRecorded:false,scaleX:parentRect.width/(parent.clientWidth||parentRect.width),scaleY:parentRect.height/(parent.clientHeight||parentRect.height)};
+    this.renderTree();this.renderInspector();this.renderSelectionHandles();event.preventDefault();
   }
 
   moveDrag(event) {
-    if (!this.drag) return;
-    const d=this.drag, dx=(event.clientX-d.startX)/(d.scaleX||1), dy=(event.clientY-d.startY)/(d.scaleY||1);
-    if (Math.abs(dx)+Math.abs(dy)>3) d.moved=true;
-    if (!d.moved) return;
-    d.node.properties.positionX=Math.round(d.baseX+dx);
-    d.node.properties.positionY=Math.round(d.baseY+dy);
-    d.el.style.left=d.node.properties.positionX+'px'; d.el.style.top=d.node.properties.positionY+'px';
-    const x=$('p-x'),y=$('p-y'); if(x)x.value=d.node.properties.positionX;if(y)y.value=d.node.properties.positionY;
+    if(!this.drag)return;
+    const d=this.drag,dx=(event.clientX-d.startX)/(d.scaleX||1),dy=(event.clientY-d.startY)/(d.scaleY||1);
+    if(Math.abs(dx)+Math.abs(dy)>3)d.moved=true;if(!d.moved)return;
+    if(!d.historyRecorded){this.pushHistory();d.historyRecorded=true;}
+    const p=d.node.properties;
+    if(d.mode==='resize'){
+      const dir=d.direction;let x=d.baseX,y=d.baseY,w=d.baseW,h=d.baseH;
+      if(dir.includes('e'))w=Math.max(24,d.baseW+dx);
+      if(dir.includes('s'))h=Math.max(24,d.baseH+dy);
+      if(dir.includes('w')){w=Math.max(24,d.baseW-dx);x=d.baseX+d.baseW-w;}
+      if(dir.includes('n')){h=Math.max(24,d.baseH-dy);y=d.baseY+d.baseH-h;}
+      p.positionX=Math.round(x);p.positionY=Math.round(y);p.width=Math.round(w);p.height=Math.round(h);
+      d.el.style.left=p.positionX+'px';d.el.style.top=p.positionY+'px';d.el.style.width=p.width+'px';d.el.style.height=p.height+'px';
+      const width=$('p-w'),height=$('p-h'),px=$('p-x'),py=$('p-y');
+      if(width)width.value=p.width;if(height)height.value=p.height;if(px)px.value=p.positionX;if(py)py.value=p.positionY;
+    }else{
+      p.positionX=Math.round(d.baseX+dx);p.positionY=Math.round(d.baseY+dy);
+      d.el.style.left=p.positionX+'px';d.el.style.top=p.positionY+'px';
+      const x=$('p-x'),y=$('p-y');if(x)x.value=p.positionX;if(y)y.value=p.positionY;
+    }
+    this.updateSelectionHandles();
   }
 
-  endDrag() { if(!this.drag)return; const moved=this.drag.moved; this.drag=null; if(moved)this.scheduleSave(); }
+  endDrag(){if(!this.drag)return;const moved=this.drag.moved;this.drag=null;if(moved){this.updateSelectionHandles();this.scheduleSave();}}
+
+  renderSelectionHandles(){
+    const canvas=$('canvas');canvas.querySelector('.selection-box')?.remove();
+    if(!this.selected||this.playMode)return;
+    const el=[...canvas.querySelectorAll('[data-node-id]')].find(item=>item.dataset.nodeId===this.selected.id);if(!el)return;
+    const overlay=document.createElement('div'),cr=canvas.getBoundingClientRect(),r=el.getBoundingClientRect();
+    overlay.className='selection-box';overlay.style.left=((r.left-cr.left)/this.zoom)+'px';overlay.style.top=((r.top-cr.top)/this.zoom)+'px';
+    overlay.style.width=(r.width/this.zoom)+'px';overlay.style.height=(r.height/this.zoom)+'px';
+    ['nw','n','ne','e','se','s','sw','w'].forEach(dir=>{const h=document.createElement('button');h.type='button';h.className='resize-handle';h.dataset.resize=dir;h.dataset.nodeId=this.selected.id;h.setAttribute('aria-label','Redimensionar '+dir);overlay.append(h);});
+    canvas.append(overlay);
+  }
+
+  updateSelectionHandles(){
+    const overlay=$('canvas').querySelector('.selection-box');if(!overlay||!this.drag)return;
+    const r=this.drag.el.getBoundingClientRect(),cr=$('canvas').getBoundingClientRect();
+    overlay.style.left=((r.left-cr.left)/this.zoom)+'px';overlay.style.top=((r.top-cr.top)/this.zoom)+'px';
+    overlay.style.width=(r.width/this.zoom)+'px';overlay.style.height=(r.height/this.zoom)+'px';
+  }
+
+  pushHistory(){
+    if(!this.project)return;
+    this.undoStack.push({data:JSON.parse(JSON.stringify(this.model.toJSON())),selectedId:this.selected?.id||null});
+    if(this.undoStack.length>80)this.undoStack.shift();this.redoStack.length=0;this.updateHistoryButtons();
+  }
+  restoreHistory(snapshot){this.model.loadFromJSON(snapshot.data);this.selected=snapshot.selectedId?this.model.find(snapshot.selectedId):null;this.refresh();this.scheduleSave();}
+  undo(){if(!this.undoStack.length)return;this.redoStack.push({data:JSON.parse(JSON.stringify(this.model.toJSON())),selectedId:this.selected?.id||null});this.restoreHistory(this.undoStack.pop());this.log('Ação desfeita.','ok');}
+  redo(){if(!this.redoStack.length)return;this.undoStack.push({data:JSON.parse(JSON.stringify(this.model.toJSON())),selectedId:this.selected?.id||null});this.restoreHistory(this.redoStack.pop());this.log('Ação refeita.','ok');}
+  updateHistoryButtons(){const u=$('undo-action'),r=$('redo-action');if(u)u.disabled=!this.undoStack.length;if(r)r.disabled=!this.redoStack.length;}
 
   renderInspector() {
     const box=$('inspector-content'), node=this.selected;
@@ -292,7 +347,8 @@ class StudioApp {
       'p-text':v=>p.text=v,'p-bg':v=>p.backgroundColor=v,'p-fg':v=>p.textColor=v,
       'p-radius':v=>p.borderRadius=Math.max(0,Number(v)||0),'p-font':v=>p.fontSize=Math.max(8,Number(v)||8)
     };
-    Object.entries(fields).forEach(([id,set])=>$(id).oninput=e=>{set(e.target.value);this.renderCanvas();this.scheduleSave();});
+    Object.entries(fields).forEach(([id,set])=>{const field=$(id);field.onfocus=()=>this.pushHistory();field.oninput=e=>{set(e.target.value);this.renderCanvas();this.scheduleSave();};});
+    $('p-visible').onfocus=()=>this.pushHistory();
     $('p-visible').onchange=e=>{p.visible=e.target.checked;this.renderCanvas();this.scheduleSave();};
     $('delete-node').onclick=()=>this.deleteSelected();
     $('duplicate-node').onclick=()=>this.duplicateSelected();
@@ -300,7 +356,7 @@ class StudioApp {
 
   deleteSelected() {
     if(!this.selected)return;
-    const old=this.selected; const parent=old.parent; old.destroy(); this.selected=parent === this.model.root ? null : parent;
+    const old=this.selected; const parent=old.parent; this.pushHistory(); old.destroy(); this.selected=parent === this.model.root ? null : parent;
     this.refresh(); this.scheduleSave(); this.log(old.name+' excluído.');
   }
 
