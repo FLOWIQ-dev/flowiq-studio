@@ -1,5 +1,5 @@
-import { DataModel, Instance } from './datamodel.js?v=2026.11.16.12';
-import { VirtualFS } from './vfs.js?v=2026.11.16.12';
+import { DataModel, Instance } from './datamodel.js?v=2026.11.16.13';
+import { VirtualFS } from './vfs.js?v=2026.11.16.13';
 
 const $ = (id) => document.getElementById(id);
 const esc = (value) => String(value ?? '').replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -79,7 +79,7 @@ class StudioApp {
     const list = $('project-list');
     if (!this.projects.length) { list.innerHTML = '<div class="empty">Nenhum projeto por aqui ainda.<br>Crie um projeto para começar.</div>'; return; }
     list.innerHTML = [...this.projects].sort((a,b) => new Date(b.updatedAt || 0)-new Date(a.updatedAt || 0)).map(p => `
-      <article class="project-card"><h3>▣ ${esc(p.name)}</h3><p>Atualizado em ${new Date(p.updatedAt || Date.now()).toLocaleString('pt-BR')}</p><div class="project-actions"><button class="btn primary" data-open="${esc(p.id)}">Abrir Studio →</button><button class="btn danger" data-delete="${esc(p.id)}" title="Excluir">⌫</button></div></article>`).join('');
+      <article class="project-card"><h3><img src="./assets/icon.svg" alt="">${esc(p.name)}</h3><p>Atualizado em ${new Date(p.updatedAt || Date.now()).toLocaleString('pt-BR')}</p><div class="project-actions"><button class="btn primary" data-open="${esc(p.id)}">Abrir Studio →</button><button class="btn danger" data-delete="${esc(p.id)}" title="Excluir">⌫</button></div></article>`).join('');
     list.querySelectorAll('[data-open]').forEach(b => b.onclick = () => this.openProject(b.dataset.open));
     list.querySelectorAll('[data-delete]').forEach(b => b.onclick = () => this.deleteProject(b.dataset.delete));
   }
@@ -244,7 +244,7 @@ class StudioApp {
       const row = document.createElement('div');
       row.className = 'tree-row'+(this.selected === node ? ' selected' : '');
       row.style.paddingLeft = (7 + depth*14)+'px';
-      const glyph = node.className === 'Frame' ? '▧' : node.className === 'TextButton' ? '▣' : node.className === 'ImageLabel' ? '▨' : 'T';
+      const glyph = node.className === 'Frame' ? 'F' : node.className === 'TextButton' ? 'B' : node.className === 'ImageLabel' ? 'I' : 'T';
       row.innerHTML = '<span>'+glyph+'</span><span class="node-name">'+esc(node.name)+'</span><span class="muted">'+(node.children.length?'⌄':'')+'</span>';
       row.onclick = () => { this.select(node); this.openPanel('inspector'); }; root.append(row); walk(node,depth+1);
     });
