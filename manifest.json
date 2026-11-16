@@ -7,6 +7,7 @@
   "lang": "pt-BR",
   "start_url": "./",
   "scope": "./",
+  "display_override": ["fullscreen", "standalone"],
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#15181d",
