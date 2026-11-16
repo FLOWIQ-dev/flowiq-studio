@@ -4,6 +4,7 @@ const DB_NAME = 'flowiq-studio-next';
 const DB_VERSION = 1;
 const PROJECTS = 'projects';
 const ASSETS = 'assets';
+const makeId = () => globalThis.crypto?.randomUUID?.() || 'import_' + Date.now().toString(36) + Math.random().toString(36).slice(2);
 
 function requestResult(request) {
   return new Promise((resolve, reject) => {
@@ -126,7 +127,7 @@ export class Database {
       if (!project?.id || !project?.name || !Array.isArray(project.scene)) throw new Error('Um projeto do backup está inválido.');
       new Scene(project.scene);
       if (project.events != null && !Array.isArray(project.events)) throw new Error('Eventos do projeto inválidos.');
-      return { ...project, id: crypto.randomUUID(), name: String(project.name).slice(0, 64), createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
+      return { ...project, id: makeId(), name: String(project.name).slice(0, 64), createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
     });
     const assetIds = new Map();
     const assets = data.assets.map(asset => {
@@ -134,7 +135,7 @@ export class Database {
       const binary = atob(asset.data);
       if (binary.length > 12 * 1024 * 1024) throw new Error('Um arquivo ultrapassa 12 MB.');
       const bytes = Uint8Array.from(binary, char => char.charCodeAt(0));
-      const id = crypto.randomUUID();
+      const id = makeId();
       assetIds.set(asset.id, id);
       return { id, name: String(asset.name || 'Arquivo').slice(0, 180), blob: new Blob([bytes], { type: String(asset.mime || 'application/octet-stream') }) };
     });
