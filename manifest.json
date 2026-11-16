@@ -1,1 +1,10 @@
+{
+  "name": "Flowiq Studio",
+  "short_name": "Flowiq",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#0f1117",
+  "theme_color": "#6366f1",
+  "icons": []
+}
 
