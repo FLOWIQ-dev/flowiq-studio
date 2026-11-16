@@ -1,7 +1,7 @@
-import { DataModel, Instance } from './datamodel.js?v=2026.11.16.54';
-import { VirtualFS } from './vfs.js?v=2026.11.16.54';
-import { createProjectRecord, normalizeProject, FlowiqRuntime } from './engine.js?v=2026.11.16.54';
-import { createBackupFile, inspectBackupFile, restoreBackup } from './backup.js?v=2026.11.16.54';
+import { DataModel, Instance } from './datamodel.js?v=2026.11.16.55';
+import { VirtualFS } from './vfs.js?v=2026.11.16.55';
+import { createProjectRecord, normalizeProject, FlowiqRuntime } from './engine.js?v=2026.11.16.55';
+import { createBackupFile, inspectBackupFile, restoreBackup } from './backup.js?v=2026.11.16.55';
 
 const $ = (id) => document.getElementById(id);
 const esc = (value) => String(value ?? '').replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -27,6 +27,7 @@ class StudioApp {
     this.projects = [];
     this.assetBrowser = null;
     this.selectedAssetId = null;
+    this.preferences = this.loadPreferences();
     this.assetUrls = new Map();
     this.assets = [];
     this.assetSearch = '';
@@ -50,6 +51,8 @@ class StudioApp {
     this.gridVisible = true;
     this.undoStack = [];
     this.redoStack = [];
+    this.smartAlign=this.preferences.smartAlign;
+    this.gridVisible=this.preferences.gridVisible;
     this.bind();
     this.loadHub();
   }
@@ -58,17 +61,16 @@ class StudioApp {
     $('btn-new').onclick = () => this.createProject();
     $('btn-hub').onclick = async () => { await this.save(); this.toHub(); };
     $('btn-save').onclick = () => this.save();
-    $('btn-export').onclick = () => this.exportProject();
-    $('btn-import').onclick = () => $('file-input').click();
-    $('btn-backup-export').onclick = () => this.exportFullBackup();
-    $('btn-backup-import').onclick = () => $('backup-file-input').click();
-    $('btn-backup-export').onclick = () => { $('hub-tools-menu')?.removeAttribute('open'); this.exportFullBackup(); };
-    $('btn-import').onclick = () => { $('hub-tools-menu')?.removeAttribute('open'); $('file-input').click(); };
+    $('btn-settings').onclick = () => this.openSettingsFromEditor();
+    $('settings-export-backup').onclick = () => this.exportFullBackup();
+    $('settings-restore-backup').onclick = () => $('backup-file-input').click();
+    $('settings-import-project').onclick = () => $('file-input').click();
+    $('settings-export-project').onclick = () => this.exportProject();
+    $('pref-grid').onchange = e => { this.preferences.gridVisible=e.target.checked; this.savePreferences(); this.applyPreferences(); };
+    $('pref-smart-align').onchange = e => { this.preferences.smartAlign=e.target.checked; this.savePreferences(); this.applyPreferences(); };
+    $('project-search').oninput = e => { this.projectSearch=e.target.value.trim().toLocaleLowerCase('pt-BR'); this.renderHub(); };
+    $('file-input').onchange = (e) => this.importProject(e.target.files?.[0]);
     document.querySelectorAll('[data-hub-view]').forEach(button=>button.onclick=()=>this.showHubView(button.dataset.hubView));
-    $('home-open-library').onclick=()=>this.showHubView('library');
-    $('home-all-projects').onclick=()=>this.showHubView('projects');
-    $('home-backup').onclick=()=>this.exportFullBackup();
-    $('projects-new').onclick=()=>this.createProject();
     $('asset-upload-button').onclick = () => $('asset-file-input').click();
     $('asset-file-input').onchange = e => this.uploadAssets(e.target.files);
     $('asset-search').oninput = e => { this.assetSearch=e.target.value.trim().toLocaleLowerCase('pt-BR'); this.renderLibrary(); };
@@ -87,8 +89,8 @@ class StudioApp {
     $('zoom-fit').onclick = () => this.fitCanvas();
     $('show-explorer').onclick = () => this.toggleDesktopPanel('explorer');
     $('show-inspector').onclick = () => this.toggleDesktopPanel('inspector');
-    $('btn-grid').onclick = () => { this.gridVisible=!this.gridVisible; $('stage-scroll').classList.toggle('grid-hidden',!this.gridVisible); $('btn-grid').setAttribute('aria-pressed',String(this.gridVisible)); $('btn-grid').title=this.gridVisible?'Grade visível':'Grade oculta'; };
-    const setPositionMode=enabled=>{this.smartAlign=enabled;$('btn-align').setAttribute('aria-pressed',String(enabled));$('btn-free').setAttribute('aria-pressed',String(!enabled));$('btn-align').classList.toggle('is-active',enabled);$('btn-free').classList.toggle('is-active',!enabled);$('btn-align').title=enabled?'Alinhamento inteligente ativo':'Ativar alinhamento inteligente';$('btn-free').title=enabled?'Ativar posicionamento totalmente livre':'Posicionamento totalmente livre ativo';if(!enabled)this.clearAlignmentGuides();};$('btn-align').onclick=()=>setPositionMode(true);$('btn-free').onclick=()=>setPositionMode(false);
+    $('btn-grid').onclick = () => { this.gridVisible=!this.gridVisible; this.preferences.gridVisible=this.gridVisible; this.savePreferences(); this.applyPreferences(); };
+    const setPositionMode=enabled=>{this.smartAlign=enabled;this.preferences.smartAlign=enabled;this.savePreferences();$('btn-align').setAttribute('aria-pressed',String(enabled));$('btn-free').setAttribute('aria-pressed',String(!enabled));$('btn-align').classList.toggle('is-active',enabled);$('btn-free').classList.toggle('is-active',!enabled);$('btn-align').title=enabled?'Alinhamento inteligente ativo':'Ativar alinhamento inteligente';$('btn-free').title=enabled?'Ativar posicionamento totalmente livre':'Posicionamento totalmente livre ativo';if(!enabled)this.clearAlignmentGuides();};$('btn-align').onclick=()=>setPositionMode(true);$('btn-free').onclick=()=>setPositionMode(false);
 
     $('undo-action').onclick = () => this.undo();
     $('redo-action').onclick = () => this.redo();
@@ -120,6 +122,60 @@ class StudioApp {
     $('modal').onclick = (e) => { if (e.target === $('modal')) this.hideModal(); };
   }
 
+  loadPreferences() {
+    const defaults={gridVisible:true,smartAlign:true};
+    try{return {...defaults,...JSON.parse(localStorage.getItem('flowiq-studio-preferences-v1')||'{}')};}
+    catch{return defaults;}
+  }
+
+  savePreferences() {
+    try{localStorage.setItem('flowiq-studio-preferences-v1',JSON.stringify(this.preferences));}
+    catch(error){this.notify('Não foi possível salvar as preferências neste navegador.','warning');}
+  }
+
+  applyPreferences() {
+    this.gridVisible=Boolean(this.preferences.gridVisible);
+    this.smartAlign=Boolean(this.preferences.smartAlign);
+    $('stage-scroll')?.classList.toggle('grid-hidden',!this.gridVisible);
+    $('btn-grid')?.setAttribute('aria-pressed',String(this.gridVisible));
+    if($('btn-grid'))$('btn-grid').title=this.gridVisible?'Grade visível':'Grade oculta';
+    $('btn-align')?.setAttribute('aria-pressed',String(this.smartAlign));
+    $('btn-free')?.setAttribute('aria-pressed',String(!this.smartAlign));
+    $('btn-align')?.classList.toggle('is-active',this.smartAlign);
+    $('btn-free')?.classList.toggle('is-active',!this.smartAlign);
+    if($('pref-grid'))$('pref-grid').checked=this.gridVisible;
+    if($('pref-smart-align'))$('pref-smart-align').checked=this.smartAlign;
+  }
+
+  renderSettings() {
+    const total=this.assets.reduce((sum,a)=>sum+(Number(a.size)||0),0);
+    $('settings-project-count').textContent=String(this.projects.length);
+    $('settings-asset-count').textContent=String(this.assets.length);
+    $('settings-storage-size').textContent=this.formatBytes(total);
+    $('settings-export-project').disabled=!this.project;
+    $('settings-export-project').classList.toggle('is-disabled',!this.project);
+    $('settings-export-project').querySelector('small').textContent=this.project?'Salvar '+this.project.name+' e os arquivos que ele utiliza.':'Abra um projeto para habilitar esta opção.';
+    $('settings-version').textContent='Versão 2026.11.16.55';
+    this.applyPreferences();
+  }
+
+  async openSettingsFromEditor() {
+    if(this.project)await this.save();
+    $('workspace').classList.remove('active');
+    $('hub').classList.add('active');
+    await this.loadHub();
+    this.showHubView('settings');
+  }
+
+  async returnToEditor() {
+    if(!this.project){this.showHubView('projects');return;}
+    $('hub').classList.remove('active');
+    $('workspace').classList.add('active');
+    this.refresh();
+    this.applyPreferences();
+    this.fitCanvas();
+  }
+
   async loadHub() {
     try { this.projects = await this.vfs.getProjects(); this.assets = await this.vfs.getAssets(); this.renderHub(); this.renderLibrary(); }
     catch (e) { this.log('Falha ao abrir armazenamento: ' + e.message, 'error'); $('project-list').innerHTML = '<div class="empty">Não foi possível acessar os projetos. Verifique se o navegador permite armazenamento local.</div>'; }
@@ -129,26 +185,83 @@ class StudioApp {
     const sorted=[...this.projects].sort((a,b)=>new Date(b.updatedAt||0)-new Date(a.updatedAt||0));
     const count=this.projects.length;
     $('project-count').textContent=count+(count===1?' projeto':' projetos');
-    $('home-project-count').textContent=String(count);
-    $('home-asset-count').textContent=String(this.assets.length);
-    const renderCard=p=>'<article class="project-card"><button class="project-card-open" data-open="'+esc(p.id)+'"><span class="project-glyph"><img src="./assets/icon.svg" alt=""></span><span class="project-card-copy"><strong>'+esc(p.name)+'</strong><small>Atualizado '+new Date(p.updatedAt||Date.now()).toLocaleDateString('pt-BR')+'</small></span><span class="project-card-arrow">↗</span></button><div class="project-card-tools"><button data-rename-project="'+esc(p.id)+'">Renomear</button><button data-delete="'+esc(p.id)+'">Excluir</button></div></article>';
-    const empty='<div class="empty-project-state"><span class="empty-project-icon">＋</span><strong>Nenhum projeto ainda</strong><small>Crie seu primeiro projeto e comece a montar sua interface.</small><button class="btn primary" data-create-first>Criar projeto</button></div>';
-    $('project-list').innerHTML=sorted.length?sorted.map(renderCard).join(''):empty;
-    $('home-recent-list').innerHTML=sorted.length?sorted.slice(0,3).map(p=>'<button class="recent-project" data-open="'+esc(p.id)+'"><span class="recent-project-icon"><img src="./assets/icon.svg" alt=""></span><span><strong>'+esc(p.name)+'</strong><small>'+new Date(p.updatedAt||Date.now()).toLocaleDateString('pt-BR')+'</small></span><b>→</b></button>').join(''):empty;
+    const matches=sorted.filter(p=>!this.projectSearch||(p.name||'').toLocaleLowerCase('pt-BR').includes(this.projectSearch));
+    const card=p=>'<article class="project-card"><button class="project-card-open" data-open="'+esc(p.id)+'"><span class="project-glyph"><img src="./assets/icon.svg" alt=""></span><span class="project-card-copy"><strong>'+esc(p.name)+'</strong><small>Modificado em '+new Date(p.updatedAt||Date.now()).toLocaleDateString('pt-BR')+'</small></span><svg class="project-card-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14m-6-6 6 6-6 6"/></svg></button><div class="project-card-tools"><button data-rename-project="'+esc(p.id)+'">Renomear</button><button data-delete="'+esc(p.id)+'">Excluir</button></div></article>';
+    const empty='<div class="empty-project-state"><span class="empty-project-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></span><strong>'+(this.projectSearch?'Nenhum projeto encontrado':'Seu primeiro projeto começa aqui')+'</strong><small>'+(this.projectSearch?'Tente outro nome.':'Crie uma interface, experimente componentes e dê vida às suas ideias.')+'</small>'+(this.projectSearch?'':'<button class="btn primary" data-create-first>Criar projeto</button>')+'</div>';
+    $('project-list').innerHTML=matches.length?matches.map(card).join(''):empty;
+    $('home-recent-list').innerHTML=sorted.length?sorted.slice(0,4).map(p=>'<button class="recent-project" data-open="'+esc(p.id)+'"><span class="recent-project-icon"><img src="./assets/icon.svg" alt=""></span><span><strong>'+esc(p.name)+'</strong><small>'+new Date(p.updatedAt||Date.now()).toLocaleDateString('pt-BR')+'</small></span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14m-6-6 6 6-6 6"/></svg></button>').join(''):'<div class="empty-project-state"><strong>Nenhum projeto criado</strong><small>Use “Novo projeto” no topo para começar sua primeira criação.</small></div>';
     document.querySelectorAll('[data-open]').forEach(b=>b.onclick=()=>this.openProject(b.dataset.open));
     document.querySelectorAll('[data-delete]').forEach(b=>b.onclick=()=>this.deleteProject(b.dataset.delete));
     document.querySelectorAll('[data-rename-project]').forEach(b=>b.onclick=()=>this.renameProject(b.dataset.renameProject));
     document.querySelectorAll('[data-create-first]').forEach(b=>b.onclick=()=>this.createProject());
+    this.renderSettings();
   }
 
   showHubView(view) {
-    const active=['home','projects','library'].includes(view)?view:'home';
-    for(const key of ['home','projects','library']){
+    const active=['home','projects','library','settings'].includes(view)?view:'home';
+    for(const key of ['home','projects','library','settings']){
       $('hub-'+key+'-view').classList.toggle('active',key===active);
-      const tab=$('hub-tab-'+key);tab.setAttribute('aria-selected',String(key===active));
+      $('hub-tab-'+key).setAttribute('aria-selected',String(key===active));
     }
-    $('btn-new').hidden=active==='library';
+    $('btn-new').hidden=active==='library'||active==='settings';
     if(active==='library')this.refreshLibrary();
+    if(active==='settings')this.renderSettings();
+  }
+
+  renderLibrary() {
+    const total=this.assets.reduce((sum,a)=>sum+(Number(a.size)||0),0);
+    $('library-summary-text').textContent=this.assets.length+' arquivos · '+this.formatBytes(total);
+    const folders=[...new Set(this.assets.map(a=>a.folder).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'pt-BR'));
+    const folderSelect=$('asset-folder-filter'),previous=this.assetFolder;
+    folderSelect.innerHTML='<option value="">Todas as pastas</option>'+folders.map(f=>'<option value="'+esc(f)+'">'+esc(f)+'</option>').join('');
+    if(folders.includes(previous))folderSelect.value=previous;else this.assetFolder='';
+    const filtered=this.assets.filter(a=>(!this.assetFolder||a.folder===this.assetFolder)&&(!this.assetSearch||(a.name+' '+a.mime+' '+(a.folder||'')).toLocaleLowerCase('pt-BR').includes(this.assetSearch)));
+    const list=$('asset-list');
+    if(!filtered.length){
+      list.innerHTML='<div class="empty-project-state"><span class="empty-project-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v15H4zM8 9h8M8 13h5"/></svg></span><strong>'+(this.assets.length?'Nenhum arquivo encontrado':'Biblioteca vazia')+'</strong><small>'+(this.assets.length?'Altere a busca ou o filtro de pasta.':'Adicione imagens, áudio, vídeo e documentos para usar nos projetos.')+'</small></div>';
+      $('asset-preview-pane').innerHTML='<div class="preview-empty"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="m4 17 5-5 4 4 3-3 4 4"/></svg><strong>Nenhum arquivo selecionado</strong><span>Escolha um arquivo na lista para visualizar.</span></div>';
+      return;
+    }
+    if(!filtered.some(a=>a.id===this.selectedAssetId))this.selectedAssetId=filtered[0].id;
+    const iconFor=a=>{
+      const mime=a.mime||'',name=a.name||'';
+      const image=mime.startsWith('image/')||/\.(png|jpe?g|gif|webp|avif|bmp)$/i.test(name);
+      const video=mime.startsWith('video/')||/\.(mp4|webm|mov|m4v)$/i.test(name);
+      const audio=mime.startsWith('audio/')||/\.(mp3|wav|ogg|m4a|aac|flac)$/i.test(name);
+      const pdf=mime==='application/pdf'||/\.pdf$/i.test(name);
+      const font=/font|\.(woff2?|ttf|otf)$/i.test(mime+' '+name);
+      const path=image?'<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m4 17 5-5 4 4 3-3 4 4"/>':video?'<rect x="3" y="5" width="18" height="14" rx="2"/><path d="m10 9 5 3-5 3z"/>':audio?'<path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>':pdf?'<path d="M6 3h9l4 4v14H6zM14 3v5h5M9 13h6M9 16h6"/>':font?'<path d="m4 20 8-17 8 17M7 14h10"/>':'<path d="M5 3h9l5 5v13H5zM14 3v5h5"/>';
+      return '<svg viewBox="0 0 24 24" aria-hidden="true">'+path+'</svg>';
+    };
+    list.innerHTML=filtered.map(a=>'<button class="asset-entry '+(a.id===this.selectedAssetId?'selected':'')+'" data-asset-select="'+esc(a.id)+'"><span class="asset-entry-thumb">'+(a.mime?.startsWith('image/')?'<img src="'+this.assetUrl(a)+'" alt="">':iconFor(a))+'</span><span class="asset-entry-copy"><strong>'+esc(a.name)+'</strong><small>'+esc(a.folder||'Sem pasta')+' · '+this.formatBytes(a.size||0)+'</small></span><svg class="asset-entry-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></button>').join('');
+    list.querySelectorAll('[data-asset-select]').forEach(b=>b.onclick=()=>{this.selectedAssetId=b.dataset.assetSelect;this.renderLibrary();});
+    this.renderAssetPreview(this.assets.find(a=>a.id===this.selectedAssetId));
+  }
+
+  async renderAssetPreview(asset) {
+    const pane=$('asset-preview-pane');if(!pane)return;
+    if(!asset){pane.innerHTML='<div class="preview-empty"><strong>Selecione um arquivo</strong></div>';return;}
+    const mime=asset.mime||'',name=asset.name||'',url=(()=>{try{return this.assetUrl(asset)}catch{return null}})();
+    const isImage=mime.startsWith('image/')||/\.(png|jpe?g|gif|webp|avif|bmp)$/i.test(name);
+    const isVideo=mime.startsWith('video/')||/\.(mp4|webm|mov|m4v)$/i.test(name);
+    const isAudio=mime.startsWith('audio/')||/\.(mp3|wav|ogg|m4a|aac|flac)$/i.test(name);
+    const isPdf=mime==='application/pdf'||/\.pdf$/i.test(name);
+    let content='<div class="preview-unsupported"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3h9l5 5v13H5zM14 3v5h5"/></svg><strong>Prévia não disponível</strong><span>Este formato pode ser baixado e usado no projeto.</span></div>';
+    if(!url){content='<div class="preview-unsupported"><strong>Arquivo indisponível</strong><span>O conteúdo não foi encontrado no armazenamento local.</span></div>';}
+    else if(isImage)content='<div class="preview-media image-preview"><img id="asset-preview-image" src="'+url+'" alt="'+esc(name)+'"></div>';
+    else if(isVideo)content='<div class="preview-media"><video src="'+url+'" controls playsinline preload="metadata"></video></div>';
+    else if(isAudio)content='<div class="preview-audio"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg><audio src="'+url+'" controls preload="metadata"></audio></div>';
+    else if(isPdf)content='<iframe class="preview-pdf" src="'+url+'" title="'+esc(name)+'"></iframe>';
+    else if(/(text|json|svg|xml)/i.test(mime)||/\.(txt|json|svg|xml|md|html|css|js)$/i.test(name)){
+      try{const raw=await asset.blob.text();content='<pre class="preview-code">'+esc(raw.slice(0,60000))+'</pre>';}
+      catch{content='<div class="preview-unsupported"><strong>Não foi possível ler o arquivo.</strong></div>';}
+    }
+    pane.innerHTML='<div class="preview-pane-heading"><div><strong>'+esc(name)+'</strong><small>'+esc(mime||'Arquivo')+' · '+this.formatBytes(asset.size||0)+'</small></div><button class="icon-action preview-close" id="preview-clear" aria-label="Fechar pré-visualização"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button></div><div class="preview-pane-content">'+content+'</div><div class="preview-pane-actions"><button class="btn" id="preview-rename">Renomear</button><button class="btn danger" id="preview-delete">Excluir</button><button class="btn primary" id="preview-download"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m-4-4 4 4 4-4"/><path d="M5 17v3h14v-3"/></svg>Baixar</button></div>';
+    $('preview-clear').onclick=()=>{this.selectedAssetId=null;this.renderLibrary();};
+    $('preview-rename').onclick=()=>this.renameAsset(asset.id);
+    $('preview-delete').onclick=()=>this.deleteAsset(asset.id);
+    $('preview-download').onclick=()=>this.downloadAsset(asset.id);
+    const image=$('asset-preview-image');if(image)image.onerror=()=>{$('asset-preview-pane').querySelector('.preview-pane-content').innerHTML='<div class="preview-unsupported"><strong>Não foi possível exibir a imagem.</strong><span>O arquivo pode estar corrompido ou em um formato não suportado.</span></div>';};
   }
 
   async refreshLibrary() {
@@ -299,13 +412,14 @@ class StudioApp {
       }
       if(accepted.length)await this.vfs.saveAssets(accepted);
       await this.refreshLibrary();
+      if(accepted.length)this.selectedAssetId=accepted[0].id;
+      this.renderLibrary();
       if(this.assetBrowser)this.renderProjectLibraryBrowser(this.assetBrowser.node);
       this.notify(accepted.length+' arquivo(s) adicionado(s).'+(errors.length?' Não adicionados: '+errors.join('; '):''),errors.length?'warning':'success');
     }catch(error){this.notify('Falha ao adicionar arquivos: '+error.message+' Nenhum arquivo do lote foi salvo.','error');}
     finally{button.disabled=false;$('asset-file-input').value='';}
   }
 
-  openAsset(id) { this.previewAsset(id,false); }
 
   async deleteAsset(id) {
     const asset=this.assets.find(a=>a.id===id);if(!asset)return;
