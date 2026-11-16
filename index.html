@@ -1,19 +1,1246 @@
-<!doctype html>
+
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#090d18"><meta name="description" content="Flowiq Studio: editor 2D mobile-first para interfaces e sistemas operacionais."><title>Flowiq Studio</title><link rel="manifest" href="./manifest.json">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#090d18">
+<meta name="description" content="Flowiq Studio - Mobile 2D Development Environment">
+<title>Flowiq Studio</title>
+<link rel="manifest" href="./manifest.json">
+
 <style>
-:root{color-scheme:dark;--bg:#090d18;--panel:#101727;--panel2:#151f32;--line:#26334a;--muted:#8d9ab1;--text:#edf2fb;--accent:#8b7cff;--accent2:#6554e8;--green:#4bd5a0;--danger:#ff7185;--top:58px;--dock:68px}*{box-sizing:border-box}html,body{height:100%;margin:0}body{background:var(--bg);color:var(--text);font:14px/1.45 Inter,ui-sans-serif,system-ui,-apple-system,sans-serif;overflow:hidden}button,input,select,textarea{font:inherit}button{cursor:pointer;color:inherit}.app{height:100dvh;display:flex;flex-direction:column}.topbar{height:var(--top);flex:none;display:flex;align-items:center;gap:12px;padding:0 16px;border-bottom:1px solid var(--line);background:#0d1422;z-index:20}.brand{display:flex;align-items:center;gap:9px;font-weight:800;letter-spacing:.2px}.brandmark{width:29px;height:29px;border-radius:9px;background:linear-gradient(145deg,#a99cff,#6654e8);display:grid;place-items:center;color:white;font-weight:900}.crumb{color:var(--muted);font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.top-spacer{flex:1}.btn{border:1px solid var(--line);background:var(--panel2);padding:8px 11px;border-radius:9px;font-size:12px;font-weight:650;display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:36px}.btn:hover{border-color:#58698b;background:#1b2940}.btn.primary{background:var(--accent2);border-color:var(--accent2);color:white}.btn.good{background:#123a34;border-color:#246d5e;color:#9af0d0}.btn.danger{color:#ff9aaa}.btn.icon{width:36px;padding:0}.btn:disabled{opacity:.4;cursor:not-allowed}.screen{display:none;flex:1;min-height:0}.screen.active{display:flex}.hub{overflow:auto;padding:clamp(16px,4vw,34px);display:block}.hero{max-width:1000px;margin:0 auto 22px;padding:clamp(22px,5vw,42px);border:1px solid var(--line);border-radius:20px;background:radial-gradient(ellipse at 85% 5%,#433b8055,transparent 48%),linear-gradient(135deg,#151f34,#0f1728)}.eyebrow{color:#aaa0ff;text-transform:uppercase;font-size:10px;font-weight:800;letter-spacing:1.5px}.hero h1{font-size:clamp(25px,5vw,42px);line-height:1.08;margin:10px 0}.hero p{color:var(--muted);max-width:600px;margin:0 0 20px}.project-area{max-width:1000px;margin:auto}.section-head{display:flex;align-items:center;justify-content:space-between;margin:20px 0 12px}.section-head h2{font-size:15px;margin:0}.project-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px}.project-card{border:1px solid var(--line);background:var(--panel);border-radius:14px;padding:15px;min-width:0}.project-card h3{margin:0 0 5px;font-size:14px}.project-card p{margin:0;color:var(--muted);font-size:11px}.project-actions{display:flex;gap:7px;margin-top:14px}.project-actions .btn:first-child{flex:1}.empty{border:1px dashed #34415b;border-radius:14px;padding:35px;text-align:center;color:var(--muted)}.workspace.screen.active{min-height:0;display:grid;grid-template-columns:235px minmax(0,1fr) 270px;width:100%}.panel{background:var(--panel);min-height:0;display:flex;flex-direction:column}.explorer{border-right:1px solid var(--line)}.inspector{border-left:1px solid var(--line)}.panel-head{height:45px;flex:none;padding:0 13px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;font-size:11px;font-weight:800;letter-spacing:.8px;text-transform:uppercase;color:#b6c2d7}.panel-body{padding:10px;overflow:auto;min-height:0;flex:1}.tree-row{display:flex;align-items:center;gap:7px;padding:7px 8px;border-radius:7px;font-size:12px;color:#c6d0e2;cursor:pointer;min-width:0}.tree-row:hover{background:#1a263b}.tree-row.selected{background:#332d65;color:white}.tree-row .node-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}.tree-actions{display:flex;gap:6px;padding:9px;border-bottom:1px solid var(--line)}.tree-actions .btn{flex:1;padding:7px 5px}.stage-area{min-width:0;min-height:0;display:flex;flex-direction:column;background:#0b1120}.stage-toolbar{height:45px;flex:none;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:8px;padding:0 12px}.stage-toolbar .hint{font-size:11px;color:var(--muted);margin-left:auto}.stage-wrap{flex:1;min-height:0;overflow:auto;display:grid;place-items:center;padding:18px;background-color:#0b1120;background-image:radial-gradient(#27334a 1px,transparent 1px);background-size:18px 18px}.canvas{width:min(100%,390px);height:min(100%,690px);min-height:320px;position:relative;overflow:hidden;background:#111b2c;border:1px solid #43516a;border-radius:12px;box-shadow:0 18px 60px #0008;touch-action:pan-x pan-y}.canvas .empty-canvas{position:absolute;inset:0;display:grid;place-items:center;text-align:center;color:#73819a;font-size:12px;padding:30px;pointer-events:none}.node{position:absolute;display:flex;align-items:center;justify-content:center;overflow:hidden;white-space:pre-wrap;word-break:break-word;touch-action:manipulation;user-select:none}.node.selected{outline:2px solid #a69aff;outline-offset:2px}.node.button-node{cursor:pointer}.inspector-content{padding:13px;overflow:auto}.field{display:flex;flex-direction:column;gap:5px;margin-bottom:12px}.field label{font-size:10px;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);font-weight:750}.field input,.field select,.field textarea{width:100%;min-width:0;border:1px solid var(--line);background:#0a1120;color:var(--text);border-radius:8px;padding:9px;font-size:12px;outline:none}.field input:focus,.field textarea:focus{border-color:var(--accent)}.field input[type=color]{height:38px;padding:3px}.field-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px}.divider{border:0;border-top:1px solid var(--line);margin:14px 0}.muted{color:var(--muted)}.console{height:112px;flex:none;border-top:1px solid var(--line);background:#080d17;display:flex;flex-direction:column}.console-head{height:31px;padding:0 12px;display:flex;align-items:center;justify-content:space-between;font-size:10px;color:var(--muted);font-weight:800;text-transform:uppercase}.console-log{overflow:auto;padding:4px 12px 10px;font:11px/1.6 ui-monospace,monospace;color:#aebbd0}.log-error{color:#ff8999}.log-ok{color:#76dfb6}.mobile-nav{display:none}.drawer-backdrop{display:none}.toast{position:fixed;bottom:calc(var(--dock) + 15px);left:50%;transform:translateX(-50%);background:#202c42;border:1px solid #465675;border-radius:10px;padding:10px 15px;font-size:12px;z-index:80;box-shadow:0 8px 30px #0008}.modal-backdrop{position:fixed;inset:0;background:#020611c9;z-index:70;display:none;place-items:center;padding:15px}.modal-backdrop.open{display:grid}.modal{width:min(100%,480px);max-height:90dvh;overflow:auto;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px}.modal h2{font-size:16px;margin:0 0 14px}.modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:15px}.play-frame{background:#111b2c;border:1px solid #44516a;border-radius:12px;width:min(100%,390px);height:min(70dvh,690px);position:relative;overflow:hidden}.play-frame .node{cursor:default}.hidden{display:none!important}
-@media(max-width:760px){:root{--top:54px;--dock:64px}.topbar{padding:0 10px;gap:8px}.brand{font-size:13px}.crumb{display:none}.topbar .btn{padding:7px 9px;min-height:34px}.workspace.screen.active{display:block;position:relative}.explorer,.inspector{display:none;position:absolute;z-index:35;left:0;right:0;bottom:var(--dock);height:min(68%,560px);border:1px solid var(--line);border-radius:16px 16px 0 0;box-shadow:0 -18px 50px #0009}.explorer.mobile-open,.inspector.mobile-open{display:flex}.stage-area{height:100%;padding-bottom:var(--dock)}.stage-wrap{padding:12px}.canvas{width:min(100%,390px);height:min(100%,680px)}.mobile-nav{position:absolute;bottom:0;left:0;right:0;height:var(--dock);display:flex;justify-content:space-around;align-items:center;background:#101827;border-top:1px solid var(--line);z-index:30;padding-bottom:env(safe-area-inset-bottom)}.mobile-nav button{border:0;background:none;color:#9ba9c0;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:10px;min-width:58px;padding:6px}.mobile-nav button.active{color:#b6aaff}.mobile-nav svg{width:19px;height:19px}.console{height:86px}.drawer-backdrop.show{display:block;position:absolute;inset:0;z-index:34;background:#0007}.hub{padding:15px}.hero{border-radius:16px}.project-grid{grid-template-columns:1fr}.toast{bottom:calc(var(--dock) + 12px)}}
-@media(min-width:761px) and (max-width:1050px){.workspace{grid-template-columns:205px minmax(0,1fr) 235px}}
-</style></head>
-<body><div class="app">
-<header class="topbar"><div class="brand"><span class="brandmark">F</span><span>FLOWIQ <span style="color:#a99cff">STUDIO</span></span></div><div class="crumb" id="breadcrumb">/ Projetos</div><div class="top-spacer"></div><button class="btn" id="btn-import" title="Importar projeto">↥ <span class="wide-label">Importar</span></button><button class="btn" id="btn-export" title="Exportar projeto" disabled>↧ <span class="wide-label">Exportar</span></button><button class="btn primary" id="btn-save" disabled>Salvar</button></header>
-<main id="hub" class="screen hub active"><section class="hero"><div class="eyebrow">2D interface development environment</div><h1>Construa seu próximo<br>universo digital.</h1><p>Um espaço de trabalho para criar interfaces, organizar componentes e testar experiências 2D. Seus projetos ficam salvos neste dispositivo.</p><button class="btn primary" id="btn-new">＋ Criar novo projeto</button></section><section class="project-area"><div class="section-head"><h2>Seus projetos</h2><span class="muted" id="project-count">0 projetos</span></div><div class="project-grid" id="project-list"></div></section></main>
-<section id="workspace" class="screen workspace"><aside class="panel explorer" id="explorer"><div class="panel-head"><span>⌘ Explorer</span><button class="btn icon" data-close-panel="explorer" aria-label="Fechar">×</button></div><div class="tree-actions"><button class="btn" id="add-frame">▧ Frame</button><button class="btn" id="add-button">▣ Botão</button></div><div class="panel-body" id="tree"></div></aside>
-<div class="stage-area"><div class="stage-toolbar"><button class="btn icon" id="btn-hub" title="Voltar aos projetos">←</button><span id="project-title" style="font-weight:700;font-size:12px"></span><span class="hint">Canvas · 2D</span><button class="btn good" id="btn-play">▶ Play</button></div><div class="stage-wrap" id="stage-wrap"><div class="canvas" id="canvas"><div class="empty-canvas">Seu palco está vazio.<br>Adicione um Frame ou Botão pelo Explorer.</div></div></div><div class="console"><div class="console-head"><span>Output / Console</span><button class="btn" id="clear-console" style="min-height:23px;padding:2px 7px">Limpar</button></div><div class="console-log" id="console-log"><div class="log-ok">Flowiq Studio pronto. Selecione um objeto para editar.</div></div></div></div>
-<aside class="panel inspector" id="inspector"><div class="panel-head"><span>☷ Inspector</span><button class="btn icon" data-close-panel="inspector" aria-label="Fechar">×</button></div><div class="inspector-content" id="inspector-content"><p class="muted">Selecione um objeto no Explorer ou no palco para editar suas propriedades.</p></div></aside>
-<div class="drawer-backdrop" id="drawer-backdrop"></div><nav class="mobile-nav"><button data-panel="explorer"><span>☷</span>Explorer</button><button data-panel="inspector"><span>☷</span>Inspector</button><button id="mobile-add"><span>＋</span>Adicionar</button><button id="mobile-play"><span>▶</span>Play</button></nav></section>
+:root {
+  color-scheme: dark;
+  --bg: #090d18;
+  --panel: #111a2b;
+  --panel2: #172238;
+  --line: #293751;
+  --text: #edf2fb;
+  --muted: #91a0b8;
+  --accent: #8b7cff;
+  --accent2: #6554e8;
+  --green: #4bd5a0;
+  --danger: #ff7185;
+  --top: 54px;
+  --dock: 70px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font: 14px/1.45 system-ui, sans-serif;
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
+button, input, select, textarea {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+  color: inherit;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.app {
+  height: 100vh;
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* HEADER */
+
+.topbar {
+  height: var(--top);
+  min-height: var(--top);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 14px;
+  background: #0d1422;
+  border-bottom: 1px solid var(--line);
+  z-index: 20;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 13px;
+  font-weight: 850;
+  letter-spacing: .5px;
+  white-space: nowrap;
+}
+
+.brandmark {
+  width: 30px;
+  height: 30px;
+  border-radius: 10px;
+  background: linear-gradient(145deg,#a99cff,#6554e8);
+  display: grid;
+  place-items: center;
+  color: white;
+  font-weight: 900;
+}
+
+.crumb {
+  color: var(--muted);
+  font-size: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.top-spacer {
+  flex: 1;
+}
+
+.btn {
+  border: 1px solid var(--line);
+  background: var(--panel2);
+  padding: 8px 12px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 38px;
+}
+
+.btn:active {
+  transform: scale(.97);
+}
+
+.btn.primary {
+  background: var(--accent2);
+  border-color: var(--accent2);
+  color: white;
+}
+
+.btn.good {
+  background: #123a34;
+  border-color: #246d5e;
+  color: #9af0d0;
+}
+
+.btn.danger {
+  color: #ff9aaa;
+}
+
+.btn.icon {
+  width: 38px;
+  padding: 0;
+}
+
+.btn:disabled {
+  opacity: .4;
+  cursor: not-allowed;
+}
+
+/* SCREENS */
+
+.screen {
+  display: none;
+  flex: 1;
+  min-height: 0;
+}
+
+.screen.active {
+  display: flex;
+}
+
+.hidden {
+  display: none !important;
+}
+
+/* PROJECT HUB */
+
+.hub {
+  display: block;
+  overflow-y: auto;
+  padding: 24px;
+  overscroll-behavior: contain;
+}
+
+.hero {
+  max-width: 1000px;
+  margin: 0 auto 24px;
+  padding: 35px;
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  background:
+    radial-gradient(ellipse at 85% 5%,#433b8055,transparent 48%),
+    linear-gradient(135deg,#151f34,#0f1728);
+}
+
+.eyebrow {
+  color: #aaa0ff;
+  text-transform: uppercase;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+}
+
+.hero h1 {
+  font-size: clamp(28px,5vw,42px);
+  line-height: 1.1;
+  margin: 12px 0;
+}
+
+.hero p {
+  color: var(--muted);
+  max-width: 600px;
+  margin: 0 0 20px;
+}
+
+.project-area {
+  max-width: 1000px;
+  margin: auto;
+}
+
+.section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 20px 0 12px;
+}
+
+.section-head h2 {
+  font-size: 16px;
+  margin: 0;
+}
+
+.project-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill,minmax(230px,1fr));
+  gap: 13px;
+}
+
+.project-card {
+  border: 1px solid var(--line);
+  background: var(--panel);
+  border-radius: 15px;
+  padding: 17px;
+  min-width: 0;
+}
+
+.project-card h3 {
+  margin: 0 0 5px;
+  font-size: 14px;
+}
+
+.project-card p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.project-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.project-actions .btn:first-child {
+  flex: 1;
+}
+
+.empty {
+  border: 1px dashed #34415b;
+  border-radius: 14px;
+  padding: 30px;
+  text-align: center;
+  color: var(--muted);
+}
+
+/* WORKSPACE */
+
+.workspace.screen.active {
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 235px minmax(0,1fr) 270px;
+  width: 100%;
+}
+
+/* PANELS */
+
+.panel {
+  background: var(--panel);
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.explorer {
+  border-right: 1px solid var(--line);
+}
+
+.inspector {
+  border-left: 1px solid var(--line);
+}
+
+.panel-head {
+  height: 48px;
+  flex: none;
+  padding: 0 13px;
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .8px;
+  text-transform: uppercase;
+  color: #b6c2d7;
+}
+
+.panel-body {
+  padding: 10px;
+  overflow: auto;
+  min-height: 0;
+  flex: 1;
+}
+
+.tree-actions {
+  display: flex;
+  gap: 7px;
+  padding: 10px;
+  border-bottom: 1px solid var(--line);
+}
+
+.tree-actions .btn {
+  flex: 1;
+  padding: 7px 5px;
+}
+
+.tree-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px;
+  border-radius: 8px;
+  font-size: 12px;
+  color: #c6d0e2;
+  cursor: pointer;
+  min-width: 0;
+}
+
+.tree-row:hover {
+  background: #1a263b;
+}
+
+.tree-row.selected {
+  background: #332d65;
+  color: white;
+}
+
+.tree-row .node-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+}
+
+/* STAGE */
+
+.stage-area {
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  background: #0b1120;
+}
+
+.stage-toolbar {
+  height: 48px;
+  flex: none;
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 0 12px;
+}
+
+.stage-toolbar .hint {
+  font-size: 11px;
+  color: var(--muted);
+  margin-left: auto;
+}
+
+.stage-wrap {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background-color: #0b1120;
+  background-image: radial-gradient(#27334a 1px,transparent 1px);
+  background-size: 18px 18px;
+}
+
+/* CANVAS */
+
+.canvas {
+  width: min(100%,390px);
+  height: min(100%,690px);
+  min-height: 320px;
+  position: relative;
+  overflow: hidden;
+  background: #111b2c;
+  border: 1px solid #43516a;
+  border-radius: 13px;
+  box-shadow: 0 18px 60px #0008;
+  touch-action: pan-x pan-y;
+}
+
+.canvas .empty-canvas {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  text-align: center;
+  color: #73819a;
+  font-size: 12px;
+  padding: 30px;
+  pointer-events: none;
+}
+
+.node {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  white-space: pre-wrap;
+  word-break: break-word;
+  touch-action: manipulation;
+  user-select: none;
+}
+
+.node.selected {
+  outline: 2px solid #a69aff;
+  outline-offset: 2px;
+}
+
+.node.button-node {
+  cursor: pointer;
+}
+
+/* INSPECTOR */
+
+.inspector-content {
+  padding: 14px;
+  overflow: auto;
+  min-height: 0;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+
+.field label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: .6px;
+  color: var(--muted);
+  font-weight: 750;
+}
+
+.field input,
+.field select,
+.field textarea {
+  width: 100%;
+  min-width: 0;
+  border: 1px solid var(--line);
+  background: #0a1120;
+  color: var(--text);
+  border-radius: 9px;
+  padding: 10px;
+  font-size: 13px;
+  outline: none;
+}
+
+.field input:focus,
+.field textarea:focus {
+  border-color: var(--accent);
+}
+
+.field input[type=color] {
+  height: 42px;
+  padding: 3px;
+}
+
+.field-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.divider {
+  border: 0;
+  border-top: 1px solid var(--line);
+  margin: 15px 0;
+}
+
+.muted {
+  color: var(--muted);
+}
+
+/* CONSOLE */
+
+.console {
+  height: 110px;
+  flex: none;
+  border-top: 1px solid var(--line);
+  background: #080d17;
+  display: flex;
+  flex-direction: column;
+}
+
+.console-head {
+  height: 31px;
+  padding: 0 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 10px;
+  color: var(--muted);
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.console-log {
+  overflow: auto;
+  padding: 4px 12px 10px;
+  font: 11px/1.6 monospace;
+  color: #aebbd0;
+}
+
+.log-error {
+  color: #ff8999;
+}
+
+.log-ok {
+  color: #76dfb6;
+}
+
+/* MOBILE NAV */
+
+.mobile-nav {
+  display: none;
+}
+
+.drawer-backdrop {
+  display: none;
+}
+
+/* MODALS */
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: #020611c9;
+  z-index: 70;
+  display: none;
+  place-items: center;
+  padding: 15px;
+}
+
+.modal-backdrop.open {
+  display: grid;
+}
+
+.modal {
+  width: min(100%,480px);
+  max-height: 90dvh;
+  overflow: auto;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 17px;
+  padding: 20px;
+}
+
+.modal h2 {
+  font-size: 17px;
+  margin: 0 0 15px;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 9px;
+  margin-top: 16px;
+}
+
+.play-frame {
+  background: #111b2c;
+  border: 1px solid #44516a;
+  border-radius: 12px;
+  width: min(100%,390px);
+  height: min(70dvh,690px);
+  position: relative;
+  overflow: hidden;
+}
+
+.play-frame .node {
+  cursor: default;
+}
+
+.toast {
+  position: fixed;
+  bottom: calc(var(--dock) + 15px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: #202c42;
+  border: 1px solid #465675;
+  border-radius: 10px;
+  padding: 10px 15px;
+  font-size: 12px;
+  z-index: 80;
+  box-shadow: 0 8px 30px #0008;
+}
+
+/* =========================================
+   MOBILE FIRST - PORTRAIT
+========================================= */
+
+@media(max-width:760px) {
+
+  :root {
+    --top: 54px;
+    --dock: 68px;
+  }
+
+  html, body {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+  }
+
+  body {
+    height: 100dvh;
+  }
+
+  .app {
+    height: 100dvh;
+    overflow: hidden;
+  }
+
+  /* HEADER */
+
+  .topbar {
+    height: var(--top);
+    min-height: var(--top);
+    padding: 0 11px;
+    gap: 8px;
+  }
+
+  .brand {
+    font-size: 12px;
+  }
+
+  .brandmark {
+    width: 28px;
+    height: 28px;
+  }
+
+  .crumb,
+  .wide-label {
+    display: none;
+  }
+
+  .topbar .btn {
+    min-height: 35px;
+    padding: 6px 9px;
+    font-size: 11px;
+  }
+
+  /* HUB */
+
+  .hub {
+    padding: 15px;
+    overflow-y: auto;
+    padding-bottom: 30px;
+  }
+
+  .hero {
+    padding: 23px 18px;
+    border-radius: 18px;
+    margin-bottom: 20px;
+  }
+
+  .hero h1 {
+    font-size: 29px;
+    line-height: 1.12;
+    letter-spacing: -1px;
+  }
+
+  .hero p {
+    font-size: 13px;
+    line-height: 1.6;
+  }
+
+  .hero .btn {
+    width: 100%;
+    min-height: 47px;
+  }
+
+  .section-head {
+    margin: 18px 2px 12px;
+  }
+
+  .project-grid {
+    grid-template-columns: 1fr;
+    gap: 11px;
+  }
+
+  .project-card {
+    padding: 16px;
+  }
+
+  .project-actions .btn {
+    min-height: 43px;
+  }
+
+  /* WORKSPACE */
+
+  .workspace.screen.active {
+    display: block;
+    position: relative;
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .stage-area {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+    padding-bottom: calc(
+      var(--dock) + env(safe-area-inset-bottom)
+    );
+    overflow: hidden;
+  }
+
+  /* STAGE TOOLBAR */
+
+  .stage-toolbar {
+    height: 48px;
+    min-height: 48px;
+    padding: 0 9px;
+    gap: 7px;
+  }
+
+  .stage-toolbar .hint {
+    display: none;
+  }
+
+  .stage-toolbar #project-title {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 12px !important;
+  }
+
+  .stage-toolbar .btn {
+    min-height: 35px;
+  }
+
+  /* STAGE VIEWPORT */
+
+  .stage-wrap {
+    flex: 1;
+    min-height: 0;
+    display: grid;
+    place-items: center;
+    overflow: hidden;
+    padding: 12px 9px;
+    background-color: #0a1020;
+    background-image:
+      radial-gradient(#293650 1px,transparent 1px);
+    background-size: 18px 18px;
+  }
+
+  /* VERTICAL CANVAS */
+
+  .canvas {
+    width: auto;
+    height: min(100%,650px);
+    aspect-ratio: 9 / 16;
+    max-width: calc(100vw - 25px);
+    max-height: 100%;
+    min-width: 0;
+    min-height: 0;
+    border-radius: 15px;
+    border-color: #465775;
+    box-shadow: 0 16px 45px #0009;
+  }
+
+  /* CONSOLE */
+
+  .console {
+    height: 76px;
+    min-height: 76px;
+    flex: none;
+  }
+
+  .console-head {
+    height: 26px;
+    padding: 0 11px;
+    font-size: 9px;
+  }
+
+  .console-log {
+    padding: 3px 11px;
+    font-size: 10px;
+  }
+
+  /* PANELS AS DRAWERS */
+
+  .explorer,
+  .inspector {
+    display: none;
+    position: absolute;
+    z-index: 45;
+    left: 8px;
+    right: 8px;
+    bottom: calc(
+      var(--dock) + env(safe-area-inset-bottom) + 8px
+    );
+    width: auto;
+    height: min(70dvh,580px);
+    max-height: calc(100dvh - 145px);
+    border: 1px solid #35445f;
+    border-radius: 19px;
+    background: #111a2a;
+    box-shadow: 0 20px 60px #000b;
+    overflow: hidden;
+  }
+
+  .explorer.mobile-open,
+  .inspector.mobile-open {
+    display: flex;
+  }
+
+  .panel-head {
+    height: 52px;
+    min-height: 52px;
+    padding: 0 14px;
+    font-size: 11px;
+    background: #151f32;
+  }
+
+  .panel-body,
+  .inspector-content {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 13px;
+    overscroll-behavior: contain;
+  }
+
+  .tree-actions {
+    padding: 10px;
+    gap: 8px;
+  }
+
+  .tree-actions .btn {
+    min-height: 43px;
+  }
+
+  .tree-row {
+    min-height: 43px;
+    padding: 10px;
+    font-size: 13px;
+    border-radius: 9px;
+  }
+
+  .field {
+    margin-bottom: 14px;
+  }
+
+  .field input,
+  .field textarea,
+  .field select {
+    min-height: 43px;
+    font-size: 14px;
+    padding: 10px;
+  }
+
+  .field input[type=color] {
+    height: 45px;
+  }
+
+  /* BOTTOM NAVIGATION */
+
+  .mobile-nav {
+    position: absolute;
+    z-index: 40;
+    left: 0;
+    right: 0;
+    bottom: 0;
+
+    height: calc(
+      var(--dock) + env(safe-area-inset-bottom)
+    );
+
+    display: grid;
+    grid-template-columns: repeat(4,minmax(0,1fr));
+    align-items: stretch;
+
+    padding: 7px 8px
+      calc(7px + env(safe-area-inset-bottom));
+
+    background: rgba(13,21,36,.97);
+    border-top: 1px solid #293750;
+
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+  }
+
+  .mobile-nav button {
+    min-width: 0;
+    min-height: 48px;
+    border: 0;
+    border-radius: 12px;
+    background: transparent;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+
+    gap: 5px;
+    padding: 5px 2px;
+
+    color: #94a3b8;
+    font-size: 10px;
+    font-weight: 700;
+  }
+
+  .mobile-nav button.active {
+    color: #c3b8ff;
+    background: #302b55;
+  }
+
+  .mobile-nav button:active {
+    transform: scale(.96);
+  }
+
+  .mobile-nav button span {
+    font-size: 19px;
+    line-height: 1;
+  }
+
+  /* BACKDROP */
+
+  .drawer-backdrop.show {
+    display: block;
+    position: absolute;
+    z-index: 44;
+    inset: 0 0 calc(
+      var(--dock) + env(safe-area-inset-bottom)
+    );
+    background: rgba(0,0,0,.58);
+    backdrop-filter: blur(2px);
+  }
+
+  /* MODALS */
+
+  .modal-backdrop {
+    align-items: flex-end;
+    padding: 10px;
+  }
+
+  .modal {
+    width: 100%;
+    max-width: 520px;
+    max-height: 85dvh;
+    border-radius: 20px;
+    padding: 19px 16px;
+    overflow-y: auto;
+  }
+
+  .modal-actions {
+    gap: 8px;
+  }
+
+  .modal-actions .btn {
+    min-height: 44px;
+  }
+
+  .toast {
+    bottom: calc(
+      var(--dock) + env(safe-area-inset-bottom) + 12px
+    );
+    max-width: calc(100vw - 28px);
+    text-align: center;
+  }
+}
+
+/* SMALL PHONES */
+
+@media(max-width:380px) {
+  .topbar {
+    padding: 0 8px;
+  }
+
+  .brand {
+    font-size: 11px;
+  }
+
+  .stage-toolbar {
+    padding: 0 7px;
+    gap: 5px;
+  }
+
+  .mobile-nav button {
+    font-size: 9px;
+  }
+}
+
+/* TABLETS AND SMALL DESKTOPS */
+
+@media(min-width:761px) and (max-width:1050px) {
+  .workspace.screen.active {
+    grid-template-columns: 205px minmax(0,1fr) 235px;
+  }
+}
+</style>
+</head>
+
+<body>
+
+<div class="app">
+
+<header class="topbar">
+
+  <div class="brand">
+    <span class="brandmark">F</span>
+    <span>FLOWIQ <span style="color:#a99cff">STUDIO</span></span>
+  </div>
+
+  <div class="crumb" id="breadcrumb">/ Projetos</div>
+
+  <div class="top-spacer"></div>
+
+  <button class="btn" id="btn-import" title="Importar projeto">
+    ↥ <span class="wide-label">Importar</span>
+  </button>
+
+  <button class="btn" id="btn-export" title="Exportar projeto" disabled>
+    ↧ <span class="wide-label">Exportar</span>
+  </button>
+
+  <button class="btn primary" id="btn-save" disabled>
+    Salvar
+  </button>
+
+</header>
+
+<!-- PROJECT HUB -->
+
+<main id="hub" class="screen hub active">
+
+  <section class="hero">
+
+    <div class="eyebrow">
+      2D Interface Development Environment
+    </div>
+
+    <h1>
+      Construa seu próximo
+      <br>universo digital.
+    </h1>
+
+    <p>
+      Um ambiente de desenvolvimento para criar interfaces,
+      organizar componentes e testar experiências 2D.
+      Seus projetos ficam salvos neste dispositivo.
+    </p>
+
+    <button class="btn primary" id="btn-new">
+      ＋ Criar novo projeto
+    </button>
+
+  </section>
+
+  <section class="project-area">
+
+    <div class="section-head">
+      <h2>Seus projetos</h2>
+      <span class="muted" id="project-count">0 projetos</span>
+    </div>
+
+    <div class="project-grid" id="project-list"></div>
+
+  </section>
+
+</main>
+
+<!-- EDITOR WORKSPACE -->
+
+<section id="workspace" class="screen workspace">
+
+  <!-- EXPLORER -->
+
+  <aside class="panel explorer" id="explorer">
+
+    <div class="panel-head">
+      <span>⌘ Explorer</span>
+      <button class="btn icon" data-close-panel="explorer">×</button>
+    </div>
+
+    <div class="tree-actions">
+      <button class="btn" id="add-frame">▧ Frame</button>
+      <button class="btn" id="add-button">▣ Botão</button>
+    </div>
+
+    <div class="panel-body" id="tree"></div>
+
+  </aside>
+
+  <!-- CENTRAL STAGE -->
+
+  <div class="stage-area">
+
+    <div class="stage-toolbar">
+
+      <button class="btn icon" id="btn-hub" title="Voltar aos projetos">
+        ←
+      </button>
+
+      <span id="project-title" style="font-weight:700;font-size:12px"></span>
+
+      <span class="hint">CANVAS · 2D</span>
+
+      <button class="btn good" id="btn-play">
+        ▶ Play
+      </button>
+
+    </div>
+
+    <div class="stage-wrap" id="stage-wrap">
+
+      <div class="canvas" id="canvas">
+
+        <div class="empty-canvas">
+          Seu palco está vazio.
+          <br>
+          Adicione um Frame ou Botão pelo Explorer.
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- OUTPUT -->
+
+    <div class="console">
+
+      <div class="console-head">
+        <span>Output / Console</span>
+
+        <button class="btn" id="clear-console"
+          style="min-height:23px;padding:2px 7px">
+          Limpar
+        </button>
+      </div>
+
+      <div class="console-log" id="console-log">
+        <div class="log-ok">
+          Flowiq Studio pronto. Selecione um objeto para editar.
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+  <!-- INSPECTOR -->
+
+  <aside class="panel inspector" id="inspector">
+
+    <div class="panel-head">
+      <span>☷ Inspector</span>
+      <button class="btn icon" data-close-panel="inspector">×</button>
+    </div>
+
+    <div class="inspector-content" id="inspector-content">
+
+      <p class="muted">
+        Selecione um objeto no Explorer ou no palco
+        para editar suas propriedades.
+      </p>
+
+    </div>
+
+  </aside>
+
+  <!-- MOBILE BACKDROP -->
+
+  <div class="drawer-backdrop" id="drawer-backdrop"></div>
+
+  <!-- MOBILE NAVIGATION -->
+
+  <nav class="mobile-nav" aria-label="Navegação do Studio">
+
+    <button data-panel="explorer">
+      <span>☷</span>
+      Explorer
+    </button>
+
+    <button data-panel="inspector">
+      <span>⚙</span>
+      Propriedades
+    </button>
+
+    <button id="mobile-add">
+      <span>＋</span>
+      Adicionar
+    </button>
+
+    <button id="mobile-play">
+      <span>▶</span>
+      Play
+    </button>
+
+  </nav>
+
+</section>
+
 </div>
-<div class="modal-backdrop" id="modal"><div class="modal" id="modal-content"></div></div><input type="file" id="file-input" accept=".flowiq,.json,application/json" class="hidden">
-<script type="module" src="./js/studio.js"></script><script>if('serviceWorker'in navigator&&location.protocol!=='file:'){window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));}</script></body></html>
+
+<!-- MODAL -->
+
+<div class="modal-backdrop" id="modal">
+  <div class="modal" id="modal-content"></div>
+</div>
+
+<!-- FILE IMPO
