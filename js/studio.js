@@ -1,6 +1,6 @@
-import { DataModel, Instance } from './datamodel.js?v=2026.11.16.45';
-import { VirtualFS } from './vfs.js?v=2026.11.16.45';
-import { createProjectRecord, normalizeProject, FlowiqRuntime } from './engine.js?v=2026.11.16.45';
+import { DataModel, Instance } from './datamodel.js?v=2026.11.16.46';
+import { VirtualFS } from './vfs.js?v=2026.11.16.46';
+import { createProjectRecord, normalizeProject, FlowiqRuntime } from './engine.js?v=2026.11.16.46';
 
 const $ = (id) => document.getElementById(id);
 const esc = (value) => String(value ?? '').replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -226,7 +226,8 @@ class StudioApp {
     try {
       do {
         this.savePending = false;
-        this.project.data = this.model.toJSON();
+        const sourceModel = this.playMode ? this.runtime.editorModel : this.model;
+        this.project.data = (sourceModel || this.model).toJSON();
         this.project.schemaVersion = 2;
         this.project.updatedAt = new Date().toISOString();
         await this.vfs.saveProject(this.project);
@@ -763,7 +764,8 @@ class StudioApp {
 
   exportProject() {
     if(!this.project)return;
-    const payload={format:'flowiq-studio',version:2,project:normalizeProject({...this.project,data:this.model.toJSON()})};
+    const sourceModel=this.playMode?this.runtime.editorModel:this.model;
+    const payload={format:'flowiq-studio',version:2,project:normalizeProject({...this.project,data:(sourceModel||this.model).toJSON()})};
     const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
     const url=URL.createObjectURL(blob); const a=document.createElement('a');
     a.href=url;a.download=(this.project.name.replace(/[^a-z0-9-_]+/gi,'_')||'projeto')+'.flowiq';a.click();URL.revokeObjectURL(url);
