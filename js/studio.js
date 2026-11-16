@@ -1,7 +1,7 @@
-import { DataModel, Instance } from './datamodel.js?v=2026.11.16.50';
-import { VirtualFS } from './vfs.js?v=2026.11.16.50';
-import { createProjectRecord, normalizeProject, FlowiqRuntime } from './engine.js?v=2026.11.16.50';
-import { createBackupFile, inspectBackupFile, restoreBackup } from './backup.js?v=2026.11.16.50';
+import { DataModel, Instance } from './datamodel.js?v=2026.11.16.51';
+import { VirtualFS } from './vfs.js?v=2026.11.16.51';
+import { createProjectRecord, normalizeProject, FlowiqRuntime } from './engine.js?v=2026.11.16.51';
+import { createBackupFile, inspectBackupFile, restoreBackup } from './backup.js?v=2026.11.16.51';
 
 const $ = (id) => document.getElementById(id);
 const esc = (value) => String(value ?? '').replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -999,19 +999,32 @@ class StudioApp {
       const result=await createBackupFile(this.vfs);
       const name='Flowiq-Backup-'+new Date().toISOString().slice(0,10)+'.flowiq-backup';
       const file=new File([result.blob],name,{type:result.blob.type});
+      let shared=false,downloaded=false;
       if(navigator.share&&navigator.canShare?.({files:[file]})){
-        try{await navigator.share({files:[file],title:'Backup do Flowiq Studio',text:'Backup dos projetos e da biblioteca.'});}
-        catch(e){if(e?.name!=='AbortError')throw e;}
-      }else{
-        const url=URL.createObjectURL(result.blob),a=document.createElement('a');
-        a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();
-        setTimeout(()=>URL.revokeObjectURL(url),30000);
+        try{
+          await navigator.share({files:[file],title:'Backup do Flowiq Studio',text:'Backup dos projetos e da biblioteca.'});
+          shared=true;
+        }catch(e){
+          if(e?.name==='AbortError'){
+            alert('Compartilhamento cancelado. O backup continua preservado no Studio.');
+            return;
+          }
+          console.warn('Flowiq: compartilhamento indisponível, tentando download.',e);
+        }
       }
-      alert('Backup preparado.\n\nProjetos: '+result.projectCount+'\nArquivos da biblioteca: '+result.assetCount+'\nTamanho: '+(result.size/1048576).toFixed(2)+' MB\n\nGuarde uma cópia fora do navegador.');
-    }catch(e){alert('Não foi possível criar o backup: '+e.message);}
-    finally{if(button)button.disabled=false;}
+      if(!shared){
+        const url=URL.createObjectURL(result.blob),a=document.createElement('a');
+        a.href=url;a.download=name;a.style.display='none';
+        document.body.appendChild(a);
+        try{a.click();downloaded=true;}
+        finally{a.remove();setTimeout(()=>URL.revokeObjectURL(url),60000);}
+      }
+      alert((shared?'Backup enviado para o compartilhamento.':downloaded?'Compartilhamento bloqueado pelo navegador. O download do backup foi solicitado.':'Backup preparado.')+'\n\nProjetos: '+result.projectCount+'\nArquivos da biblioteca: '+result.assetCount+'\nTamanho: '+(result.size/1048576).toFixed(2)+' MB\n\nConfirme se o arquivo foi salvo e guarde uma cópia fora do navegador.');
+    }catch(e){
+      console.error('Flowiq: falha ao preparar backup.',e);
+      alert('Não foi possível preparar o backup: '+(e?.message||'erro desconhecido')+'\n\nSeus projetos e arquivos não foram apagados. Tente novamente após fechar outras abas ou liberar espaço no dispositivo.');
+    }finally{if(button)button.disabled=false;}
   }
-
   async importFullBackup(file) {
     if(!file)return;
     try{
