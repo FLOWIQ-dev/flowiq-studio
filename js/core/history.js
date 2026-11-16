@@ -7,7 +7,7 @@ export class History {
   }
 
   checkpoint(snapshot) {
-    this.undoStack.push(structuredClone(snapshot));
+    this.undoStack.push(JSON.parse(JSON.stringify(snapshot)));
     if (this.undoStack.length > this.limit) this.undoStack.shift();
     this.redoStack.length = 0;
     this.onChange(this.status);
@@ -15,18 +15,18 @@ export class History {
 
   undo(current) {
     if (!this.undoStack.length) return null;
-    this.redoStack.push(structuredClone(current));
+    this.redoStack.push(JSON.parse(JSON.stringify(current)));
     const value = this.undoStack.pop();
     this.onChange(this.status);
-    return structuredClone(value);
+    return JSON.parse(JSON.stringify(value));
   }
 
   redo(current) {
     if (!this.redoStack.length) return null;
-    this.undoStack.push(structuredClone(current));
+    this.undoStack.push(JSON.parse(JSON.stringify(current)));
     const value = this.redoStack.pop();
     this.onChange(this.status);
-    return structuredClone(value);
+    return JSON.parse(JSON.stringify(value));
   }
 
   clear() {
