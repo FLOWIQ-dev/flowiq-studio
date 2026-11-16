@@ -190,13 +190,13 @@ class StudioApp {
     $('project-count').textContent=count+(count===1?' projeto':' projetos');
     const matches=sorted.filter(p=>!this.projectSearch||(p.name||'').toLocaleLowerCase('pt-BR').includes(this.projectSearch));
     const card=p=>'<article class="project-card"><button class="project-card-open" data-open="'+esc(p.id)+'"><span class="project-glyph"><img src="./assets/icon.svg" alt=""></span><span class="project-card-copy"><strong>'+esc(p.name)+'</strong><small>Modificado em '+new Date(p.updatedAt||Date.now()).toLocaleDateString('pt-BR')+'</small></span><svg class="project-card-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14m-6-6 6 6-6 6"/></svg></button><div class="project-card-tools"><button data-rename-project="'+esc(p.id)+'">Renomear</button><button data-delete="'+esc(p.id)+'">Excluir</button></div></article>';
-    const empty='<div class="empty-project-state"><span class="empty-project-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></span><strong>'+(this.projectSearch?'Nenhum projeto encontrado':'Seu primeiro projeto começa aqui')+'</strong><small>'+(this.projectSearch?'Tente outro nome.':'Crie uma interface, experimente componentes e dê vida às suas ideias.')+'</small>'+(this.projectSearch?'':'<button class="btn primary" data-create-first>Criar projeto</button>')+'</div>';
+    const empty='<div class="empty-project-state"><span class="empty-project-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></span><strong>'+(this.projectSearch?'Nenhum projeto encontrado':'Seu primeiro projeto começa aqui')+'</strong><small>'+(this.projectSearch?'Tente outro nome.':'Use o botão “Novo projeto” no topo para começar sua criação.')+'</small></div>';
     $('project-list').innerHTML=matches.length?matches.map(card).join(''):empty;
     $('home-recent-list').innerHTML=sorted.length?sorted.slice(0,4).map(p=>'<button class="recent-project" data-open="'+esc(p.id)+'"><span class="recent-project-icon"><img src="./assets/icon.svg" alt=""></span><span><strong>'+esc(p.name)+'</strong><small>'+new Date(p.updatedAt||Date.now()).toLocaleDateString('pt-BR')+'</small></span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14m-6-6 6 6-6 6"/></svg></button>').join(''):'<div class="empty-project-state"><strong>Nenhum projeto criado</strong><small>Use “Novo projeto” no topo para começar sua primeira criação.</small></div>';
     document.querySelectorAll('[data-open]').forEach(b=>b.onclick=()=>this.openProject(b.dataset.open));
     document.querySelectorAll('[data-delete]').forEach(b=>b.onclick=()=>this.deleteProject(b.dataset.delete));
     document.querySelectorAll('[data-rename-project]').forEach(b=>b.onclick=()=>this.renameProject(b.dataset.renameProject));
-    document.querySelectorAll('[data-create-first]').forEach(b=>b.onclick=()=>this.createProject());
+
     this.renderSettings();
   }
 
