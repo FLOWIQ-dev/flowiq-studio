@@ -36,10 +36,9 @@ class StudioApp {
     $('btn-export').onclick = () => this.exportProject();
     $('btn-import').onclick = () => $('file-input').click();
     $('file-input').onchange = (e) => this.importProject(e.target.files?.[0]);
-    $('add-frame').onclick = () => this.add('Frame');
-    $('add-button').onclick = () => this.add('TextButton');
-    $('add-label').onclick = () => this.add('TextLabel');
-    $('add-image').onclick = () => this.add('ImageLabel');
+    $('open-instances').onclick = () => this.toggleInstanceLibrary();
+    $('close-instances').onclick = () => this.closeInstanceLibrary();
+    $('instance-library').querySelectorAll('[data-instance]').forEach(button => button.onclick = () => this.add(button.dataset.instance));
     $('tree-search').oninput = (e) => { this.treeQuery = e.target.value.trim().toLocaleLowerCase('pt-BR'); this.renderTree(); };
     $('btn-play').onclick = () => this.play();
     $('zoom-in').onclick = () => this.setZoom(this.zoom + 0.1);
@@ -297,7 +296,7 @@ class StudioApp {
     if(isRoot){add('Expandir tudo',()=>{this.model.getAll().forEach(n=>{if(n.children.length)this.expandedNodes.add(n.id);});this.renderTree();});add('Recolher tudo',()=>{this.expandedNodes.clear();this.renderTree();});}
     else{
       add('Selecionar',()=>this.select(node));
-      if(node.className==='Frame'){add('＋ Inserir Frame filho',()=>this.insertChild(node,'Frame'));add('＋ Inserir Botão',()=>this.insertChild(node,'TextButton'));add('＋ Inserir Texto',()=>this.insertChild(node,'TextLabel'));add('＋ Inserir Imagem',()=>this.insertChild(node,'ImageLabel'));}
+      add('＋ Inserir instância filha',()=>{this.select(node);this.toggleInstanceLibrary();});
       add('Renomear  ·  F2',()=>this.renameNode(node));
       add('Duplicar  ·  Ctrl+D',()=>{this.select(node);this.duplicateSelected();});
       sep();
@@ -317,6 +316,14 @@ class StudioApp {
     const value=prompt('Nome do objeto:',node.name);if(value===null)return;
     const name=value.trim().slice(0,64);if(!name)return;
     this.pushHistory();node.name=name;this.refresh();this.scheduleSave();
+  }
+  moveIntoFrame(node){
+    const targets=[this.model.root,...this.model.getAll().filter(candidate=>candidate!==node&&!this.isDescendant(candidate,node))];
+    const choices=targets.map((target,index)=>(index+1)+'. '+(target===this.model.root?'Projeto':target.name+' ('+target.className+')')).join('\\n');
+    const answer=prompt('Mover para qual objeto?\\n'+choices,'1');
+    if(answer===null)return;
+    const target=targets[Number(answer)-1];
+    if(target)this.reparentNode(node,target);
   }
   isDescendant(candidate,ancestor){
     for(let current=candidate?.parent;current;current=current.parent)if(current===ancestor)return true;
