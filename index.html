@@ -535,6 +535,10 @@ body{background:#11151b}
 .property-group{border:0;border-radius:9px;background:#202b37;padding:0 11px 11px}
 .field input,.field textarea,.field select{border:0;border-radius:7px;background:#131c25}
 .tree-row{border:0;border-radius:7px}
+.tree-disclosure{font-size:0!important;color:transparent!important}
+.tree-disclosure svg{width:14px;height:14px;display:block;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;transition:transform .12s}
+.tree-disclosure[aria-expanded=true] svg{transform:rotate(90deg)}
+.tree-disclosure.spacer svg{visibility:hidden}
 .tree-row.selected{background:#263d54}
 .btn{border:0;border-radius:7px;background:#263442}
 .btn.primary{background:#326fa7}
@@ -604,8 +608,8 @@ body{background:#11151b}
         <label class="setting-row"><span><strong>Alinhamento inteligente</strong><small>Guias ajudam a alinhar objetos durante o movimento.</small></span><input type="checkbox" id="pref-smart-align"></label>
       </section>
       <section class="settings-section"><div class="settings-section-heading"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/><circle cx="8" cy="7" r="2"/><circle cx="15" cy="12" r="2"/><circle cx="10" cy="17" r="2"/></svg><div><strong>Dados e armazenamento</strong><small>Importação, exportação e cópias de segurança</small></div></div>
-        <div class="storage-summary"><span>Projetos</span><strong id="settings-project-count">0</strong><span>Arquivos</span><strong id="settings-asset-count">0</strong><span>Espaço utilizado</span><strong id="settings-storage-size">0 B</strong></div>
-        <div class="settings-actions"><button class="settings-action" id="settings-export-backup"><span class="settings-action-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m-4-4 4 4 4-4"/><path d="M5 17v3h14v-3"/></svg></span><span><strong>Exportar tudo</strong><small>Projetos, biblioteca e configurações compatíveis.</small></span><svg class="settings-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></button>
+        <div class="storage-summary"><span>Projetos</span><strong id="settings-project-count">0</strong><span>Arquivos</span><strong id="settings-asset-count">0</strong><span>Tamanho dos arquivos</span><strong id="settings-storage-size">0 B</strong></div>
+        <div class="settings-actions"><button class="settings-action" id="settings-export-backup"><span class="settings-action-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m-4-4 4 4 4-4"/><path d="M5 17v3h14v-3"/></svg></span><span><strong>Exportar tudo</strong><small>Projetos, biblioteca e pastas organizadas.</small></span><svg class="settings-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></button>
         <button class="settings-action" id="settings-restore-backup"><span class="settings-action-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4m-4 4 4-4 4 4"/><path d="M5 14v6h14v-6"/></svg></span><span><strong>Restaurar backup</strong><small>Adicionar dados de um arquivo de backup.</small></span><svg class="settings-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></button>
         <button class="settings-action" id="settings-import-project"><span class="settings-action-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h7l2 2h7v12H4z"/><path d="M12 10v6m-3-3 3 3 3-3"/></svg></span><span><strong>Importar projeto</strong><small>Adicionar um projeto Flowiq existente.</small></span><svg class="settings-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></button>
         <button class="settings-action" id="settings-export-project"><span class="settings-action-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m-4-4 4 4 4-4"/><path d="M5 17v3h14v-3"/></svg></span><span><strong>Exportar projeto atual</strong><small>Salvar o projeto aberto e os arquivos que ele utiliza.</small></span><svg class="settings-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></button></div>
