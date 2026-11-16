@@ -61,7 +61,7 @@ class StudioApp {
     $('zoom-out').onclick = () => this.setZoom(this.zoom - 0.1);
     $('zoom-fit').onclick = () => this.fitCanvas();
     $('btn-grid').onclick = () => { this.gridVisible=!this.gridVisible; $('stage-scroll').classList.toggle('grid-hidden',!this.gridVisible); $('btn-grid').setAttribute('aria-pressed',String(this.gridVisible)); $('btn-grid').title=this.gridVisible?'Grade visível':'Grade oculta'; };
-    $('btn-align').onclick = () => { this.smartAlign=!this.smartAlign; $('btn-align').setAttribute('aria-pressed',String(this.smartAlign)); $('btn-align').title=this.smartAlign?'Alinhamento inteligente ativo. Segure Alt para posicionar livremente.':'Posicionamento livre ativo. Clique para ativar alinhamento inteligente.'; if(!this.smartAlign)this.clearAlignmentGuides(); };
+    const setPositionMode=enabled=>{this.smartAlign=enabled;$('btn-align').setAttribute('aria-pressed',String(enabled));$('btn-free').setAttribute('aria-pressed',String(!enabled));$('btn-align').classList.toggle('primary',enabled);$('btn-free').classList.toggle('primary',!enabled);$('btn-align').title=enabled?'Alinhamento inteligente ativo':'Ativar alinhamento inteligente';$('btn-free').title=enabled?'Ativar posicionamento totalmente livre':'Posicionamento totalmente livre ativo';if(!enabled)this.clearAlignmentGuides();};$('btn-align').onclick=()=>setPositionMode(true);$('btn-free').onclick=()=>setPositionMode(false);
 
     $('undo-action').onclick = () => this.undo();
     $('redo-action').onclick = () => this.redo();
@@ -463,11 +463,10 @@ class StudioApp {
     if(!d.moved){d.moved=true;d.historyRecorded=false;}
     if(!d.historyRecorded){this.pushHistory();d.historyRecorded=true;}
     let screenDX=event.clientX-d.startX,screenDY=event.clientY-d.startY;
-    if(d.mode==='move'&&this.smartAlign&&!event.altKey){
-      const aligned=this.getSmartAlignment(d,screenDX,screenDY);
-      screenDX=aligned.dx;screenDY=aligned.dy;
-      this.renderAlignmentGuides(aligned.guides);
-    }else if(d.mode==='move')this.clearAlignmentGuides();
+    if(d.mode==='move'){
+      const bounded=this.constrainMoveToHierarchy(d,screenDX,screenDY);screenDX=bounded.dx;screenDY=bounded.dy;
+      if(this.smartAlign&&!event.altKey){const aligned=this.getSmartAlignment(d,screenDX,screenDY);screenDX=aligned.dx;screenDY=aligned.dy;this.renderAlignmentGuides(aligned.guides);}else this.clearAlignmentGuides();
+    }
     let dx=screenDX/(d.scaleX||1),dy=screenDY/(d.scaleY||1);
     const p=d.node.properties;
     if(d.mode==='resize'){
@@ -486,8 +485,9 @@ class StudioApp {
     }else if(d.mode==='resize'){
       const dir=d.direction;
       const oldW=d.baseW,oldH=d.baseH;
-      const w=dir.includes('e')?Math.max(24,oldW+dx):dir.includes('w')?Math.max(24,oldW-dx):oldW;
-      const h=dir.includes('s')?Math.max(24,oldH+dy):dir.includes('n')?Math.max(24,oldH-dy):oldH;
+      let w=dir.includes('e')?Math.max(24,oldW+dx):dir.includes('w')?Math.max(24,oldW-dx):oldW;
+      let h=dir.includes('s')?Math.max(24,oldH+dy):dir.includes('n')?Math.max(24,oldH-dy):oldH;
+      if(this.smartAlign&&!event.altKey){const aligned=this.getSmartResize(d,w,h);w=aligned.w;h=aligned.h;this.renderAlignmentGuides(aligned.guides);}else this.clearAlignmentGuides();
       // Keep the opposite edge/corner fixed. The center moves by half the
       // size delta in the element's local axes, then is rotated into its parent.
       // The CSS layout origin also shifts by +delta/2 (old size minus new size).
@@ -510,34 +510,52 @@ class StudioApp {
     this.updateSelectionHandles();
   }
 
-  getSmartAlignment(d,screenDX,screenDY){
-    const tolerance=7;
-    const moving=d.startRect;
-    const movingX=[moving.left+screenDX,moving.left+moving.width/2+screenDX,moving.right+screenDX];
-    const movingY=[moving.top+screenDY,moving.top+moving.height/2+screenDY,moving.bottom+screenDY];
+  getAlignmentTargets(d){
+    const canvas=$('canvas'),targets=[],seen=new Set();
+    const add=(node,kind)=>{
+      const el=node===this.model.root?canvas:[...canvas.querySelectorAll('[data-node-id]')].find(item=>item.dataset.nodeId===node.id);
+      if(!el||node===d.node||d.node.getAll().includes(node)||seen.has(el))return;
+      const r=el.getBoundingClientRect();if(r.width<1||r.height<1)return;
+      targets.push({left:r.left,right:r.right,top:r.top,bottom:r.bottom,width:r.width,height:r.height,kind});seen.add(el);
+    };
     const parent=d.node.parent;
-    const targets=[];
-    if(parent){
-      parent.children.filter(node=>node!==d.node).forEach(node=>{
-        const el=[...$('canvas').querySelectorAll('[data-node-id]')].find(item=>item.dataset.nodeId===node.id);
-        if(el){const r=el.getBoundingClientRect();targets.push(r);}
-      });
-    }
-    if(parent===this.model.root){
-      const r=$('canvas').getBoundingClientRect();
-      targets.push({left:r.left,right:r.right,top:r.top,bottom:r.bottom,width:r.width,height:r.height});
-    }
-    let bestX=null,bestY=null;
-    for(const r of targets){
-      const xs=[r.left,r.left+r.width/2,r.right],ys=[r.top,r.top+r.height/2,r.bottom];
+    if(parent){parent.children.filter(node=>node!==d.node).forEach(node=>add(node,'sibling'));
+      for(let ancestor=parent;ancestor&&ancestor!==this.model.root;ancestor=ancestor.parent)add(ancestor,'parent');
+      if(parent===this.model.root)add(this.model.root,'canvas');}
+    return targets;
+  }
+
+  constrainMoveToHierarchy(d,dx,dy){
+    const parent=d.node.parent;if(!parent||parent===this.model.root)return {dx,dy};
+    const el=[...$('canvas').querySelectorAll('[data-node-id]')].find(item=>item.dataset.nodeId===parent.id);if(!el)return {dx,dy};
+    const r=el.getBoundingClientRect(),m=d.startRect;
+    return {dx:Math.max(r.left-m.left,Math.min(r.right-m.right,dx)),dy:Math.max(r.top-m.top,Math.min(r.bottom-m.bottom,dy))};
+  }
+
+  getSmartAlignment(d,screenDX,screenDY){
+    const tolerance=8,m=d.startRect,targets=this.getAlignmentTargets(d);
+    const movingX=[m.left+screenDX,m.left+m.width/2+screenDX,m.right+screenDX];
+    const movingY=[m.top+screenDY,m.top+m.height/2+screenDY];
+    movingY.push(m.bottom+screenDY);let bestX=null,bestY=null;
+    for(const r of targets){const xs=[r.left,r.left+r.width/2,r.right],ys=[r.top,r.top+r.height/2,r.bottom];
       for(const x of movingX)for(const target of xs){const delta=target-x;if(Math.abs(delta)<=tolerance&&(!bestX||Math.abs(delta)<Math.abs(bestX.delta)))bestX={delta,target};}
-      for(const y of movingY)for(const target of ys){const delta=target-y;if(Math.abs(delta)<=tolerance&&(!bestY||Math.abs(delta)<Math.abs(bestY.delta)))bestY={delta,target};}
-    }
-    if(bestX)screenDX+=bestX.delta;
-    if(bestY)screenDY+=bestY.delta;
+      for(const y of movingY)for(const target of ys){const delta=target-y;if(Math.abs(delta)<=tolerance&&(!bestY||Math.abs(delta)<Math.abs(bestY.delta)))bestY={delta,target};}}
+    if(bestX)screenDX+=bestX.delta;if(bestY)screenDY+=bestY.delta;
     return {dx:screenDX,dy:screenDY,guides:{x:bestX?.target??null,y:bestY?.target??null}};
   }
 
+  getSmartResize(d,w,h){
+    const tolerance=8,zoom=d.scaleX||1,m=d.startRect,dir=d.direction,targets=this.getAlignmentTargets(d);let guideX=null,guideY=null;
+    if(dir.includes('e')||dir.includes('w')){const edge=dir.includes('e')?m.right+(w-d.baseW)*zoom:m.left-(w-d.baseW)*zoom;let best=null;
+      for(const r of targets)for(const target of [r.left,r.left+r.width/2,r.right]){const delta=target-edge;if(Math.abs(delta)<=tolerance&&(!best||Math.abs(delta)<Math.abs(best.delta)))best={delta,target};}
+      if(best){w=Math.max(24,w+(dir.includes('e')?best.delta:-best.delta)/zoom);guideX=best.target;}}
+    if(dir.includes('n')||dir.includes('s')){const edge=dir.includes('s')?m.bottom+(h-d.baseH)*zoom:m.top-(h-d.baseH)*zoom;let best=null;
+      for(const r of targets)for(const target of [r.top,r.top+r.height/2,r.bottom]){const delta=target-edge;if(Math.abs(delta)<=tolerance&&(!best||Math.abs(delta)<Math.abs(best.delta)))best={delta,target};}
+      if(best){h=Math.max(24,h+(dir.includes('s')?best.delta:-best.delta)/zoom);guideY=best.target;}}
+    const parent=d.node.parent;if(parent&&parent!==this.model.root){const el=[...$('canvas').querySelectorAll('[data-node-id]')].find(item=>item.dataset.nodeId===parent.id);
+      if(el){const r=el.getBoundingClientRect();if(dir.includes('e'))w=Math.min(w,Math.max(24,d.baseW+(r.right-m.left)/zoom-d.baseW));if(dir.includes('w'))w=Math.min(w,Math.max(24,d.baseW+(m.right-r.left)/zoom-d.baseW));if(dir.includes('s'))h=Math.min(h,Math.max(24,d.baseH+(r.bottom-m.top)/zoom-d.baseH));if(dir.includes('n'))h=Math.min(h,Math.max(24,d.baseH+(m.bottom-r.top)/zoom-d.baseH));}}
+    return {w,h,guides:{x:guideX,y:guideY}};
+  }
   renderAlignmentGuides(guides){
     const canvas=$('canvas');
     let layer=canvas.querySelector('.alignment-guides');
