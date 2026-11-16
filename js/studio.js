@@ -36,6 +36,8 @@ class StudioApp {
     this.savePending = false;
     this.playMode = false;
     this.zoom = 1;
+    this.smartAlign = true;
+    this.gridVisible = true;
     this.undoStack = [];
     this.redoStack = [];
     this.bind();
@@ -58,6 +60,9 @@ class StudioApp {
     $('zoom-in').onclick = () => this.setZoom(this.zoom + 0.1);
     $('zoom-out').onclick = () => this.setZoom(this.zoom - 0.1);
     $('zoom-fit').onclick = () => this.fitCanvas();
+    $('btn-grid').onclick = () => { this.gridVisible=!this.gridVisible; $('stage-scroll').classList.toggle('grid-hidden',!this.gridVisible); $('btn-grid').setAttribute('aria-pressed',String(this.gridVisible)); $('btn-grid').title=this.gridVisible?'Grade visível':'Grade oculta'; };
+    $('btn-align').onclick = () => { this.smartAlign=!this.smartAlign; $('btn-align').setAttribute('aria-pressed',String(this.smartAlign)); $('btn-align').title=this.smartAlign?'Alinhamento inteligente ativo. Segure Alt para posicionar livremente.':'Posicionamento livre ativo. Clique para ativar alinhamento inteligente.'; if(!this.smartAlign)this.clearAlignmentGuides(); };
+
     $('undo-action').onclick = () => this.undo();
     $('redo-action').onclick = () => this.redo();
     $('clear-console').onclick = () => $('console-log').replaceChildren();
@@ -444,7 +449,7 @@ class StudioApp {
       baseX:Number(node.properties.positionX)||0,baseY:Number(node.properties.positionY)||0,
       baseW:Math.max(1,Number(node.properties.width)||1),baseH:Math.max(1,Number(node.properties.height)||1),
       baseRotation:Number(node.properties.rotation)||0,parentRotation:this.getParentRotation(node),startAngle,centerX,centerY,
-      moved:false,historyRecorded:false,scaleX:this.zoom||1,scaleY:this.zoom||1
+      moved:false,historyRecorded:false,scaleX:this.zoom||1,scaleY:this.zoom||1,startRect:el.getBoundingClientRect()
     };
     try{$('canvas').setPointerCapture(event.pointerId);}catch(_){}
     event.preventDefault();
@@ -457,7 +462,13 @@ class StudioApp {
     if(!d.moved&&distance<8)return;
     if(!d.moved){d.moved=true;d.historyRecorded=false;}
     if(!d.historyRecorded){this.pushHistory();d.historyRecorded=true;}
-    let dx=(event.clientX-d.startX)/(d.scaleX||1),dy=(event.clientY-d.startY)/(d.scaleY||1);
+    let screenDX=event.clientX-d.startX,screenDY=event.clientY-d.startY;
+    if(d.mode==='move'&&this.smartAlign&&!event.altKey){
+      const aligned=this.getSmartAlignment(d,screenDX,screenDY);
+      screenDX=aligned.dx;screenDY=aligned.dy;
+      this.renderAlignmentGuides(aligned.guides);
+    }else if(d.mode==='move')this.clearAlignmentGuides();
+    let dx=screenDX/(d.scaleX||1),dy=screenDY/(d.scaleY||1);
     const p=d.node.properties;
     if(d.mode==='resize'){
       const a=-(d.parentRotation+d.baseRotation)*Math.PI/180,c=Math.cos(a),s=Math.sin(a);
@@ -499,10 +510,51 @@ class StudioApp {
     this.updateSelectionHandles();
   }
 
+  getSmartAlignment(d,screenDX,screenDY){
+    const tolerance=7;
+    const moving=d.startRect;
+    const movingX=[moving.left+screenDX,moving.left+moving.width/2+screenDX,moving.right+screenDX];
+    const movingY=[moving.top+screenDY,moving.top+moving.height/2+screenDY,moving.bottom+screenDY];
+    const parent=d.node.parent;
+    const targets=[];
+    if(parent){
+      parent.children.filter(node=>node!==d.node).forEach(node=>{
+        const el=[...$('canvas').querySelectorAll('[data-node-id]')].find(item=>item.dataset.nodeId===node.id);
+        if(el){const r=el.getBoundingClientRect();targets.push(r);}
+      });
+    }
+    if(parent===this.model.root){
+      const r=$('canvas').getBoundingClientRect();
+      targets.push({left:r.left,right:r.right,top:r.top,bottom:r.bottom,width:r.width,height:r.height});
+    }
+    let bestX=null,bestY=null;
+    for(const r of targets){
+      const xs=[r.left,r.left+r.width/2,r.right],ys=[r.top,r.top+r.height/2,r.bottom];
+      for(const x of movingX)for(const target of xs){const delta=target-x;if(Math.abs(delta)<=tolerance&&(!bestX||Math.abs(delta)<Math.abs(bestX.delta)))bestX={delta,target};}
+      for(const y of movingY)for(const target of ys){const delta=target-y;if(Math.abs(delta)<=tolerance&&(!bestY||Math.abs(delta)<Math.abs(bestY.delta)))bestY={delta,target};}
+    }
+    if(bestX)screenDX+=bestX.delta;
+    if(bestY)screenDY+=bestY.delta;
+    return {dx:screenDX,dy:screenDY,guides:{x:bestX?.target??null,y:bestY?.target??null}};
+  }
+
+  renderAlignmentGuides(guides){
+    const canvas=$('canvas');
+    let layer=canvas.querySelector('.alignment-guides');
+    if(!layer){layer=document.createElement('div');layer.className='alignment-guides';canvas.append(layer);}
+    layer.replaceChildren();
+    const rect=canvas.getBoundingClientRect(),zoom=this.zoom||1;
+    if(guides.x!==null){const line=document.createElement('i');line.className='alignment-guide alignment-guide-x';line.style.left=((guides.x-rect.left)/zoom)+'px';layer.append(line);}
+    if(guides.y!==null){const line=document.createElement('i');line.className='alignment-guide alignment-guide-y';line.style.top=((guides.y-rect.top)/zoom)+'px';layer.append(line);}
+  }
+
+  clearAlignmentGuides(){ $('canvas')?.querySelector('.alignment-guides')?.remove(); }
+
   endDrag(event) {
     const d=this.drag;
     if(!d||(event?.pointerId!==undefined&&event.pointerId!==d.pointerId))return;
     this.drag=null;
+    this.clearAlignmentGuides();
     if(d.moved){
       if(d.mode!=='select'){this.renderSelectionHandles();this.scheduleSave();}
       return;
@@ -544,25 +596,23 @@ class StudioApp {
     const el=[...$('canvas').querySelectorAll('[data-node-id]')].find(item=>item.dataset.nodeId===this.selected.id);
     const area=$('stage-scroll');
     if(!el||!area)return;
-    const objectRect=el.getBoundingClientRect();
-    const areaRect=area.getBoundingClientRect();
-    const topRoom=objectRect.top-areaRect.top;
-    const bottomRoom=areaRect.bottom-objectRect.bottom;
-    const placement=topRoom>=124?'above':bottomRoom>=64?'below':'inside';
+    const objectRect=el.getBoundingClientRect(),areaRect=area.getBoundingClientRect();
+    const overlayElement=rotate.parentElement,canvas=$('canvas'),canvasRect=canvas.getBoundingClientRect();
+    const half=24,margin=half+5;
+    const minX=Math.min(areaRect.right-margin,areaRect.left+margin),maxX=Math.max(minX,areaRect.right-margin);
+    const minY=Math.min(areaRect.bottom-margin,areaRect.top+margin),maxY=Math.max(minY,areaRect.bottom-margin);
+    const cx=Math.max(minX,Math.min(maxX,objectRect.left+objectRect.width/2));
+    let cy=objectRect.top-half-10,placement='above';
+    if(cy<minY){cy=objectRect.bottom+half+10;placement='below';}
+    if(cy>maxY){cy=Math.max(minY,Math.min(maxY,objectRect.top+objectRect.height/2));placement='inside';}
+    cy=Math.max(minY,Math.min(maxY,cy));
+    const angle=this.getWorldRotation(this.selected)*Math.PI/180,cos=Math.cos(angle),sin=Math.sin(angle),zoom=this.zoom||1;
+    const sx=cx-(objectRect.left+objectRect.width/2),sy=cy-(objectRect.top+objectRect.height/2);
+    const localX=(sx*cos+sy*sin)/zoom,localY=(-sx*sin+sy*cos)/zoom;
     rotate.dataset.placement=placement;
-    if(placement==='below'){
-      rotate.style.top='calc(100% + 12px * var(--handle-scale,1))';
-      rotate.style.left='50%';
-      rotate.style.transform='translateX(-50%)';
-    }else if(placement==='inside'){
-      rotate.style.top='50%';
-      rotate.style.left='50%';
-      rotate.style.transform='translate(-50%,-50%)';
-    }else{
-      rotate.style.top='';
-      rotate.style.left='50%';
-      rotate.style.transform='translateX(-50%)';
-    }
+    rotate.style.left=(overlayElement.offsetWidth/2+localX)+'px';
+    rotate.style.top=(overlayElement.offsetHeight/2+localY)+'px';
+    rotate.style.transform='translate(-50%,-50%)';
   }
 
   renderSelectionHandles(){
@@ -580,6 +630,7 @@ class StudioApp {
   updateSelectionHandles(){
     const overlay=$('canvas').querySelector('.selection-box');if(!overlay||!this.drag)return;
     this.positionSelectionOverlay(overlay,this.drag.el);
+    this.updateRotateHandlePlacement();
   }
 
   pushHistory(){
