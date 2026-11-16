@@ -719,7 +719,7 @@ class StudioApp {
       row.style.paddingLeft=(5+depth*13)+'px';row.setAttribute('role','treeitem');row.setAttribute('aria-level',String(depth+1));row.setAttribute('aria-expanded',String(children.length>0&&!!expanded));
       if(!isRoot)row.setAttribute('aria-selected',String(this.selected===node));
       row.draggable=!isRoot;
-      const disclosure=document.createElement('button');disclosure.type='button';disclosure.className='tree-disclosure'+(children.length?'':' spacer');disclosure.textContent=children.length?(expanded?'▾':'▸'):'·';
+      const disclosure=document.createElement('button');disclosure.type='button';disclosure.className='tree-disclosure'+(children.length?'':' spacer');disclosure.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>';
       disclosure.setAttribute('aria-label',(expanded?'Recolher ':'Expandir ')+(isRoot?'Projeto':node.name));
       disclosure.onclick=event=>{event.stopPropagation();if(isRoot)return;if(this.expandedNodes.has(id))this.expandedNodes.delete(id);else this.expandedNodes.add(id);this.renderTree();};row.append(disclosure);
       const type=document.createElement('span');type.className='tree-type-icon'+(isRoot?' project-type-icon':'');type.innerHTML=iconMarkup(isRoot?'Project':node.className);type.title=isRoot?'Projeto':node.className;row.append(type);
