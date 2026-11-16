@@ -360,8 +360,8 @@ class StudioApp {
       const angle=(d.baseRotation||0)*Math.PI/180,cos=Math.cos(angle),sin=Math.sin(angle);
       const centerShiftX=cos*anchorLocalX-sin*anchorLocalY;
       const centerShiftY=sin*anchorLocalX+cos*anchorLocalY;
-      p.positionX=Math.round(d.baseX+centerShiftX-deltaW/2);
-      p.positionY=Math.round(d.baseY+centerShiftY-deltaH/2);
+      p.positionX=Math.round(d.baseX+centerShiftX+deltaW/2);
+      p.positionY=Math.round(d.baseY+centerShiftY+deltaH/2);
       p.width=Math.round(w);p.height=Math.round(h);
       d.el.style.left=p.positionX+'px';d.el.style.top=p.positionY+'px';d.el.style.width=p.width+'px';d.el.style.height=p.height+'px';
       const width=$('p-w'),height=$('p-h'),px=$('p-x'),py=$('p-y');
