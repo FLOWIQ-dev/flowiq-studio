@@ -19,6 +19,12 @@ const iconMarkup = (type) => {
 
 const color = (value, fallback) => /^#[0-9a-f]{6}$/i.test(String(value || '')) ? value : fallback;
 
+const hexToRgb = value => { const m=/^#?([0-9a-f]{6})$/i.exec(String(value||'')); if(!m)return {r:255,g:255,b:255}; const n=parseInt(m[1],16); return {r:(n>>16)&255,g:(n>>8)&255,b:n&255}; };
+const rgbToHex = (r,g,b) => '#'+[r,g,b].map(v=>Math.max(0,Math.min(255,Math.round(Number(v)||0))).toString(16).padStart(2,'0')).join('').toUpperCase();
+const rgbToHsv = (r,g,b) => {r/=255;g/=255;b/=255;const max=Math.max(r,g,b),min=Math.min(r,g,b),d=max-min;let h=0;if(d){if(max===r)h=((g-b)/d)%6;else if(max===g)h=(b-r)/d+2;else h=(r-g)/d+4;h*=60;if(h<0)h+=360;}return {h,s:max===0?0:d/max,v:max};};
+const hsvToHex = (h,s,v) => {const c=v*s,x=c*(1-Math.abs((h/60)%2-1)),m=v-c/2;let r=0,g=0,b=0;if(h<60){r=c;g=x;}else if(h<120){r=x;g=c;}else if(h<180){g=c;b=x;}else if(h<240){g=x;b=c;}else if(h<300){r=x;b=c;}else{r=c;b=x;}return rgbToHex((r+m)*255,(g+m)*255,(b+m)*255);};
+
+
 class StudioApp {
   constructor() {
     this.vfs = new VirtualFS();
@@ -60,6 +66,10 @@ class StudioApp {
   bind() {
     $('btn-new').onclick = () => this.createProject();
     $('btn-hub').onclick = async () => { await this.save(); await this.toHub(); };
+    $('btn-library-nav').onclick = async () => { await this.save(); $('workspace').classList.remove('active'); $('hub').classList.add('active'); await this.loadHub(); this.showHubView('library'); };
+    $('hub-return-project').onclick = () => this.returnToEditor();
+    $('preview-exit').onclick = () => this.play(false);
+    document.querySelectorAll('[data-workspace-nav]').forEach(button=>button.addEventListener('click',()=>{document.querySelectorAll('[data-workspace-nav]').forEach(item=>item.classList.toggle('active',item===button));}));
     $('settings-return-project').onclick = () => this.returnToEditor();
     $('btn-save').onclick = () => this.save();
     $('btn-settings').onclick = () => this.openSettingsFromEditor();
@@ -175,6 +185,7 @@ class StudioApp {
     $('hub').classList.remove('active');
     $('workspace').classList.add('active');
     this.refresh();
+    document.querySelectorAll('[data-workspace-nav]').forEach(item=>item.classList.toggle('active',item.dataset.workspaceNav==='editor'));
     this.applyPreferences();
     this.fitCanvas();
   }
@@ -202,6 +213,7 @@ class StudioApp {
 
   showHubView(view) {
     const active=['home','projects','library','settings'].includes(view)?view:'home';
+    $('hub-return-project').hidden=!this.project;
     for(const key of ['home','projects','library','settings']){
       $('hub-'+key+'-view').classList.toggle('active',key===active);
       $('hub-tab-'+key).setAttribute('aria-selected',String(key===active));
@@ -218,6 +230,7 @@ class StudioApp {
     const folderSelect=$('asset-folder-filter'),previous=this.assetFolder;
     folderSelect.innerHTML='<option value="">Todas as pastas</option>'+folders.map(f=>'<option value="'+esc(f)+'">'+esc(f)+'</option>').join('');
     if(folders.includes(previous))folderSelect.value=previous;else this.assetFolder='';
+    this.enhanceSelects($('hub-library-view'));
     const filtered=this.assets.filter(a=>(!this.assetFolder||a.folder===this.assetFolder)&&(!this.assetSearch||(a.name+' '+a.mime+' '+(a.folder||'')).toLocaleLowerCase('pt-BR').includes(this.assetSearch)));
     const list=$('asset-list');
     if(!filtered.length){
@@ -316,6 +329,7 @@ class StudioApp {
     $('browser-asset-search').oninput=e=>{state.query=e.target.value.trim().toLocaleLowerCase('pt-BR');this.renderProjectLibraryBrowser(node);const input=$('browser-asset-search');input.focus();input.setSelectionRange(input.value.length,input.value.length);};
     $('browser-asset-folder').onchange=e=>{state.folder=e.target.value;this.renderProjectLibraryBrowser(node);};
     $('browser-asset-upload').onclick=()=>$('asset-file-input').click();
+    this.enhanceSelects($('modal-content'));
     $('modal-content').querySelectorAll('[data-library-preview]').forEach(b=>b.onclick=()=>this.previewAsset(b.dataset.libraryPreview,true,node));
     $('modal-content').querySelectorAll('[data-library-use]').forEach(b=>b.onclick=()=>this.applyImageAsset(node,b.dataset.libraryUse));
     $('modal-content').querySelectorAll('[data-library-rename]').forEach(b=>b.onclick=async()=>{await this.renameAsset(b.dataset.libraryRename);if(this.assetBrowser)this.renderProjectLibraryBrowser(node);});
@@ -454,6 +468,7 @@ class StudioApp {
       const finish=result=>{if(this.modalResolve!==resolve)return;this.modalResolve=null;$('modal').classList.remove('open');resolve(result);};
       $('studio-dialog-cancel').onclick=()=>finish(null);
       $('studio-dialog-ok').onclick=()=>finish(select.value);
+      this.enhanceSelects($('modal-content'));
       requestAnimationFrame(()=>select.focus());
     });
   }
@@ -500,6 +515,7 @@ class StudioApp {
       $('hub').classList.remove('active'); $('workspace').classList.add('active');
       $('btn-save').disabled = false; $('btn-export').disabled = false;
       $('project-title').textContent = p.name;
+      document.querySelectorAll('[data-workspace-nav]').forEach(item=>item.classList.toggle('active',item.dataset.workspaceNav==='editor'));
       this.closePanels(); this.refresh(); this.applyPreferences();
 
     } catch (e) { this.log('Não foi possível abrir o projeto: '+e.message,'error'); }
@@ -749,7 +765,7 @@ class StudioApp {
   }
 
   renderCanvas() {
-    const canvas = $('canvas'); canvas.replaceChildren();
+    const canvas = $(this.playMode?'preview-canvas':'canvas'); if(!canvas)return; canvas.replaceChildren();
     const renderNode = (node, parentEl) => {
       if (node.properties.visible === false) return;
       const p = node.properties;
@@ -790,7 +806,7 @@ class StudioApp {
     };
     this.model.root.children.forEach(node => renderNode(node,canvas));
     if (!canvas.children.length) canvas.innerHTML = '<div class="empty-canvas">Seu palco está vazio.<br>Adicione um Frame para começar.</div>';
-    this.renderSelectionHandles();
+    if(!this.playMode)this.renderSelectionHandles();
   }
 
   getParentRotation(node) {
@@ -1037,7 +1053,7 @@ class StudioApp {
     const box=$('inspector-content'),node=this.selected;
     if(!node){box.innerHTML='<p class="muted">Selecione um objeto no Explorer ou no palco para editar suas propriedades.</p>';return;}
     const p=node.properties,isFrame=node.className==='Frame',isImage=node.className==='ImageLabel',isText=node.className==='TextButton'||node.className==='TextLabel';
-    const field=(label,id,value,type='text',attrs='')=>'<div class="field"><label for="'+id+'">'+label+'</label><input id="'+id+'" type="'+type+'" value="'+esc(value??'')+'" '+attrs+'></div>';
+    const field=(label,id,value,type='text',attrs='')=>type==='color'?'<div class="field"><label>'+label+'</label>'+this.colorControlMarkup(id,color(value,'#ffffff'))+'</div>':'<div class="field"><label for="'+id+'">'+label+'</label><input id="'+id+'" type="'+type+'" value="'+esc(value??'')+'" '+attrs+'></div>';
     const select=(label,id,value,options)=>'<div class="field"><label for="'+id+'">'+label+'</label><select id="'+id+'">'+options.map(([v,l])=>'<option value="'+v+'" '+(value===v?'selected':'')+'>'+l+'</option>').join('')+'</select></div>';
     box.innerHTML=`
       <div class="properties-object-heading"><span class="tree-type-icon">${iconMarkup(node.className)}</span><div><strong>${esc(node.name)}</strong><small>${esc(node.className)}</small></div></div>
@@ -1079,6 +1095,36 @@ class StudioApp {
     $('p-visible').onfocus=()=>this.pushHistory();$('p-visible').onchange=e=>{p.visible=e.target.checked;this.renderCanvas();this.scheduleSave();};
     $('delete-node').onclick=()=>this.deleteSelected();$('duplicate-node').onclick=()=>this.duplicateSelected();
     this.renderEventEditor(node,box);
+    this.bindColorControls(box,setters);
+    this.enhanceSelects(box);
+  }
+
+  colorControlMarkup(id,value){
+    const rgb=hexToRgb(value),hsv=rgbToHsv(rgb.r,rgb.g,rgb.b);
+    return '<div class="studio-color-control" data-color-id="'+id+'" data-color-value="'+value+'"><button type="button" class="studio-color-trigger" data-color-toggle aria-label="Abrir seletor de cor"><span class="studio-color-swatch" style="--swatch:'+value+'"></span></button><code class="studio-color-value">'+value+'</code><div class="studio-color-popover" data-color-popover hidden><div class="color-square" data-color-square style="--hue-color:'+hsvToHex(hsv.h,1,1)+';--sat:'+(hsv.s*100)+'%;--val:'+((1-hsv.v)*100)+'%"></div><div class="color-hue-row"><span>Matiz</span><input data-color-hue type="range" min="0" max="359" value="'+Math.round(hsv.h)+'"></div><div class="color-palette">'+['#FFFFFF','#D9E2F0','#94A3B8','#475569','#111827','#000000','#F87171','#EF4444','#F97316','#F59E0B','#FDE047','#84CC16','#22C55E','#14B8A6','#06B6D4','#3B82F6','#6366F1','#8B5CF6','#D946EF','#EC4899','#A16207','#854D0E','#166534','#155E75'].map(c=>'<button type="button" data-color-preset="'+c+'" style="--swatch:'+c+'" aria-label="'+c+'"></button>').join('')+'</div><div class="color-values"><label>HEX<input data-color-hex maxlength="7" value="'+value+'" spellcheck="false"></label><label>Cor atual<input data-color-preview value="'+value+'" readonly></label></div><div class="color-rgb">'+['r','g','b'].map(key=>'<label>'+key.toUpperCase()+'<input data-color-rgb="'+key+'" type="number" min="0" max="255" value="'+rgb[key]+'"></label>').join('')+'</div></div></div>';
+  }
+
+  bindColorControls(root,setters={}){
+    root.querySelectorAll('[data-color-id]').forEach(control=>{if(control.dataset.bound==='true')return;control.dataset.bound='true';
+      const id=control.dataset.colorId,pop=control.querySelector('[data-color-popover]'),square=control.querySelector('[data-color-square]'),hue=control.querySelector('[data-color-hue]'),hex=control.querySelector('[data-color-hex]'),preview=control.querySelector('[data-color-preview]'),rgbInputs=[...control.querySelectorAll('[data-color-rgb]')],trigger=control.querySelector('[data-color-toggle]');
+      let current=control.dataset.colorValue||'#FFFFFF',rgb=hexToRgb(current),hsv=rgbToHsv(rgb.r,rgb.g,rgb.b);
+      const update=value=>{value=color(value,'#FFFFFF').toUpperCase();current=value;rgb=hexToRgb(value);hsv=rgbToHsv(rgb.r,rgb.g,rgb.b);control.dataset.colorValue=value;control.querySelector('.studio-color-swatch').style.setProperty('--swatch',value);control.querySelector('.studio-color-value').textContent=value;hex.value=value;preview.value=value;rgbInputs.forEach(input=>input.value=rgb[input.dataset.colorRgb]);hue.value=Math.round(hsv.h);square.style.setProperty('--hue-color',hsvToHex(hsv.h,1,1));square.style.setProperty('--sat',(hsv.s*100)+'%');square.style.setProperty('--val',((1-hsv.v)*100)+'%');if(setters[id])setters[id](value);this.renderCanvas();this.scheduleSave();};
+      const place=()=>{const r=trigger.getBoundingClientRect(),w=Math.min(300,innerWidth-24),left=Math.max(12,Math.min(innerWidth-w-12,r.left)),height=pop.offsetHeight||360,top=r.bottom+8+height<innerHeight?r.bottom+8:Math.max(12,r.top-height-8);pop.style.left=left+'px';pop.style.top=top+'px';};
+      trigger.onclick=()=>{const open=pop.hidden;document.querySelectorAll('[data-color-popover]').forEach(p=>p.hidden=true);pop.hidden=!open;if(open)requestAnimationFrame(place);};
+      control.querySelectorAll('[data-color-preset]').forEach(button=>button.onclick=()=>update(button.dataset.colorPreset));
+      hue.oninput=()=>{hsv.h=Number(hue.value);update(hsvToHex(hsv.h,hsv.s,hsv.v));};hex.onchange=()=>{if(/^#[0-9a-f]{6}$/i.test(hex.value))update(hex.value);else hex.value=current;};
+      rgbInputs.forEach(input=>input.onchange=()=>update(rgbToHex(...['r','g','b'].map(k=>Number(control.querySelector('[data-color-rgb="'+k+'"]').value)))));
+      const setSquare=e=>{const r=square.getBoundingClientRect();hsv.s=Math.max(0,Math.min(1,(e.clientX-r.left)/r.width));hsv.v=1-Math.max(0,Math.min(1,(e.clientY-r.top)/r.height));update(hsvToHex(hsv.h,hsv.s,hsv.v));};let dragging=false;square.onpointerdown=e=>{dragging=true;square.setPointerCapture(e.pointerId);setSquare(e);};square.onpointermove=e=>{if(dragging)setSquare(e);};square.onpointerup=()=>dragging=false;square.onpointercancel=()=>dragging=false;
+    });
+  }
+
+  enhanceSelects(root){
+    root.querySelectorAll('select').forEach(select=>{let wrap=select.closest('.studio-select'),trigger,menu,label;
+      if(!wrap){wrap=document.createElement('div');wrap.className='studio-select';select.parentNode.insertBefore(wrap,select);wrap.appendChild(select);select.classList.add('studio-select-native');trigger=document.createElement('button');trigger.type='button';trigger.className='studio-select-trigger';trigger.setAttribute('aria-haspopup','listbox');trigger.setAttribute('aria-expanded','false');label=document.createElement('span');trigger.append(label);menu=document.createElement('div');menu.className='studio-select-menu';menu.hidden=true;menu.setAttribute('role','listbox');wrap.append(trigger,menu);trigger.onclick=()=>{const open=menu.hidden;document.querySelectorAll('.studio-select-menu').forEach(m=>m.hidden=true);menu.hidden=!open;if(open){const r=trigger.getBoundingClientRect(),w=r.width,top=Math.min(innerHeight-230,r.bottom+5);menu.style.left=Math.max(8,Math.min(innerWidth-w-8,r.left))+'px';menu.style.top=Math.max(8,top)+'px';menu.style.width=w+'px';trigger.setAttribute('aria-expanded','true');}else trigger.setAttribute('aria-expanded','false');};
+      }else{trigger=wrap.querySelector('.studio-select-trigger');menu=wrap.querySelector('.studio-select-menu');label=trigger.querySelector('span');}
+      menu.replaceChildren();[...select.options].forEach(option=>{const item=document.createElement('button');item.type='button';item.className='studio-select-option';item.textContent=option.textContent;item.setAttribute('role','option');item.onclick=()=>{select.value=option.value;select.dispatchEvent(new Event('change',{bubbles:true}));menu.hidden=true;trigger.setAttribute('aria-expanded','false');};menu.append(item);});
+      const sync=()=>{label.textContent=select.selectedOptions[0]?.textContent||'Selecionar';menu.querySelectorAll('button').forEach((b,i)=>b.setAttribute('aria-selected',String(select.options[i]?.value===select.value)));};select.addEventListener('change',sync);sync();
+    });
   }
 
   async chooseImageAsset(node) { await this.openProjectLibrary(node); }
@@ -1111,6 +1157,7 @@ class StudioApp {
         this.pushHistory();this.project.events.push({id:this.makeId(),nodeId:node.id,event:'click',actions:[]});
         this.renderEventEditor(node,box);this.scheduleSave();
       };
+      this.enhanceSelects(host);
       return;
     }
     if(!Array.isArray(event.actions))event.actions=[];
@@ -1154,6 +1201,7 @@ class StudioApp {
         this.renderEventEditor(node,box);this.scheduleSave();
       };
     });
+    this.enhanceSelects(host);
   }
 
   deleteSelected() {
@@ -1300,6 +1348,7 @@ class StudioApp {
     else { this.runtime.stop(); this.model = this.runtime.model; }
     this.closePanels();
     $('workspace').classList.toggle('preview-mode',this.playMode);
+    $('preview-window').classList.toggle('open',this.playMode);$('preview-window').setAttribute('aria-hidden',String(!this.playMode));$('preview-window-project').textContent=this.project.name||'Projeto';if(this.playMode)$('preview-canvas').style.zoom=String(this.zoom);
     $('btn-play').innerHTML=this.playMode?'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5 3 12l6 7M4 12h10a6 6 0 0 1 0 12h-2"/></svg><span>Editor</span>':'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8 5 11 7-11 7z"/></svg><span>Prévia</span>';
     const modeLabel=$('stage-mode-label');
     if(modeLabel)modeLabel.textContent=this.playMode?'PRÉ-VISUALIZAÇÃO':'PALCO 2D';
