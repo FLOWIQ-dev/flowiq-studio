@@ -51,8 +51,8 @@ class StudioApp {
     });
     $('canvas').addEventListener('pointerdown', (e) => this.startDrag(e));
     document.addEventListener('pointermove', (e) => this.moveDrag(e));
-    document.addEventListener('pointerup', () => this.endDrag());
-    document.addEventListener('pointercancel', () => this.endDrag());
+    document.addEventListener('pointerup', (e) => this.endDrag(e));
+    document.addEventListener('pointercancel', (e) => this.endDrag(e));
     window.addEventListener('resize', () => { this.closePanels(); this.renderSelectionHandles(); });
     document.addEventListener('keydown', (e) => {
       const editingText = ['INPUT','TEXTAREA'].includes(document.activeElement?.tagName);
@@ -240,6 +240,8 @@ class StudioApp {
       el.style.fontSize = Math.max(8,Number(p.fontSize)||14)+'px';
       el.style.border = node.className === 'TextButton' ? '1px solid #ffffff30' : 'none';
       el.style.position = 'absolute';
+      el.style.transform = 'rotate('+(Number(p.rotation)||0)+'deg)';
+      el.style.transformOrigin = 'center center';
       if (node.className === 'Frame') { el.style.display='block'; el.style.overflow='hidden'; el.style.outlineOffset='2px'; }
       el.textContent = p.text || (node.className === 'Frame' ? '' : node.name);
       if (node.className === 'TextButton' && this.playMode) {
@@ -256,51 +258,53 @@ class StudioApp {
   }
 
   startDrag(event) {
-    if (!this.project || this.playMode || event.button !== 0) return;
-    const isMobile = window.matchMedia('(max-width: 760px)').matches;
+    if (!this.project || this.playMode || event.button !== 0 || this.drag) return;
     const handle=event.target.closest('[data-resize]');
-    const el=handle?[...$('canvas').querySelectorAll('[data-node-id]')].find(item=>item.dataset.nodeId===handle.dataset.nodeId):event.target.closest('[data-node-id]');
+    const rotate=event.target.closest('[data-rotate]');
+    const el=(handle||rotate)?[...$('canvas').querySelectorAll('[data-node-id]')].find(item=>item.dataset.nodeId===(handle||rotate).dataset.nodeId):event.target.closest('[data-node-id]');
     if(!el)return;
     const node=this.model.find(el.dataset.nodeId);if(!node)return;
-    if(isMobile && !handle && event.pointerType==='touch'){
-      if(this.selected !== node){this.select(node);return;}
-      if(!this.allowTouchDrag){
-        clearTimeout(this.pendingTouch?.timer);
-        const pending={node,el,event,pointerId:event.pointerId};
-        this.pendingTouch=pending;
-        try{$('canvas').setPointerCapture(event.pointerId);}catch(_){}
-        pending.timer=setTimeout(()=>{
-          if(this.pendingTouch!==pending)return;
-          this.pendingTouch=null;
-          this.allowTouchDrag=true;
-          this.startDrag(event);
-          this.allowTouchDrag=false;
-        },260);
-        return;
-      }
+    if(this.selected!==node){
+      this.selected=node;
+      this.renderTree();this.renderInspector();this.renderCanvas();
     }
-    this.selected=node;
-    const parent=el.parentElement,parentRect=parent.getBoundingClientRect();
-    try{$('canvas').setPointerCapture(event.pointerId);}catch(_){}
-    this.drag={node,el,mode:handle?'resize':'move',direction:handle?.dataset.resize||'',startX:event.clientX,startY:event.clientY,
+    const activeEl=[...$('canvas').querySelectorAll('[data-node-id]')].find(item=>item.dataset.nodeId===node.id);
+    if(!activeEl)return;
+    const parent=activeEl.parentElement,parentRect=parent.getBoundingClientRect();
+    const rect=activeEl.getBoundingClientRect();
+    const centerX=rect.left+rect.width/2,centerY=rect.top+rect.height/2;
+    const startAngle=Math.atan2(event.clientY-centerY,event.clientX-centerX)*180/Math.PI;
+    this.drag={
+      node,el:activeEl,pointerId:event.pointerId,
+      mode:rotate?'rotate':handle?'resize':'move',
+      direction:handle?.dataset.resize||'',
+      startX:event.clientX,startY:event.clientY,
       baseX:Number(node.properties.positionX)||0,baseY:Number(node.properties.positionY)||0,
       baseW:Math.max(1,Number(node.properties.width)||1),baseH:Math.max(1,Number(node.properties.height)||1),
-      moved:false,historyRecorded:false,scaleX:parentRect.width/(parent.clientWidth||parentRect.width),scaleY:parentRect.height/(parent.clientHeight||parentRect.height)};
-    this.renderTree();this.renderInspector();this.renderSelectionHandles();event.preventDefault();
+      baseRotation:Number(node.properties.rotation)||0,startAngle,
+      centerX,centerY,moved:false,historyRecorded:false,
+      scaleX:parentRect.width/(parent.clientWidth||parentRect.width),
+      scaleY:parentRect.height/(parent.clientHeight||parentRect.height)
+    };
+    try{$('canvas').setPointerCapture(event.pointerId);}catch(_){}
+    event.preventDefault();
   }
 
   moveDrag(event) {
-    if(this.pendingTouch){
-      const p=this.pendingTouch,dx=event.clientX-p.event.clientX,dy=event.clientY-p.event.clientY;
-      if(Math.hypot(dx,dy)>8){clearTimeout(p.timer);this.pendingTouch=null;}
-      return;
-    }
-    if(!this.drag)return;
-    const d=this.drag,dx=(event.clientX-d.startX)/(d.scaleX||1),dy=(event.clientY-d.startY)/(d.scaleY||1);
-    if(Math.abs(dx)+Math.abs(dy)>3)d.moved=true;if(!d.moved)return;
+    const d=this.drag;if(!d||event.pointerId!==d.pointerId)return;
+    const distance=Math.hypot(event.clientX-d.startX,event.clientY-d.startY);
+    if(!d.moved&&distance<7)return;
+    if(!d.moved){d.moved=true;d.historyRecorded=false;}
     if(!d.historyRecorded){this.pushHistory();d.historyRecorded=true;}
+    const dx=(event.clientX-d.startX)/(d.scaleX||1),dy=(event.clientY-d.startY)/(d.scaleY||1);
     const p=d.node.properties;
-    if(d.mode==='resize'){
+    if(d.mode==='rotate'){
+      const angle=Math.atan2(event.clientY-d.centerY,event.clientX-d.centerX)*180/Math.PI;
+      let rotation=d.baseRotation+angle-d.startAngle;
+      rotation=((rotation%360)+360)%360;
+      p.rotation=Math.round(rotation);
+      d.el.style.transform='rotate('+p.rotation+'deg)';
+    }else if(d.mode==='resize'){
       const dir=d.direction;let x=d.baseX,y=d.baseY,w=d.baseW,h=d.baseH;
       if(dir.includes('e'))w=Math.max(24,d.baseW+dx);
       if(dir.includes('s'))h=Math.max(24,d.baseH+dy);
@@ -318,7 +322,22 @@ class StudioApp {
     this.updateSelectionHandles();
   }
 
-  endDrag(){if(this.pendingTouch){clearTimeout(this.pendingTouch.timer);this.pendingTouch=null;}if(!this.drag)return;const moved=this.drag.moved;this.drag=null;if(moved){this.updateSelectionHandles();this.scheduleSave();}}
+  endDrag(event) {
+    const d=this.drag;if(!d||(event?.pointerId!==undefined&&event.pointerId!==d.pointerId))return;
+    this.drag=null;
+    if(d.moved){this.updateSelectionHandles();this.scheduleSave();return;}
+    if(event?.type==='pointerup'&&event.pointerType==='touch'){
+      const now=Date.now(),last=this.lastTap;
+      if(last&&last.id===d.node.id&&now-last.time<360){
+        clearTimeout(this.lastTapTimer);this.lastTap=null;
+        this.selected=d.node;this.renderInspector();this.togglePanel('inspector');
+      }else{
+        this.lastTap={id:d.node.id,time:now};
+        clearTimeout(this.lastTapTimer);
+        this.lastTapTimer=setTimeout(()=>{this.lastTap=null;},380);
+      }
+    }
+  }
 
   renderSelectionHandles(){
     const canvas=$('canvas');canvas.querySelector('.selection-box')?.remove();
@@ -327,7 +346,8 @@ class StudioApp {
     const overlay=document.createElement('div'),cr=canvas.getBoundingClientRect(),r=el.getBoundingClientRect();
     overlay.className='selection-box';overlay.style.left=((r.left-cr.left)/this.zoom)+'px';overlay.style.top=((r.top-cr.top)/this.zoom)+'px';
     overlay.style.width=(r.width/this.zoom)+'px';overlay.style.height=(r.height/this.zoom)+'px';
-    ['nw','n','ne','e','se','s','sw','w'].forEach(dir=>{const h=document.createElement('button');h.type='button';h.className='resize-handle';h.dataset.resize=dir;h.dataset.nodeId=this.selected.id;h.setAttribute('aria-label','Redimensionar '+dir);h.setAttribute('tabindex','0');overlay.append(h);});
+    ['nw','n','ne','e','se','s','sw','w'].forEach(dir=>{const h=document.createElement('button');h.type='button';h.className='resize-handle';h.dataset.resize=dir;h.dataset.nodeId=this.selected.id;h.setAttribute('aria-label','Redimensionar '+dir);overlay.append(h);});
+    const rotate=document.createElement('button');rotate.type='button';rotate.className='rotate-handle';rotate.dataset.rotate='true';rotate.dataset.nodeId=this.selected.id;rotate.setAttribute('aria-label','Rotacionar objeto');rotate.textContent='↻';overlay.append(rotate);
     canvas.append(overlay);
   }
 
