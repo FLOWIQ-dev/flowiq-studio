@@ -3,20 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Flowiq Studio - Mobile OS Engine</title>
+    <title>Flowiq Studio - v0.9 Pro</title>
     <style>
         :root {
-            --bg-base: #0f1117;
-            --bg-surface: #161b22;
-            --bg-card: #1f242d;
+            --bg-base: #090d16;
+            --bg-surface: #111827;
+            --bg-card: #1f2937;
             --border-subtle: rgba(255, 255, 255, 0.08);
             --accent: #6366f1;
             --accent-hover: #4f46e5;
-            --text-main: #f1f5f9;
+            --text-main: #f8fafc;
             --text-muted: #94a3b8;
             --success: #10b981;
-            --radius-lg: 14px;
-            --radius-md: 8px;
+            --danger: #ef4444;
+            --radius-lg: 16px;
+            --radius-md: 10px;
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; -webkit-tap-highlight-color: transparent; }
@@ -32,99 +33,102 @@
         header { 
             background: var(--bg-surface); 
             border-bottom: 1px solid var(--border-subtle); 
-            padding: 8px 16px; 
+            padding: 10px 16px; 
             display: flex; justify-content: space-between; align-items: center; 
-            flex-shrink: 0; height: 48px; z-index: 10;
+            flex-shrink: 0; height: 50px; z-index: 50;
         }
 
-        h1 { font-size: 0.9rem; font-weight: 600; color: var(--text-main); display: flex; align-items: center; gap: 6px; }
+        h1 { font-size: 0.95rem; font-weight: 700; color: var(--text-main); display: flex; align-items: center; gap: 8px; }
 
-        .header-actions { display: flex; align-items: center; gap: 8px; }
+        .header-badge { font-size: 0.6rem; color: var(--accent); background: rgba(99, 102, 241, 0.15); padding: 2px 6px; border-radius: 6px; font-weight: 600; }
         
         .fs-btn {
             background: var(--bg-card); border: 1px solid var(--border-subtle);
-            color: var(--text-main); padding: 5px 10px; border-radius: 6px; font-size: 0.7rem; cursor: pointer;
+            color: var(--text-main); padding: 6px 12px; border-radius: 8px; font-size: 0.75rem; cursor: pointer; font-weight: 500;
         }
 
         .main-container { flex: 1; display: flex; flex-direction: column; overflow: hidden; position: relative; }
 
-        .screen { display: none; flex: 1; flex-direction: column; overflow: hidden; height: 100%; }
-        .screen.active { display: flex; }
+        .screen { display: none; flex: 1; flex-direction: column; overflow: hidden; height: 100%; width: 100%; position: absolute; top: 0; left: 0; background: var(--bg-base); }
+        .screen.active { display: flex; z-index: 10; }
 
-        .hub-screen { padding: 14px; gap: 12px; overflow-y: auto; }
-
-        .card { background: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); padding: 14px; }
+        /* HUB */
+        .hub-screen { padding: 16px; gap: 14px; overflow-y: auto; }
+        .card { background: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); padding: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.3); }
 
         .btn { 
             background: var(--accent); color: white; border: none; padding: 12px; 
             border-radius: var(--radius-md); font-weight: 600; font-size: 0.85rem; width: 100%; cursor: pointer; text-align: center; 
+            display: flex; align-items: center; justify-content: center; gap: 6px; box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
         }
-        .btn:active { background: var(--accent-hover); transform: scale(0.99); }
-        .btn-secondary { background: var(--bg-card); border: 1px solid var(--border-subtle); color: var(--text-main); }
+        .btn:active { background: var(--accent-hover); transform: scale(0.98); }
+        .btn-secondary { background: var(--bg-card); border: 1px solid var(--border-subtle); color: var(--text-main); box-shadow: none; }
 
-        .project-list { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
+        .project-list { display: flex; flex-direction: column; gap: 10px; margin-top: 8px; }
         .project-item { 
             background: var(--bg-card); border: 1px solid var(--border-subtle); 
-            padding: 10px 14px; border-radius: var(--radius-md); display: flex; justify-content: space-between; align-items: center; 
+            padding: 12px 14px; border-radius: var(--radius-md); display: flex; justify-content: space-between; align-items: center; 
         }
 
-        /* Workspace */
+        /* WORKSPACE */
         .workspace-header { 
-            background: var(--bg-surface); padding: 6px 14px; display: flex; justify-content: space-between; align-items: center; 
-            border-bottom: 1px solid var(--border-subtle); font-size: 0.75rem; flex-shrink: 0; height: 42px; 
+            background: var(--bg-surface); padding: 8px 16px; display: flex; justify-content: space-between; align-items: center; 
+            border-bottom: 1px solid var(--border-subtle); font-size: 0.8rem; flex-shrink: 0; height: 48px; 
         }
         
         .workspace-body { 
-            flex: 1; position: relative; background: #090b10; 
-            display: flex; justify-content: center; align-items: center; overflow: hidden; padding: 8px;
+            flex: 1; position: relative; background: #05070b; 
+            display: flex; justify-content: center; align-items: center; overflow: hidden; padding: 10px;
         }
 
         .phone-viewport { 
-            width: 100%; max-width: 280px; height: 100%; max-height: 480px; 
-            background: #000; border: 2px solid #21262d; border-radius: 20px; position: relative; overflow: hidden; 
-            box-shadow: 0 8px 24px rgba(0,0,0,0.5); 
+            width: 100%; max-width: 300px; height: 100%; max-height: 520px; 
+            background: #000; border: 3px solid #1f2937; border-radius: 24px; position: relative; overflow: hidden; 
+            box-shadow: 0 12px 32px rgba(0,0,0,0.7); 
         }
 
         .ui-element { 
             position: absolute; display: flex; align-items: center; justify-content: center; 
-            font-size: 0.7rem; color: white; box-sizing: border-box; border-radius: 6px; cursor: pointer;
+            font-size: 0.75rem; font-weight: 600; color: white; box-sizing: border-box; border-radius: 8px; cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
         }
-        .ui-element.selected { outline: 2px solid #818cf8; outline-offset: 1px; }
+        .ui-element.selected { outline: 2px solid #818cf8; outline-offset: 2px; }
 
         /* Navegação Inferior */
         .studio-nav { 
             background: var(--bg-surface); border-top: 1px solid var(--border-subtle); 
-            display: flex; justify-content: space-around; align-items: center; padding: 6px 0; flex-shrink: 0; height: 55px; z-index: 100;
+            display: flex; justify-content: space-around; align-items: center; padding: 6px 0; flex-shrink: 0; height: 60px; z-index: 100;
         }
-        .nav-btn { background: none; border: none; color: var(--text-muted); font-size: 0.65rem; font-weight: 500; display: flex; flex-direction: column; align-items: center; gap: 2px; cursor: pointer; padding: 4px 10px; }
+        .nav-btn { background: none; border: none; color: var(--text-muted); font-size: 0.7rem; font-weight: 500; display: flex; flex-direction: column; align-items: center; gap: 3px; cursor: pointer; padding: 4px 12px; }
         .nav-btn.active { color: var(--accent); }
 
-        /* Gavetas Deslizantes Otimizadas */
+        /* Gavetas Deslizantes */
         .studio-drawer { 
-            position: absolute; bottom: 0; left: 0; width: 100%; max-height: 55%; 
+            position: absolute; bottom: 0; left: 0; width: 100%; max-height: 60%; 
             background: var(--bg-surface); border-top: 1px solid var(--border-subtle); 
-            border-radius: var(--radius-lg) var(--radius-lg) 0 0; padding: 14px; display: none; flex-direction: column; gap: 8px; 
-            z-index: 200; overflow-y: auto; box-shadow: 0 -8px 24px rgba(0,0,0,0.7); 
+            border-radius: var(--radius-lg) var(--radius-lg) 0 0; padding: 16px; display: none; flex-direction: column; gap: 10px; 
+            z-index: 200; overflow-y: auto; box-shadow: 0 -10px 30px rgba(0,0,0,0.8); 
         }
         .studio-drawer.open { display: flex; }
 
         .tree-item { 
-            padding: 8px 10px; background: var(--bg-card); border-radius: 6px; 
-            display: flex; justify-content: space-between; align-items: center; font-size: 0.75rem; border: 1px solid var(--border-subtle); cursor: pointer; 
+            padding: 10px 12px; background: var(--bg-card); border-radius: 8px; 
+            display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem; border: 1px solid var(--border-subtle); cursor: pointer; 
         }
-        .tree-item.selected { border-color: var(--accent); background: rgba(99, 102, 241, 0.1); }
+        .tree-item.selected { border-color: var(--accent); background: rgba(99, 102, 241, 0.15); }
 
         .prop-group { display: flex; flex-direction: column; gap: 4px; font-size: 0.75rem; }
+        .prop-group label { color: var(--text-muted); font-weight: 600; text-transform: uppercase; font-size: 0.65rem; }
         .prop-input { 
             background: var(--bg-base); border: 1px solid var(--border-subtle); color: var(--text-main); 
-            padding: 8px; border-radius: 6px; font-size: 0.8rem; width: 100%; outline: none; 
+            padding: 10px; border-radius: 8px; font-size: 0.85rem; width: 100%; outline: none; 
         }
         .prop-input:focus { border-color: var(--accent); }
     </style>
 </head>
 <body>
     <header>
-        <h1>⚡ Flowiq <span style="font-size: 0.6rem; color: var(--text-muted); background: var(--bg-card); padding: 1px 5px; border-radius: 8px;">v1.0 Fast</span></h1>
+        <h1>⚡ Flowiq <span class="header-badge">v0.9 Pro</span></h1>
         <div class="header-actions">
             <button class="fs-btn" onclick="toggleFullScreen()">⛶ Tela Cheia</button>
         </div>
@@ -134,15 +138,15 @@
         <!-- HUB DE PROJETOS -->
         <div id="hubScreen" class="screen active hub-screen">
             <div class="card">
-                <h2 style="font-size: 0.9rem; margin-bottom: 2px;">Sistemas Operacionais</h2>
-                <p style="font-size: 0.7rem; color: var(--text-muted); margin-bottom: 10px;">Ambiente de engenharia 2D de alta performance.</p>
+                <h2 style="font-size: 1rem; margin-bottom: 4px;">Gerenciador de Sistemas</h2>
+                <p style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 12px;">Crie e edite interfaces 2D de alta performance.</p>
                 <button class="btn" onclick="createNewProject()">+ Novo Projeto OS</button>
             </div>
 
             <div class="card" style="flex: 1; display: flex; flex-direction: column;">
-                <h3 style="font-size: 0.8rem; margin-bottom: 6px;">Projetos Salvos</h3>
+                <h3 style="font-size: 0.85rem; margin-bottom: 8px;">Projetos Salvos</h3>
                 <div id="projectList" class="project-list" style="flex: 1; overflow-y: auto;">
-                    <p style="color: var(--text-muted); font-size: 0.75rem; text-align: center; padding: 20px;">Nenhum projeto criado ainda.</p>
+                    <p style="color: var(--text-muted); font-size: 0.75rem; text-align: center; padding: 20px;">Carregando projetos...</p>
                 </div>
             </div>
         </div>
@@ -150,35 +154,34 @@
         <!-- WORKSPACE DO ESTÚDIO -->
         <div id="workspaceScreen" class="screen">
             <div class="workspace-header">
-                <button class="btn btn-secondary" style="width: auto; padding: 4px 8px; font-size: 0.7rem;" onclick="returnToHub()">← Voltar</button>
-                <span id="currentProjectTitle" style="font-weight: 600;">Projeto</span>
-                <button class="btn" style="width: auto; padding: 4px 10px; font-size: 0.7rem; background: var(--success);" onclick="alert('Modo Play: Interface executada com sucesso!')">▶ Play</button>
+                <button class="btn btn-secondary" style="width: auto; padding: 6px 10px; font-size: 0.75rem;" onclick="returnToHub()">← Voltar</button>
+                <span id="currentProjectTitle" style="font-weight: 700;">Projeto</span>
+                <button class="btn" style="width: auto; padding: 6px 12px; font-size: 0.75rem; background: var(--success);" onclick="alert('Simulação executada com sucesso!')">▶ Play</button>
             </div>
 
             <div class="workspace-body">
-                <!-- Palco -->
                 <div class="phone-viewport" id="viewportCanvas" onclick="clearSelection(event)"></div>
 
                 <!-- Gaveta Explorer -->
                 <div id="explorerDrawer" class="studio-drawer">
-                    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-subtle); padding-bottom: 4px;">
-                        <strong style="font-size: 0.8rem;">Explorer (Hierarquia)</strong>
-                        <button onclick="toggleDrawer(null)" style="background:none; border:none; color:var(--text-muted); font-size:1rem; padding:2px;">✕</button>
+                    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-subtle); padding-bottom: 6px;">
+                        <strong style="font-size: 0.85rem;">Explorer (Hierarquia)</strong>
+                        <button onclick="toggleDrawer(null)" style="background:none; border:none; color:var(--text-muted); font-size:1.1rem; padding:4px;">✕</button>
                     </div>
-                    <div style="display: flex; gap: 6px;">
-                        <button class="btn" style="font-size: 0.75rem; padding: 8px;" onclick="addInstance('Frame')">+ Frame</button>
-                        <button class="btn" style="font-size: 0.75rem; padding: 8px; background: var(--bg-card); border: 1px solid var(--border-subtle);" onclick="addInstance('TextButton')">+ Botão</button>
+                    <div style="display: flex; gap: 8px;">
+                        <button class="btn" style="font-size: 0.8rem; padding: 10px;" onclick="addInstance('Frame')">+ Frame</button>
+                        <button class="btn" style="font-size: 0.8rem; padding: 10px; background: var(--bg-card); border: 1px solid var(--border-subtle);" onclick="addInstance('TextButton')">+ Botão</button>
                     </div>
-                    <div id="instanceTree" style="display: flex; flex-direction: column; gap: 4px; max-height: 160px; overflow-y: auto; margin-top: 4px;"></div>
+                    <div id="instanceTree" style="display: flex; flex-direction: column; gap: 6px; max-height: 180px; overflow-y: auto; margin-top: 4px;"></div>
                 </div>
 
                 <!-- Gaveta Propriedades -->
                 <div id="propertiesDrawer" class="studio-drawer">
-                    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-subtle); padding-bottom: 4px;">
-                        <strong style="font-size: 0.8rem;">Inspetor de Propriedades</strong>
-                        <button onclick="toggleDrawer(null)" style="background:none; border:none; color:var(--text-muted); font-size:1rem; padding:2px;">✕</button>
+                    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-subtle); padding-bottom: 6px;">
+                        <strong style="font-size: 0.85rem;">Inspetor de Propriedades</strong>
+                        <button onclick="toggleDrawer(null)" style="background:none; border:none; color:var(--text-muted); font-size:1.1rem; padding:4px;">✕</button>
                     </div>
-                    <div id="propDetails" style="display: flex; flex-direction: column; gap: 8px; padding-top: 4px;">
+                    <div id="propDetails" style="display: flex; flex-direction: column; gap: 10px; padding-top: 4px;">
                         <p style="color: var(--text-muted); font-size: 0.75rem; text-align: center; padding: 15px;">Selecione um elemento para editar.</p>
                     </div>
                 </div>
@@ -187,15 +190,15 @@
             <!-- Navegação Inferior -->
             <div class="studio-nav">
                 <button class="nav-btn" onclick="toggleDrawer('explorerDrawer')">
-                    <span style="font-size: 1rem;">📂</span>
+                    <span style="font-size: 1.2rem;">📂</span>
                     <span>Explorer</span>
                 </button>
                 <button class="nav-btn" onclick="toggleDrawer('propertiesDrawer')">
-                    <span style="font-size: 1rem;">⚙️</span>
+                    <span style="font-size: 1.2rem;">⚙️</span>
                     <span>Propriedades</span>
                 </button>
-                <button class="nav-btn" onclick="alert('Editor de scripts em desenvolvimento.')">
-                    <span style="font-size: 1rem;">💻</span>
+                <button class="nav-btn" onclick="alert('Editor de scripts em breve.')">
+                    <span style="font-size: 1.2rem;">💻</span>
                     <span>Scripts</span>
                 </button>
             </div>
@@ -214,54 +217,84 @@
             }
         }
 
+        function getProjects() {
+            try {
+                return JSON.parse(localStorage.getItem('flowiq_projects') || '[]');
+            } catch (e) {
+                return [];
+            }
+        }
+
+        function saveProjectsList(projects) {
+            localStorage.setItem('flowiq_projects', JSON.stringify(projects));
+        }
+
         function createNewProject() {
             const projectName = prompt("Nome do seu Sistema Operacional:", "NeoOS");
             if (!projectName) return;
             
-            const projects = JSON.parse(localStorage.getItem('flowiq_projects') || '[]');
+            const projects = getProjects();
             const newProj = { 
                 id: Date.now(), 
                 name: projectName, 
                 created: new Date().toLocaleDateString(), 
                 instances: [
-                    { id: Date.now(), name: "WindowMain", type: "Frame", bg: "#1e293b", width: "200px", height: "120px", top: "40px", left: "40px" }
+                    { id: Date.now() + 1, name: "WindowMain", type: "Frame", bg: "#3b82f6", width: "220px", height: "140px", top: "50px", left: "40px" }
                 ] 
             };
             projects.push(newProj);
-            localStorage.setItem('flowiq_projects', JSON.stringify(projects));
-            loadProjects();
+            saveProjectsList(projects);
+            openProject(newProj.id);
         }
 
         function loadProjects() {
             const list = document.getElementById('projectList');
-            const projects = JSON.parse(localStorage.getItem('flowiq_projects') || '[]');
+            const projects = getProjects();
             
             if (projects.length === 0) {
-                list.innerHTML = `<p style="color: var(--text-muted); font-size: 0.75rem; text-align: center; padding: 15px;">Nenhum projeto criado ainda.</p>`;
+                list.innerHTML = `<p style="color: var(--text-muted); font-size: 0.75rem; text-align: center; padding: 20px;">Nenhum projeto criado ainda.</p>`;
                 return;
             }
 
             list.innerHTML = projects.map(p => `
                 <div class="project-item">
                     <div>
-                        <strong style="font-size: 0.8rem; color: var(--text-main);">${p.name}</strong>
-                        <div style="font-size: 0.6rem; color: var(--text-muted);">Criado em: ${p.created}</div>
+                        <strong style="font-size: 0.85rem; color: var(--text-main);">${p.name}</strong>
+                        <div style="font-size: 0.65rem; color: var(--text-muted);">Criado em: ${p.created}</div>
                     </div>
-                    <button style="background: rgba(99, 102, 241, 0.2); border: 1px solid rgba(99, 102, 241, 0.4); color: #818cf8; padding: 5px 10px; border-radius: 6px; font-size: 0.7rem; cursor:pointer;" onclick="openProject(${p.id})">Abrir</button>
+                    <div style="display: flex; gap: 6px;">
+                        <button style="background: rgba(99, 102, 241, 0.2); border: 1px solid rgba(99, 102, 241, 0.4); color: #818cf8; padding: 6px 12px; border-radius: 8px; font-size: 0.75rem; font-weight: 600; cursor:pointer;" onclick="openProject(${p.id})">Abrir</button>
+                        <button style="background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.3); color: #f87171; padding: 6px 10px; border-radius: 8px; font-size: 0.75rem; cursor:pointer;" onclick="deleteProject(${p.id}, event)">🗑️</button>
+                    </div>
                 </div>
             `).join('');
         }
 
+        function deleteProject(id, event) {
+            event.stopPropagation();
+            if (!confirm("Deseja excluir este projeto permanentemente?")) return;
+            let projects = getProjects();
+            projects = projects.filter(p => p.id !== id);
+            saveProjectsList(projects);
+            loadProjects();
+        }
+
         function openProject(id) {
-            const projects = JSON.parse(localStorage.getItem('flowiq_projects') || '[]');
+            const projects = getProjects();
             currentProject = projects.find(p => p.id === id);
-            if (!currentProject) return;
+            if (!currentProject) {
+                alert("Projeto não encontrado!");
+                return;
+            }
 
             localStorage.setItem('flowiq_active_id', currentProject.id);
             document.getElementById('currentProjectTitle').innerText = currentProject.name;
+            
             document.getElementById('hubScreen').classList.remove('active');
             document.getElementById('workspaceScreen').classList.add('active');
+            
             selectedInstanceId = null;
+            toggleDrawer(null);
             renderWorkspace();
         }
 
@@ -269,20 +302,21 @@
             saveCurrentProject();
             localStorage.removeItem('flowiq_active_id');
             currentProject = null;
+            
             document.getElementById('workspaceScreen').classList.remove('active');
-            document.getElementById('hubScreen').classList.active = true;
             document.getElementById('hubScreen').classList.add('active');
+            
             loadProjects();
             toggleDrawer(null);
         }
 
         function saveCurrentProject() {
             if (!currentProject) return;
-            const projects = JSON.parse(localStorage.getItem('flowiq_projects') || '[]');
+            const projects = getProjects();
             const index = projects.findIndex(p => p.id === currentProject.id);
             if (index !== -1) {
                 projects[index] = currentProject;
-                localStorage.setItem('flowiq_projects', JSON.stringify(projects));
+                saveProjectsList(projects);
             }
         }
 
@@ -292,17 +326,17 @@
                 id: Date.now(),
                 name: type + "_" + (currentProject.instances.length + 1),
                 type: type,
-                bg: type === 'Frame' ? '#3b82f6' : '#10b981',
-                width: "160px",
-                height: "50px",
-                top: (60 + (currentProject.instances.length * 20)) + "px",
+                bg: type === 'Frame' ? '#1e293b' : '#6366f1',
+                width: "180px",
+                height: "60px",
+                top: (40 + (currentProject.instances.length * 25)) + "px",
                 left: "20px"
             };
             currentProject.instances.push(newObj);
             saveCurrentProject();
             selectedInstanceId = newObj.id;
             renderWorkspace();
-            toggleDrawer(null);
+            toggleDrawer('propertiesDrawer');
         }
 
         function selectInstance(id, event) {
@@ -329,8 +363,8 @@
             const viewport = document.getElementById('viewportCanvas');
             viewport.innerHTML = '';
             
-            if (!currentProject.instances || currentProject.instances.length === 0) {
-                viewport.innerHTML = `<div style="color: var(--text-muted); font-size: 0.65rem; text-align: center; margin-top: 180px;">Palco Vazio</div>`;
+            if (!currentProject || !currentProject.instances || currentProject.instances.length === 0) {
+                viewport.innerHTML = `<div style="color: var(--text-muted); font-size: 0.7rem; text-align: center; margin-top: 200px;">Palco Vazio</div>`;
                 return;
             }
 
@@ -350,7 +384,7 @@
 
         function renderExplorerTree() {
             const tree = document.getElementById('instanceTree');
-            if (!currentProject.instances) return;
+            if (!currentProject || !currentProject.instances) return;
 
             let html = `<div class="tree-item" style="opacity: 0.7;">📁 ScreenRoot (Workspace)</div>`;
             currentProject.instances.forEach(obj => {
@@ -358,7 +392,7 @@
                 html += `
                     <div class="tree-item ${isSel ? 'selected' : ''}" onclick="selectInstance(${obj.id}, event)">
                         <span>📄 ${obj.name}</span>
-                        <span style="font-size: 0.65rem; color: var(--text-muted);">${obj.type}</span>
+                        <span style="font-size: 0.7rem; color: var(--text-muted);">${obj.type}</span>
                     </div>
                 `;
             });
@@ -366,10 +400,9 @@
         }
 
         function renderProperties() {
-            const container = document.getElementById('propertiesDrawer');
             const details = document.getElementById('propDetails');
             
-            if (!selectedInstanceId) {
+            if (!selectedInstanceId || !currentProject) {
                 details.innerHTML = `<p style="color: var(--text-muted); font-size: 0.75rem; text-align: center; padding: 15px;">Selecione um elemento para editar.</p>`;
                 return;
             }
@@ -380,25 +413,75 @@
             details.innerHTML = `
                 <div class="prop-group">
                     <label>Nome do Objeto</label>
-                    <input type="text" class="prop-input" value="${obj.name}" oninput="updateProp('${obj.id}', 'name', this.value)">
+                    <input type="text" class="prop-input" value="${obj.name}" oninput="updateProp(${obj.id}, 'name', this.value)">
                 </div>
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
                     <div class="prop-group">
                         <label>Largura</label>
-                        <input type="text" class="prop-input" value="${obj.width}" oninput="updateProp('${obj.id}', 'width', this.value)">
+                        <input type="text" class="prop-input" value="${obj.width}" oninput="updateProp(${obj.id}, 'width', this.value)">
                     </div>
                     <div class="prop-group">
                         <label>Altura</label>
-                        <input type="text" class="prop-input" value="${obj.height}" oninput="updateProp('${obj.id}', 'height', this.value)">
+                        <input type="text" class="prop-input" value="${obj.height}" oninput="updateProp(${obj.id}, 'height', this.value)">
                     </div>
                 </div>
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
                     <div class="prop-group">
                         <label>Pos X (Left)</label>
-                        <input type="text" class="prop-input" value="${obj.left}" oninput="updateProp('${obj.id}', 'left', this.value)">
+                        <input type="text" class="prop-input" value="${obj.left}" oninput="updateProp(${obj.id}, 'left', this.value)">
                     </div>
                     <div class="prop-group">
                         <label>Pos Y (Top)</label>
-                        <input type="text" class="prop-input" value="${obj.top}" oninput="updateProp('${obj.id}', 'top', this.value)">
+                        <input type="text" class="prop-input" value="${obj.top}" oninput="updateProp(${obj.id}, 'top', this.value)">
                     </div>
-                
+                </div>
+                <div class="prop-group">
+                    <label>Cor de Fundo</label>
+                    <input type="color" value="${obj.bg}" onchange="updateProp(${obj.id}, 'bg', this.value)" style="width: 100%; height: 38px; background: none; border: 1px solid var(--border-subtle); border-radius: 8px; cursor: pointer;">
+                </div>
+                <button class="btn" style="background: rgba(239, 68, 68, 0.2); color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.4); margin-top: 6px;" onclick="deleteInstance(${obj.id})">Excluir Objeto</button>
+            `;
+        }
+
+        function updateProp(id, prop, val) {
+            const obj = currentProject.instances.find(i => i.id == id);
+            if (obj) {
+                obj[prop] = val;
+                saveCurrentProject();
+                renderViewport();
+                renderExplorerTree();
+            }
+        }
+
+        function deleteInstance(id) {
+            if (!confirm("Deseja realmente excluir este objeto?")) return;
+            currentProject.instances = currentProject.instances.filter(i => i.id != id);
+            selectedInstanceId = null;
+            saveCurrentProject();
+            renderWorkspace();
+            toggleDrawer(null);
+        }
+
+        function toggleDrawer(drawerId) {
+            document.querySelectorAll('.studio-drawer').forEach(d => {
+                if (d.id === drawerId) {
+                    d.classList.toggle('open');
+                } else {
+                    d.classList.remove('open');
+                }
+            });
+        }
+
+        window.onload = function() {
+            loadProjects();
+            const activeId = localStorage.getItem('flowiq_active_id');
+            if (activeId) {
+                const projects = getProjects();
+                const found = projects.find(p => p.id == activeId);
+                if (found) openProject(found.id);
+            }
+        };
+    </script>
+</body>
+</html>
+
