@@ -364,7 +364,7 @@ class StudioApp {
       el.style.border = Number(p.borderWidth)>0 ? Math.min(12,Number(p.borderWidth))+'px solid '+(p.borderColor||'#64748b') : node.className === 'TextButton' ? '1px solid #ffffff30' : 'none';
       el.style.fontWeight = p.fontWeight==='bold'?'700':'400';
       el.style.textAlign = p.textAlign || 'center';
-      if(node.className==='ImageLabel' && /^https?:\\/\\//i.test(String(p.imageUrl||''))){
+      if(node.className==='ImageLabel' && /^https?:\/\//i.test(String(p.imageUrl||''))){
         el.style.backgroundImage='url("'+String(p.imageUrl).replace(/["\\\\]/g,'')+'")';
         el.style.backgroundSize=p.imageFit==='contain'?'contain':'cover';
         el.style.backgroundPosition='center';el.style.backgroundRepeat='no-repeat';
