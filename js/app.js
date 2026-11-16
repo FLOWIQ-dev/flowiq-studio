@@ -20,6 +20,7 @@ class FlowiqStudio {
     this.objectUrls = new Map();
     this.saveTimer = 0;
     this.drag = null;
+    this.previewScene = null;
     this.dialogResolve = null;
     this.search = '';
     this.returnScreen = 'home';
@@ -277,6 +278,10 @@ class FlowiqStudio {
     if (!node) return;
     this.history.checkpoint(this.scene.snapshot());
     if (key === 'name') node.name = String(value).trim().slice(0, 64) || node.type;
+    else if (['x', 'y'].includes(key)) node.props[key] = Math.max(-2000, Math.min(4000, Number(value) || 0));
+    else if (['width', 'height'].includes(key)) node.props[key] = Math.max(1, Math.min(2000, Number(value) || 1));
+    else if (key === 'opacity') node.props[key] = Math.max(0, Math.min(1, Number(value) || 0));
+    else if (key === 'radius') node.props[key] = Math.max(0, Math.min(160, Number(value) || 0));
     else node.props[key] = value;
     this.scheduleSave();
     this.renderEditor();
@@ -393,18 +398,18 @@ class FlowiqStudio {
 
   play() {
     if (!this.project) return;
-    this.runtime.start({ ...this.project, scene: this.scene.toJSON() }, this.scene);
+    this.previewScene = new Scene(this.scene.toJSON());
+    this.runtime.start({ ...this.project, scene: this.previewScene.toJSON() }, this.previewScene);
     $('preview-screen').hidden = false;
     $('preview-name').textContent = this.project.name;
-    renderScene($('preview-scene'), this.scene, { preview: true, assets: this.assets, onRun: node => {
-      this.runtime.dispatch(node, 'click');
-      renderScene($('preview-scene'), this.scene, { preview: true, assets: this.assets, onRun: target => this.runtime.dispatch(target, 'click') });
-    } });
+    const renderPreview = () => renderScene($('preview-scene'), this.previewScene, { preview: true, assets: this.assets, onRun: node => { this.runtime.dispatch(node, 'click'); renderPreview(); } });
+    renderPreview();
   }
 
   stopPreview(announce = true) {
     if (!$('preview-screen').hidden) $('preview-screen').hidden = true;
     if (this.runtime.running) this.runtime.stop();
+    this.previewScene = null;
     if (announce) this.renderEditor();
   }
 
@@ -445,6 +450,9 @@ class FlowiqStudio {
   }
 
   async removeAsset(id) {
+    const projects = await this.db.listProjects();
+    const used = projects.some(project => JSON.stringify(project.scene || []).includes('"assetId":"' + id + '"'));
+    if (used) { this.toast('Este arquivo está em uso por um projeto. Remova a referência antes de excluir.', 'warning'); return; }
     await this.db.deleteAsset(id);
     this.assets = await this.db.listAssets();
     this.renderAssets();
