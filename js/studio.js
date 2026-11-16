@@ -255,7 +255,7 @@ class StudioApp {
 
   deleteSelected() {
     if(!this.selected)return;
-    const old=this.selected; old.destroy(); this.selected=old.parent || null;
+    const old=this.selected; const parent=old.parent; old.destroy(); this.selected=parent === this.model.root ? null : parent;
     this.refresh(); this.scheduleSave(); this.log(old.name+' excluído.');
   }
 
@@ -295,11 +295,17 @@ class StudioApp {
     const panel=$(which); if(!panel)return;
     const opening=!panel.classList.contains('mobile-open');
     this.closePanels();
-    if(opening){panel.classList.add('mobile-open');$('drawer-backdrop').classList.add('show');}
+    if(opening){
+      panel.classList.add('mobile-open');
+      $('drawer-backdrop').classList.add('show');
+      const tab=document.querySelector('[data-panel="'+which+'"]');
+      if(tab){tab.classList.add('active');tab.setAttribute('aria-expanded','true');}
+    }
   }
   closePanels() {
     $('explorer').classList.remove('mobile-open');$('inspector').classList.remove('mobile-open');
     $('drawer-backdrop').classList.remove('show');
+    document.querySelectorAll('[data-panel]').forEach((tab)=>{tab.classList.remove('active');tab.setAttribute('aria-expanded','false');});
   }
 
   log(message,type='') {
