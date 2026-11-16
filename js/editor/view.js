@@ -83,7 +83,7 @@ export function renderTree(container, scene, selectedId, onSelect) {
   container.append(list);
 }
 
-export function renderInspector(container, node, { onChange, onDelete, assets = [], onAsset, events = [], onEventSave } = {}) {
+export function renderInspector(container, node, { onChange, onDelete, assets = [], events = [], onEventSave } = {}) {
   container.replaceChildren();
   if (!node) {
     container.append(el('p', 'inspector-empty', 'Selecione um objeto no palco ou na hierarquia para editar suas propriedades.'));
