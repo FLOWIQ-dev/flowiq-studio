@@ -1,4 +1,4 @@
-import { DataModel } from './datamodel.js?v=2026.11.16.47';
+import { DataModel } from './datamodel.js?v=2026.11.16.48';
 export const PROJECT_SCHEMA_VERSION = 2;
 
 const isRecord = value => value !== null && typeof value === 'object' && !Array.isArray(value);
