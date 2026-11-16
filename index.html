@@ -23,19 +23,44 @@
 
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; -webkit-tap-highlight-color: transparent; }
         
-        body { background-color: var(--bg-base); color: var(--text-main); height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+        body { 
+            background-color: var(--bg-base); 
+            color: var(--text-main); 
+            height: 100dvh; 
+            height: 100vh;
+            display: flex; 
+            flex-direction: column; 
+            overflow: hidden; 
+        }
 
-        header { background: var(--bg-surface); border-bottom: 1px solid var(--border-subtle); padding: 14px 20px; display: flex; justify-content: space-between; align-items: center; }
-        h1 { font-size: 1rem; font-weight: 600; color: var(--text-main); letter-spacing: -0.2px; display: flex; align-items: center; gap: 8px; }
+        header { 
+            background: var(--bg-surface); 
+            border-bottom: 1px solid var(--border-subtle); 
+            padding: 12px 16px; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            flex-shrink: 0;
+        }
+
+        h1 { 
+            font-size: 1rem; 
+            font-weight: 600; 
+            color: var(--text-main);
+            letter-spacing: -0.2px;
+            display: flex; 
+            align-items: center; 
+            gap: 8px; 
+        }
 
         .main-container { flex: 1; display: flex; flex-direction: column; overflow: hidden; position: relative; }
 
         .screen { display: none; flex: 1; flex-direction: column; overflow: hidden; height: 100%; }
         .screen.active { display: flex; }
 
-        .hub-screen { padding: 20px; gap: 16px; overflow-y: auto; }
+        .hub-screen { padding: 16px; gap: 16px; overflow-y: auto; }
 
-        .card { background: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); padding: 20px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2); }
+        .card { background: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); padding: 16px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2); }
 
         .btn { background: var(--accent); color: white; border: none; padding: 12px 18px; border-radius: var(--radius-md); font-weight: 500; font-size: 0.9rem; width: 100%; cursor: pointer; text-align: center; transition: background 0.15s ease, transform 0.1s ease; }
         .btn:active { transform: scale(0.98); background: var(--accent-hover); }
@@ -46,23 +71,67 @@
         .project-item { background: var(--bg-card); border: 1px solid var(--border-subtle); padding: 14px 16px; border-radius: var(--radius-md); display: flex; justify-content: space-between; align-items: center; }
 
         /* Workspace do Studio */
-        .workspace-header { background: var(--bg-surface); padding: 10px 16px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-subtle); font-size: 0.85rem; }
-        .workspace-body { flex: 1; position: relative; background: #0d0f14; display: flex; justify-content: center; align-items: center; overflow: hidden; }
+        .workspace-header { background: var(--bg-surface); padding: 10px 16px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-subtle); font-size: 0.85rem; flex-shrink: 0; }
+        
+        .workspace-body { 
+            flex: 1; 
+            position: relative; 
+            background: #0d0f14; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            overflow: hidden; 
+            padding: 10px;
+        }
 
-        /* Viewport do Celular Virtual */
-        .phone-viewport { width: 290px; height: 520px; background: #000; border: 2px solid #2a3142; border-radius: 32px; position: relative; overflow: hidden; box-shadow: 0 15px 40px rgba(0,0,0,0.6); }
+        /* Viewport do Celular Virtual Otimizado para Mobile */
+        .phone-viewport { 
+            width: 100%; 
+            max-width: 280px; 
+            height: 100%; 
+            max-height: 480px; 
+            background: #000; 
+            border: 2px solid #2a3142; 
+            border-radius: 28px; 
+            position: relative; 
+            overflow: hidden; 
+            box-shadow: 0 15px 40px rgba(0,0,0,0.6); 
+        }
 
-        /* Renderizador interno de elementos UI */
         .ui-element { position: absolute; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; color: white; box-sizing: border-box; }
 
-        /* Barra de Ferramentas Inferior */
-        .studio-nav { background: var(--bg-surface); border-top: 1px solid var(--border-subtle); display: flex; justify-content: space-around; padding: 10px 0 16px 0; }
+        /* Barra de Ferramentas Inferior Fixa e Segura */
+        .studio-nav { 
+            background: var(--bg-surface);
+            border-top: 1px solid var(--border-subtle); 
+            display: flex; 
+            justify-content: space-around; 
+            padding: 10px 0 calc(10px + env(safe-area-inset-bottom, 0px)) 0; 
+            flex-shrink: 0;
+            z-index: 40;
+        }
         .nav-btn { background: none; border: none; color: var(--text-muted); font-size: 0.7rem; font-weight: 500; display: flex; flex-direction: column; align-items: center; gap: 4px; cursor: pointer; transition: color 0.15s ease; }
         .nav-btn span.icon { font-size: 1.1rem; }
         .nav-btn.active { color: var(--accent); }
 
-        /* Gavetas Deslizantes */
-        .studio-drawer { position: absolute; bottom: 56px; left: 0; width: 100%; max-height: 55%; background: var(--bg-surface); border-top: 1px solid var(--border-subtle); border-radius: var(--radius-lg) var(--radius-lg) 0 0; padding: 18px; display: none; flex-direction: column; gap: 12px; z-index: 30; overflow-y: auto; box-shadow: 0 -10px 30px rgba(0,0,0,0.4); }
+        /* Gavetas Deslizantes dentro do Workspace */
+        .studio-drawer { 
+            position: absolute; 
+            bottom: 0; 
+            left: 0; 
+            width: 100%; 
+            max-height: 60%; 
+            background: var(--bg-surface); 
+            border-top: 1px solid var(--border-subtle); 
+            border-radius: var(--radius-lg) var(--radius-lg) 0 0; 
+            padding: 18px; 
+            display: none; 
+            flex-direction: column; 
+            gap: 12px; 
+            z-index: 30; 
+            overflow-y: auto; 
+            box-shadow: 0 -10px 30px rgba(0,0,0,0.5); 
+        }
         .studio-drawer.open { display: flex; }
 
         .tree-item { padding: 6px 10px; background: var(--bg-card); border-radius: 6px; margin-bottom: 4px; display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem; border: 1px solid var(--border-subtle); }
@@ -71,7 +140,7 @@
 <body>
     <header>
         <h1>⚡ Flowiq Studio</h1>
-        <span style="font-size: 0.7rem; color: var(--text-muted); background: var(--bg-card); padding: 4px 8px; border-radius: 20px; border: 1px solid var(--border-subtle);">Engine v0.5</span>
+        <span style="font-size: 0.7rem; color: var(--text-muted); background: var(--bg-card); padding: 4px 8px; border-radius: 20px; border: 1px solid var(--border-subtle);">Engine v0.6</span>
     </header>
 
     <div class="main-container">
@@ -230,7 +299,7 @@
                 bg: type === 'Frame' ? '#3b82f6' : '#10b981',
                 width: "80%",
                 height: "50px",
-                top: (50 + (currentProject.instances.length * 60)) + "px",
+                top: (40 + (currentProject.instances.length * 55)) + "px",
                 left: "10%"
             };
             currentProject.instances.push(newObj);
@@ -244,7 +313,7 @@
             viewport.innerHTML = '';
             
             if (!currentProject.instances || currentProject.instances.length === 0) {
-                viewport.innerHTML = `<div style="color: var(--text-muted); font-size: 0.75rem; text-align: center; margin-top: 220px;">Palco Vazio</div>`;
+                viewport.innerHTML = `<div style="color: var(--text-muted); font-size: 0.75rem; text-align: center; margin-top: 180px;">Palco Vazio</div>`;
                 return;
             }
 
