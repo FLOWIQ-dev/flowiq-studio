@@ -604,6 +604,9 @@ class StudioApp {
   }
 
   async toHub() {
+    this.focusMode=false;
+    $('workspace').classList.remove('focus-mode');
+    const focusButton=$('btn-focus-stage');if(focusButton)focusButton.setAttribute('aria-pressed','false');
     this.runtime.stop(); this.model = this.runtime.model;
     this.project = null; this.selected = null; this.playMode = false;
     $('workspace').classList.remove('active'); $('library-screen').classList.remove('active'); $('hub').classList.add('active');
