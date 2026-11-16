@@ -1,7 +1,7 @@
-import { DataModel, Instance } from './datamodel.js?v=2026.11.16.53';
-import { VirtualFS } from './vfs.js?v=2026.11.16.53';
-import { createProjectRecord, normalizeProject, FlowiqRuntime } from './engine.js?v=2026.11.16.53';
-import { createBackupFile, inspectBackupFile, restoreBackup } from './backup.js?v=2026.11.16.53';
+import { DataModel, Instance } from './datamodel.js?v=2026.11.16.54';
+import { VirtualFS } from './vfs.js?v=2026.11.16.54';
+import { createProjectRecord, normalizeProject, FlowiqRuntime } from './engine.js?v=2026.11.16.54';
+import { createBackupFile, inspectBackupFile, restoreBackup } from './backup.js?v=2026.11.16.54';
 
 const $ = (id) => document.getElementById(id);
 const esc = (value) => String(value ?? '').replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -26,6 +26,7 @@ class StudioApp {
     this.runtime = new FlowiqRuntime({ model:this.model, onChange:()=>this.renderCanvas(), onLog:message=>this.log(message,'warn') });
     this.projects = [];
     this.assetBrowser = null;
+    this.selectedAssetId = null;
     this.assetUrls = new Map();
     this.assets = [];
     this.assetSearch = '';
@@ -61,8 +62,13 @@ class StudioApp {
     $('btn-import').onclick = () => $('file-input').click();
     $('btn-backup-export').onclick = () => this.exportFullBackup();
     $('btn-backup-import').onclick = () => $('backup-file-input').click();
-    $('hub-tab-projects').onclick = () => this.showHubView('projects');
-    $('hub-tab-library').onclick = () => this.showHubView('library');
+    $('btn-backup-export').onclick = () => { $('hub-tools-menu')?.removeAttribute('open'); this.exportFullBackup(); };
+    $('btn-import').onclick = () => { $('hub-tools-menu')?.removeAttribute('open'); $('file-input').click(); };
+    document.querySelectorAll('[data-hub-view]').forEach(button=>button.onclick=()=>this.showHubView(button.dataset.hubView));
+    $('home-open-library').onclick=()=>this.showHubView('library');
+    $('home-all-projects').onclick=()=>this.showHubView('projects');
+    $('home-backup').onclick=()=>this.exportFullBackup();
+    $('projects-new').onclick=()=>this.createProject();
     $('asset-upload-button').onclick = () => $('asset-file-input').click();
     $('asset-file-input').onchange = e => this.uploadAssets(e.target.files);
     $('asset-search').oninput = e => { this.assetSearch=e.target.value.trim().toLocaleLowerCase('pt-BR'); this.renderLibrary(); };
@@ -115,34 +121,45 @@ class StudioApp {
   }
 
   async loadHub() {
-    try { this.projects = await this.vfs.getProjects(); this.renderHub(); this.assets = await this.vfs.getAssets(); this.renderLibrary(); }
+    try { this.projects = await this.vfs.getProjects(); this.assets = await this.vfs.getAssets(); this.renderHub(); this.renderLibrary(); }
     catch (e) { this.log('Falha ao abrir armazenamento: ' + e.message, 'error'); $('project-list').innerHTML = '<div class="empty">Não foi possível acessar os projetos. Verifique se o navegador permite armazenamento local.</div>'; }
   }
 
   renderHub() {
-    $('project-count').textContent = this.projects.length + (this.projects.length === 1 ? ' projeto' : ' projetos');
-    const list = $('project-list');
-    if (!this.projects.length) { list.innerHTML = '<div class="empty">Nenhum projeto por aqui ainda.<br>Crie um projeto para começar.</div>'; return; }
-    list.innerHTML = [...this.projects].sort((a,b) => new Date(b.updatedAt || 0)-new Date(a.updatedAt || 0)).map(p => `
-      <article class="project-card"><h3><img src="./assets/icon.svg" alt="">${esc(p.name)}</h3><p>Atualizado em ${new Date(p.updatedAt || Date.now()).toLocaleString('pt-BR')}</p><div class="project-actions"><button class="btn primary" data-open="${esc(p.id)}">Abrir Studio <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14m-6-6 6 6-6 6"/></svg></button><button class="btn" data-rename-project="${esc(p.id)}" title="Renomear projeto">Renomear</button><button class="btn danger" data-delete="${esc(p.id)}" title="Excluir" aria-label="Excluir projeto"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M10 11v6m4-6v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg></button></div></article>`).join('');
-    list.querySelectorAll('[data-open]').forEach(b => b.onclick = () => this.openProject(b.dataset.open));
-    list.querySelectorAll('[data-delete]').forEach(b => b.onclick = () => this.deleteProject(b.dataset.delete));
-    list.querySelectorAll('[data-rename-project]').forEach(b => b.onclick = () => this.renameProject(b.dataset.renameProject));
+    const sorted=[...this.projects].sort((a,b)=>new Date(b.updatedAt||0)-new Date(a.updatedAt||0));
+    const count=this.projects.length;
+    $('project-count').textContent=count+(count===1?' projeto':' projetos');
+    $('home-project-count').textContent=String(count);
+    $('home-asset-count').textContent=String(this.assets.length);
+    const renderCard=p=>'<article class="project-card"><button class="project-card-open" data-open="'+esc(p.id)+'"><span class="project-glyph"><img src="./assets/icon.svg" alt=""></span><span class="project-card-copy"><strong>'+esc(p.name)+'</strong><small>Atualizado '+new Date(p.updatedAt||Date.now()).toLocaleDateString('pt-BR')+'</small></span><span class="project-card-arrow">↗</span></button><div class="project-card-tools"><button data-rename-project="'+esc(p.id)+'">Renomear</button><button data-delete="'+esc(p.id)+'">Excluir</button></div></article>';
+    const empty='<div class="empty-project-state"><span class="empty-project-icon">＋</span><strong>Nenhum projeto ainda</strong><small>Crie seu primeiro projeto e comece a montar sua interface.</small><button class="btn primary" data-create-first>Criar projeto</button></div>';
+    $('project-list').innerHTML=sorted.length?sorted.map(renderCard).join(''):empty;
+    $('home-recent-list').innerHTML=sorted.length?sorted.slice(0,3).map(p=>'<button class="recent-project" data-open="'+esc(p.id)+'"><span class="recent-project-icon"><img src="./assets/icon.svg" alt=""></span><span><strong>'+esc(p.name)+'</strong><small>'+new Date(p.updatedAt||Date.now()).toLocaleDateString('pt-BR')+'</small></span><b>→</b></button>').join(''):empty;
+    document.querySelectorAll('[data-open]').forEach(b=>b.onclick=()=>this.openProject(b.dataset.open));
+    document.querySelectorAll('[data-delete]').forEach(b=>b.onclick=()=>this.deleteProject(b.dataset.delete));
+    document.querySelectorAll('[data-rename-project]').forEach(b=>b.onclick=()=>this.renameProject(b.dataset.renameProject));
+    document.querySelectorAll('[data-create-first]').forEach(b=>b.onclick=()=>this.createProject());
   }
 
   showHubView(view) {
-    const library = view === 'library';
-    $('hub-projects-view').classList.toggle('active', !library);
-    $('hub-library-view').classList.toggle('active', library);
-    $('hub-tab-projects').setAttribute('aria-selected', String(!library));
-    $('hub-tab-library').setAttribute('aria-selected', String(library));
-    $('btn-new').hidden = library;
-    if (library) this.refreshLibrary();
+    const active=['home','projects','library'].includes(view)?view:'home';
+    for(const key of ['home','projects','library']){
+      $('hub-'+key+'-view').classList.toggle('active',key===active);
+      const tab=$('hub-tab-'+key);tab.setAttribute('aria-selected',String(key===active));
+    }
+    $('btn-new').hidden=active==='library';
+    if(active==='library')this.refreshLibrary();
   }
 
   async refreshLibrary() {
     try { this.assets = await this.vfs.getAssets(); this.renderLibrary(); }
     catch (error) { $('asset-list').innerHTML = '<div class="empty">Não foi possível abrir a biblioteca: '+esc(error.message)+'</div>'; }
+  }
+
+  notify(message,type='info') {
+    const host=$('studio-toast');if(!host)return;
+    host.textContent=String(message||'');host.dataset.type=type;host.classList.add('show');
+    clearTimeout(this.toastTimer);this.toastTimer=setTimeout(()=>host.classList.remove('show'),4200);
   }
 
   formatBytes(bytes) {
@@ -153,28 +170,45 @@ class StudioApp {
 
   renderLibrary() {
     const total=this.assets.reduce((sum,a)=>sum+(Number(a.size)||0),0);
-    $('library-summary-text').textContent=this.assets.length+' arquivos · '+this.formatBytes(total)+' neste dispositivo';
+    $('library-summary-text').textContent=this.assets.length+' arquivos · '+this.formatBytes(total)+' usados';
+    $('home-asset-count').textContent=String(this.assets.length);
     const folders=[...new Set(this.assets.map(a=>a.folder).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'pt-BR'));
     const select=$('asset-folder-filter'),previous=this.assetFolder;
     select.innerHTML='<option value="">Todas as pastas</option>'+folders.map(f=>'<option value="'+esc(f)+'">'+esc(f)+'</option>').join('');
     if(folders.includes(previous))select.value=previous;else this.assetFolder='';
     const filtered=this.assets.filter(a=>(!this.assetFolder||a.folder===this.assetFolder)&&(!this.assetSearch||(a.name+' '+a.mime+' '+(a.folder||'')).toLocaleLowerCase('pt-BR').includes(this.assetSearch)));
     const list=$('asset-list');
-    if(!filtered.length){list.innerHTML='<div class="empty">'+(this.assets.length?'Nenhum arquivo encontrado. Ajuste a busca ou a pasta.':'Sua biblioteca está vazia. Adicione imagens, vídeos, áudios ou documentos.')+'</div>';return;}
+    if(!filtered.length){list.innerHTML='<div class="empty-project-state"><span class="empty-project-icon">▤</span><strong>'+(this.assets.length?'Nenhum arquivo encontrado':'Sua biblioteca está vazia')+'</strong><small>'+(this.assets.length?'Tente outro termo ou remova o filtro.':'Adicione imagens, vídeos, áudios ou documentos para usar nos projetos.')+'</small>'+(this.assets.length?'':'<button class="btn primary" data-empty-upload>Adicionar arquivos</button>')+'</div>';const emptyUpload=list.querySelector('[data-empty-upload]');if(emptyUpload)emptyUpload.onclick=()=>$('asset-file-input').click();return;}
     list.innerHTML=filtered.map(a=>{
-      let preview='<span class="asset-file-icon">DOC</span>';
-      if(a.mime?.startsWith('image/'))preview='<img src="'+this.assetUrl(a)+'" alt="">';
-      else if(a.mime?.startsWith('video/'))preview='<span class="asset-file-icon">VID</span>';
-      else if(a.mime?.startsWith('audio/'))preview='<span class="asset-file-icon">AUD</span>';
-      else if(a.mime?.includes('font'))preview='<span class="asset-file-icon">FNT</span>';
+      const isImage=a.mime?.startsWith('image/'),isVideo=a.mime?.startsWith('video/'),isAudio=a.mime?.startsWith('audio/');
+      let thumb='<span class="asset-kind-icon">'+(isVideo?'VID':isAudio?'AUD':a.mime?.includes('font')?'FNT':a.mime==='application/pdf'?'PDF':'FILE')+'</span>';
+      if(isImage)thumb='<img src="'+this.assetUrl(a)+'" alt="" loading="lazy">';
+      const selected=this.selectedAssetId===a.id;
+      let preview='';
+      if(selected){
+        let body='<div class="inline-preview-empty">Prévia não disponível para este formato.<small>Você ainda pode baixar o arquivo.</small></div>';
+        try{
+          const url=this.assetUrl(a);
+          if(isImage)body='<div class="inline-preview-stage"><img class="inline-preview-image" src="'+url+'" alt="'+esc(a.name)+'"></div>';
+          else if(isVideo)body='<div class="inline-preview-stage"><video src="'+url+'" controls playsinline preload="metadata"></video></div>';
+          else if(isAudio)body='<div class="inline-preview-audio"><span>ÁUDIO</span><audio src="'+url+'" controls preload="metadata"></audio></div>';
+          else if(a.mime==='application/pdf')body='<iframe class="inline-preview-document" src="'+url+'" title="'+esc(a.name)+'"></iframe>';
+          else if(/(text|json|svg|xml)/i.test(a.mime||'')||/\.(txt|json|svg|xml)$/i.test(a.name))body='<iframe class="inline-preview-document inline-preview-text" src="'+url+'" title="'+esc(a.name)+'"></iframe>';
+        }catch(error){body='<div class="inline-preview-empty">Não foi possível abrir a prévia neste navegador.</div>';}
+        preview='<div class="asset-inline-preview">'+body+'<div class="asset-inline-actions"><button data-preview-download="'+esc(a.id)+'">Baixar</button><button data-preview-rename="'+esc(a.id)+'">Renomear</button><button data-preview-delete="'+esc(a.id)+'" class="danger-action">Excluir</button></div></div>';
+      }
       const kind=(a.mime||'Arquivo').split('/').pop().toUpperCase();
-      return '<article class="asset-row"><div class="asset-row-thumb">'+preview+'</div><button class="asset-row-main" data-asset-open="'+esc(a.id)+'"><strong title="'+esc(a.name)+'">'+esc(a.name)+'</strong><small>'+esc(a.folder||'Sem pasta')+' <span>·</span> '+esc(kind)+' <span>·</span> '+this.formatBytes(a.size||0)+'</small></button><div class="asset-row-actions"><button class="btn" data-asset-rename="'+esc(a.id)+'" aria-label="Renomear '+esc(a.name)+'">Renomear</button><button class="btn danger" data-asset-delete="'+esc(a.id)+'" aria-label="Excluir '+esc(a.name)+'">Excluir</button></div></article>';
+      return '<article class="asset-entry '+(selected?'is-open':'')+'"><button class="asset-entry-main" data-asset-open="'+esc(a.id)+'"><span class="asset-entry-thumb">'+thumb+'</span><span class="asset-entry-copy"><strong>'+esc(a.name)+'</strong><small>'+esc(a.folder||'Sem pasta')+' <i>·</i> '+esc(kind)+' <i>·</i> '+this.formatBytes(a.size||0)+'</small></span><span class="asset-entry-chevron">'+(selected?'⌃':'⌄')+'</span></button>'+preview+'</article>';
     }).join('');
-    list.querySelectorAll('[data-asset-open]').forEach(b=>b.onclick=()=>this.openAsset(b.dataset.assetOpen));
-    list.querySelectorAll('[data-asset-rename]').forEach(b=>b.onclick=()=>this.renameAsset(b.dataset.assetRename));
-    list.querySelectorAll('[data-asset-delete]').forEach(b=>b.onclick=()=>this.deleteAsset(b.dataset.assetDelete));
+    list.querySelectorAll('[data-asset-open]').forEach(b=>b.onclick=()=>{this.selectedAssetId=this.selectedAssetId===b.dataset.assetOpen?null:b.dataset.assetOpen;this.renderLibrary();});
+    list.querySelectorAll('[data-preview-download]').forEach(b=>b.onclick=()=>this.downloadAsset(b.dataset.previewDownload));
+    list.querySelectorAll('[data-preview-rename]').forEach(b=>b.onclick=async()=>{await this.renameAsset(b.dataset.previewRename);});
+    list.querySelectorAll('[data-preview-delete]').forEach(b=>b.onclick=()=>this.deleteAsset(b.dataset.previewDelete));
+    list.querySelectorAll('.inline-preview-image').forEach(img=>img.onerror=()=>{img.closest('.inline-preview-stage').innerHTML='<div class="inline-preview-empty">A imagem não pôde ser decodificada pelo navegador.</div>';});
     if(this.assetBrowser)this.renderProjectLibraryBrowser(this.assetBrowser.node);
   }
+
+  openAsset(id) { this.selectedAssetId=id;this.renderLibrary(); }
 
   async openProjectLibrary(node=null) {
     await this.refreshLibrary();
@@ -214,7 +248,7 @@ class StudioApp {
     const name=(await this.askText('Renomear arquivo','Nome do arquivo',asset.name)).trim();
     if(!name||name===asset.name)return;
     try{await this.vfs.saveAsset({...asset,name:name.slice(0,180)});await this.refreshLibrary();}
-    catch(error){alert('Não foi possível renomear o arquivo: '+error.message);}
+    catch(error){this.notify('Não foi possível renomear o arquivo: '+error.message);}
   }
 
   applyImageAsset(node,id) {
@@ -247,6 +281,7 @@ class StudioApp {
     const a=document.createElement('a');a.href=this.assetUrl(asset);a.download=asset.name||'flowiq-asset';a.rel='noopener';a.click();
   }
   assetUrl(asset) {
+    if(!(asset?.blob instanceof Blob))throw new Error('O conteúdo deste arquivo não está disponível no armazenamento local.');
     if(!this.assetUrls.has(asset.id))this.assetUrls.set(asset.id,URL.createObjectURL(asset.blob));
     return this.assetUrls.get(asset.id);
   }
@@ -265,8 +300,8 @@ class StudioApp {
       if(accepted.length)await this.vfs.saveAssets(accepted);
       await this.refreshLibrary();
       if(this.assetBrowser)this.renderProjectLibraryBrowser(this.assetBrowser.node);
-      alert(accepted.length+' arquivo(s) adicionado(s).'+(errors.length?'\n\nNão adicionados:\n'+errors.join('\n'):''));
-    }catch(error){alert('Falha ao adicionar arquivos: '+error.message+'\n\nO envio em lote foi cancelado para evitar uma biblioteca incompleta.');}
+      this.notify(accepted.length+' arquivo(s) adicionado(s).'+(errors.length?' Não adicionados: '+errors.join('; '):''),errors.length?'warning':'success');
+    }catch(error){this.notify('Falha ao adicionar arquivos: '+error.message+' Nenhum arquivo do lote foi salvo.','error');}
     finally{button.disabled=false;$('asset-file-input').value='';}
   }
 
@@ -278,10 +313,10 @@ class StudioApp {
     const scan=(nodes,projectName)=>{for(const node of nodes||[]){if(node?.properties?.assetId===id)references.push(projectName);scan(node?.children,projectName);}};
     for(const project of this.projects)scan(project.data,project.name);
     if(this.project)scan(this.model.toJSON(),this.project.name);
-    if(references.length){alert('Este arquivo está sendo usado por '+references.length+' objeto(s) em projetos. Remova a imagem desses componentes antes de excluir o asset.');return;}
-    if(!confirm('Excluir "'+asset.name+'"? Esta ação não pode ser desfeita.'))return;
+    if(references.length){this.notify('Este arquivo está em uso por '+references.length+' objeto(s). Remova a referência antes de excluir.','warning');return;}
+    if(!await this.askConfirm('Excluir arquivo','Excluir "'+asset.name+'"? Esta ação não pode ser desfeita.','Excluir'))return;
     try { await this.vfs.deleteAsset(id);const url=this.assetUrls.get(id);if(url)URL.revokeObjectURL(url);this.assetUrls.delete(id);await this.refreshLibrary(); }
-    catch(error){alert('Não foi possível excluir o arquivo: '+error.message);}
+    catch(error){this.notify('Não foi possível excluir o arquivo: '+error.message);}
   }
   createProject() {
     $('modal-content').innerHTML = `<h2>Novo projeto</h2><div class="field"><label>Nome do projeto</label><input id="new-name" maxlength="48" value="Meu Sistema OS" placeholder="Ex.: NeoOS"></div><div class="modal-actions"><button class="btn" id="cancel-modal">Cancelar</button><button class="btn primary" id="confirm-create">Criar projeto</button></div>`;
@@ -358,7 +393,7 @@ class StudioApp {
     const name=(await this.askText('Renomear projeto','Nome do projeto',project.name)).trim();
     if(!name||name===project.name)return;
     try{project.name=name.slice(0,64);await this.vfs.saveProject(project);if(this.project?.id===id){this.project.name=project.name;$('project-title').textContent=project.name;this.renderTree();await this.save();}await this.loadHub();}
-    catch(error){alert('Não foi possível renomear o projeto: '+error.message);}
+    catch(error){this.notify('Não foi possível renomear o projeto: '+error.message);}
   }
 
   async deleteProject(id) {
@@ -1081,7 +1116,7 @@ class StudioApp {
           shared=true;
         }catch(e){
           if(e?.name==='AbortError'){
-            alert('Compartilhamento cancelado. O backup continua preservado no Studio.');
+            this.notify('Compartilhamento cancelado. O backup continua preservado no Studio.');
             return;
           }
           console.warn('Flowiq: compartilhamento indisponível, tentando download.',e);
@@ -1094,10 +1129,10 @@ class StudioApp {
         try{a.click();downloaded=true;}
         finally{a.remove();setTimeout(()=>URL.revokeObjectURL(url),60000);}
       }
-      alert((shared?'Backup enviado para o compartilhamento.':downloaded?'Compartilhamento bloqueado pelo navegador. O download do backup foi solicitado.':'Backup preparado.')+'\n\nProjetos: '+result.projectCount+'\nArquivos da biblioteca: '+result.assetCount+'\nTamanho: '+(result.size/1048576).toFixed(2)+' MB\n\nConfirme se o arquivo foi salvo e guarde uma cópia fora do navegador.');
+      this.notify((shared?'Backup enviado para o compartilhamento.':downloaded?'Compartilhamento bloqueado pelo navegador. O download do backup foi solicitado.':'Backup preparado.')+'\n\nProjetos: '+result.projectCount+'\nArquivos da biblioteca: '+result.assetCount+'\nTamanho: '+(result.size/1048576).toFixed(2)+' MB\n\nConfirme se o arquivo foi salvo e guarde uma cópia fora do navegador.');
     }catch(e){
       console.error('Flowiq: falha ao preparar backup.',e);
-      alert('Não foi possível preparar o backup: '+(e?.message||'erro desconhecido')+'\n\nSeus projetos e arquivos não foram apagados. Tente novamente após fechar outras abas ou liberar espaço no dispositivo.');
+      this.notify('Não foi possível preparar o backup: '+(e?.message||'erro desconhecido')+'\n\nSeus projetos e arquivos não foram apagados. Tente novamente após fechar outras abas ou liberar espaço no dispositivo.');
     }finally{if(button)button.disabled=false;}
   }
   async importFullBackup(file) {
@@ -1110,12 +1145,12 @@ class StudioApp {
       }
       const data=await inspectBackupFile(file);
       const date=data.createdAt?new Date(data.createdAt).toLocaleString('pt-BR'):'não informada';
-      const ok=confirm('Backup validado com sucesso!\n\nData: '+date+'\nProjetos: '+data.projectCount+'\nArquivos da biblioteca: '+data.assetCount+'\nTamanho: '+(data.totalBytes/1048576).toFixed(2)+' MB\n\nOs dados serão adicionados aos atuais. Nada será sobrescrito. IDs repetidos serão recriados.\n\nDeseja restaurar?');
+      const ok=await this.askConfirm('Backup validado', 'Data: '+date+' · '+data.projectCount+' projetos · '+data.assetCount+' arquivos · '+(data.totalBytes/1048576).toFixed(2)+' MB.\n\nOs dados serão adicionados aos atuais. Nada será sobrescrito e IDs repetidos serão recriados.','Restaurar backup');
       if(!ok)return;
       const result=await restoreBackup(this.vfs,data);
       await this.loadHub();
-      alert('Restauração concluída!\nProjetos adicionados: '+result.projects+'\nArquivos adicionados: '+result.assets+'\n\nOs dados anteriores foram preservados.');
-    }catch(e){alert('Backup não restaurado: '+e.message+'\n\nNenhum dado existente foi substituído.');}
+      this.notify('Restauração concluída!\nProjetos adicionados: '+result.projects+'\nArquivos adicionados: '+result.assets+'\n\nOs dados anteriores foram preservados.');
+    }catch(e){this.notify('Backup não restaurado: '+e.message+'\n\nNenhum dado existente foi substituído.');}
     finally{$('backup-file-input').value='';}
   }
 
@@ -1145,7 +1180,7 @@ class StudioApp {
       a.href=url;a.download=(this.project.name.replace(/[^a-z0-9-_]+/gi,'_')||'projeto')+'.flowiq';
       document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),30000);
       this.log('Projeto e '+assets.length+' asset(s) exportados.','ok');
-    }catch(error){alert('Não foi possível exportar o projeto: '+error.message);}
+    }catch(error){this.notify('Não foi possível exportar o projeto: '+error.message);}
   }
 
   async importProject(file) {
@@ -1183,7 +1218,7 @@ class StudioApp {
       imported.data=this.model.toJSON();
       await this.vfs.restoreBackupData([imported],restoredAssets);
       $('file-input').value='';await this.loadHub();await this.openProject(imported.id);
-    } catch(e) { alert('Falha na importação: '+e.message+'\n\nNenhum dado foi substituído.');$('file-input').value=''; }
+    } catch(e) { this.notify('Falha na importação: '+e.message+'\n\nNenhum dado foi substituído.');$('file-input').value=''; }
   }
 
   play(force) {
