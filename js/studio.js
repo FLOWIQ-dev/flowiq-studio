@@ -294,7 +294,7 @@ class StudioApp {
     const menu=document.createElement('div');menu.className='tree-context-menu';menu.setAttribute('role','menu');
     const add=(label,action,extra='')=>{const button=document.createElement('button');button.type='button';button.textContent=label;button.className=extra;button.onclick=()=>{this.closeTreeMenu();action();};menu.append(button);};
     const sep=()=>{const line=document.createElement('div');line.className='menu-separator';menu.append(line);};
-    if(isRoot){add('＋ Novo Frame',()=>this.add('Frame'));add('Expandir tudo',()=>{this.model.getAll().forEach(n=>{if(n.children.length)this.expandedNodes.add(n.id);});this.renderTree();});add('Recolher tudo',()=>{this.expandedNodes.clear();this.renderTree();});}
+    if(isRoot){add('Expandir tudo',()=>{this.model.getAll().forEach(n=>{if(n.children.length)this.expandedNodes.add(n.id);});this.renderTree();});add('Recolher tudo',()=>{this.expandedNodes.clear();this.renderTree();});}
     else{
       add('Selecionar',()=>this.select(node));
       if(node.className==='Frame'){add('＋ Inserir Frame filho',()=>this.insertChild(node,'Frame'));add('＋ Inserir Botão',()=>this.insertChild(node,'TextButton'));add('＋ Inserir Texto',()=>this.insertChild(node,'TextLabel'));add('＋ Inserir Imagem',()=>this.insertChild(node,'ImageLabel'));}
