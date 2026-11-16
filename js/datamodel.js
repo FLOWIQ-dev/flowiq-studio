@@ -7,7 +7,10 @@ const DEFAULT_PROPERTIES = {
     height: 220,
     backgroundColor: '#182235',
     borderRadius: 12,
-    visible: true
+    visible: true,
+    opacity: 1,
+    borderColor: '#64748b',
+    borderWidth: 0
   },
 
   TextButton: {
@@ -20,7 +23,12 @@ const DEFAULT_PROPERTIES = {
     borderRadius: 9,
     fontSize: 14,
     text: 'Botão',
-    visible: true
+    visible: true,
+    opacity: 1,
+    borderColor: '#64748b',
+    borderWidth: 0,
+    textAlign: 'center',
+    fontWeight: 'normal'
   },
 
   TextLabel: {
@@ -33,7 +41,12 @@ const DEFAULT_PROPERTIES = {
     borderRadius: 0,
     fontSize: 14,
     text: 'Texto',
-    visible: true
+    visible: true,
+    opacity: 1,
+    borderColor: '#64748b',
+    borderWidth: 0,
+    textAlign: 'center',
+    fontWeight: 'normal'
   },
 
   ImageLabel: {
@@ -44,7 +57,12 @@ const DEFAULT_PROPERTIES = {
     backgroundColor: '#263449',
     borderRadius: 8,
     text: 'Imagem',
-    visible: true
+    visible: true,
+    opacity: 1,
+    borderColor: '#64748b',
+    borderWidth: 0,
+    imageUrl: '',
+    imageFit: 'cover'
   }
 };
 
