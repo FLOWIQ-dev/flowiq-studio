@@ -1,5 +1,5 @@
-import { DataModel, Instance } from './datamodel.js?v=2026.11.16.25';
-import { VirtualFS } from './vfs.js?v=2026.11.16.25';
+import { DataModel, Instance } from './datamodel.js?v=2026.11.16.36';
+import { VirtualFS } from './vfs.js?v=2026.11.16.36';
 
 const $ = (id) => document.getElementById(id);
 const esc = (value) => String(value ?? '').replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -133,11 +133,53 @@ class StudioApp {
   }
 
   makeId() { return globalThis.crypto?.randomUUID?.() || 'proj_'+Date.now()+'_'+Math.random().toString(36).slice(2); }
-  hideModal() { $('modal').classList.remove('open'); }
+  hideModal() {
+    $('modal').classList.remove('open');
+    if(this.modalResolve){const resolve=this.modalResolve;this.modalResolve=null;resolve(null);}
+  }
+
+  askText(title,label,value='',placeholder=''){
+    return new Promise(resolve=>{
+      this.modalResolve=resolve;
+      $('modal-content').innerHTML='<h2>'+esc(title)+'</h2><div class="field"><label>'+esc(label)+'</label><input id="studio-dialog-input" maxlength="64" value="'+esc(value)+'" placeholder="'+esc(placeholder)+'" autocomplete="off" autocapitalize="sentences"></div><div class="modal-actions"><button class="btn" id="studio-dialog-cancel">Cancelar</button><button class="btn primary" id="studio-dialog-ok">Confirmar</button></div>';
+      $('modal').classList.add('open');
+      const input=$('studio-dialog-input');
+      const finish=result=>{if(this.modalResolve!==resolve)return;this.modalResolve=null;$('modal').classList.remove('open');resolve(result);};
+      $('studio-dialog-cancel').onclick=()=>finish(null);
+      $('studio-dialog-ok').onclick=()=>finish(input.value);
+      input.addEventListener('keydown',event=>{if(event.key==='Enter'){event.preventDefault();finish(input.value);}});
+      requestAnimationFrame(()=>{input.focus();input.select();});
+    });
+  }
+
+  askChoice(title,label,options){
+    return new Promise(resolve=>{
+      this.modalResolve=resolve;
+      const optionMarkup=options.map(option=>'<option value="'+esc(option.value)+'">'+esc(option.label)+'</option>').join('');
+      $('modal-content').innerHTML='<h2>'+esc(title)+'</h2><div class="field"><label>'+esc(label)+'</label><select id="studio-dialog-choice">'+optionMarkup+'</select></div><div class="modal-actions"><button class="btn" id="studio-dialog-cancel">Cancelar</button><button class="btn primary" id="studio-dialog-ok">Mover</button></div>';
+      $('modal').classList.add('open');
+      const select=$('studio-dialog-choice');
+      const finish=result=>{if(this.modalResolve!==resolve)return;this.modalResolve=null;$('modal').classList.remove('open');resolve(result);};
+      $('studio-dialog-cancel').onclick=()=>finish(null);
+      $('studio-dialog-ok').onclick=()=>finish(select.value);
+      requestAnimationFrame(()=>select.focus());
+    });
+  }
+
+  askConfirm(title,message,confirmLabel='Confirmar'){
+    return new Promise(resolve=>{
+      this.modalResolve=resolve;
+      $('modal-content').innerHTML='<h2>'+esc(title)+'</h2><p class="dialog-message">'+esc(message)+'</p><div class="modal-actions"><button class="btn" id="studio-dialog-cancel">Cancelar</button><button class="btn danger" id="studio-dialog-ok">'+esc(confirmLabel)+'</button></div>';
+      $('modal').classList.add('open');
+      const finish=result=>{if(this.modalResolve!==resolve)return;this.modalResolve=null;$('modal').classList.remove('open');resolve(result);};
+      $('studio-dialog-cancel').onclick=()=>finish(false);
+      $('studio-dialog-ok').onclick=()=>finish(true);
+    });
+  }
 
   async deleteProject(id) {
     const p = this.projects.find(x => x.id === id);
-    if (!p || !confirm('Excluir permanentemente "'+p.name+'"?')) return;
+    if (!p || !await this.askConfirm('Excluir projeto','Excluir permanentemente "'+p.name+'"?','Excluir')) return;
     try { await this.vfs.deleteProject(id); await this.loadHub(); }
     catch (e) { this.log('Erro ao excluir: '+e.message,'error'); }
   }
@@ -356,17 +398,17 @@ class StudioApp {
     menu.style.left=Math.max(8,Math.min(window.innerWidth-w-8,r.right-w))+'px';
     menu.style.top=Math.max(8,Math.min(window.innerHeight-h-8,r.bottom+3))+'px';
   }
-  renameNode(node){
-    const value=prompt('Nome do objeto:',node.name);if(value===null)return;
+  async renameNode(node){
+    const value=await this.askText('Renomear objeto','Nome do objeto',node.name,'Novo nome');
+    if(value===null)return;
     const name=value.trim().slice(0,64);if(!name)return;
     this.pushHistory();node.name=name;this.refresh();this.scheduleSave();
   }
-  moveIntoFrame(node){
+  async moveIntoFrame(node){
     const targets=[this.model.root,...this.model.getAll().filter(candidate=>candidate!==node&&!this.isDescendant(candidate,node))];
-    const choices=targets.map((target,index)=>(index+1)+'. '+(target===this.model.root?'Projeto':target.name+' ('+target.className+')')).join('\\n');
-    const answer=prompt('Mover para qual objeto?\\n'+choices,'1');
-    if(answer===null)return;
-    const target=targets[Number(answer)-1];
+    const selected=await this.askChoice('Mover objeto','Escolha o destino',targets.map((target,index)=>({value:String(index),label:(target===this.model.root?'Projeto':target.name+' ('+target.className+')')})));
+    if(selected===null)return;
+    const target=targets[Number(selected)];
     if(target)this.reparentNode(node,target);
   }
   isDescendant(candidate,ancestor){
