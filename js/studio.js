@@ -1028,7 +1028,7 @@ class StudioApp {
   async importFullBackup(file) {
     if(!file)return;
     try{
-      const raw=JSON.parse((await file.text()).replace(/^\\uFEFF/,''));
+      const raw=JSON.parse((await file.text()).replace(/^\uFEFF/,''));
       if(raw?.format==='flowiq-studio'||raw?.project||Array.isArray(raw?.data)){
         await this.importProject(file);
         return;
@@ -1076,7 +1076,7 @@ class StudioApp {
   async importProject(file) {
     if(!file)return;
     try {
-      const raw=JSON.parse((await file.text()).replace(/^\\uFEFF/,''));
+      const raw=JSON.parse((await file.text()).replace(/^\uFEFF/,''));
       if(raw?.format==='flowiq-studio-backup'){await this.importFullBackup(file);return;}
       const p=raw.project || raw;
       if(!p || !Array.isArray(p.data))throw new Error('Arquivo não contém um projeto Flowiq válido.');
