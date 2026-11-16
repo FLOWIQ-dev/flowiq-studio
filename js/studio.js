@@ -1,6 +1,6 @@
-import { DataModel, Instance } from './datamodel.js?v=2026.11.16.46';
-import { VirtualFS } from './vfs.js?v=2026.11.16.46';
-import { createProjectRecord, normalizeProject, FlowiqRuntime } from './engine.js?v=2026.11.16.46';
+import { DataModel, Instance } from './datamodel.js?v=2026.11.16.47';
+import { VirtualFS } from './vfs.js?v=2026.11.16.47';
+import { createProjectRecord, normalizeProject, FlowiqRuntime } from './engine.js?v=2026.11.16.47';
 
 const $ = (id) => document.getElementById(id);
 const esc = (value) => String(value ?? '').replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -742,6 +742,11 @@ class StudioApp {
         <label class="visibility-control"><input type="checkbox" id="p-visible" ${p.visible!==false?'checked':''}> Visível</label>
         ${isFrame?'<p class="muted" style="font-size:10px">Os objetos filhos acompanham a hierarquia deste Frame.</p>':''}
       </details>
+      <details class="property-group event-editor-group" open>
+        <summary>Interações</summary>
+        <p class="event-editor-help">Crie comportamentos sem escrever código. Escolha o que dispara a ação e o que deve acontecer.</p>
+        <div id="event-editor-content"></div>
+      </details>
       <div class="inspector-actions"><button class="btn" id="duplicate-node"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5H5v11h3"/></svg> Duplicar</button><button class="btn danger" id="delete-node"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M10 11v6m4-6v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg> Excluir</button></div>`;
     const setters={
       'p-name':v=>{node.name=v;const title=box.querySelector('.properties-object-heading strong');if(title)title.textContent=v;this.renderTree();this.scheduleSave();},
@@ -754,6 +759,80 @@ class StudioApp {
     Object.entries(setters).forEach(([id,set])=>{const input=$(id);if(!input)return;input.onfocus=()=>this.pushHistory();input.oninput=e=>{set(e.target.value);this.renderCanvas();this.scheduleSave();};input.onchange=e=>{set(e.target.value);this.renderCanvas();this.scheduleSave();};});
     $('p-visible').onfocus=()=>this.pushHistory();$('p-visible').onchange=e=>{p.visible=e.target.checked;this.renderCanvas();this.scheduleSave();};
     $('delete-node').onclick=()=>this.deleteSelected();$('duplicate-node').onclick=()=>this.duplicateSelected();
+    this.renderEventEditor(node,box);
+  }
+
+  renderEventEditor(node,box){
+    const host=box.querySelector('#event-editor-content');
+    if(!host||!this.project)return;
+    if(node.className!=='TextButton'){
+      host.innerHTML='<p class="event-editor-note">As interações por toque estão disponíveis nos objetos Botão. Selecione um TextButton para configurar o evento <strong>Ao clicar</strong>.</p>';
+      return;
+    }
+    if(!Array.isArray(this.project.events))this.project.events=[];
+    let event=this.project.events.find(item=>item&&item.nodeId===node.id&&(item.event||item.trigger)==='click');
+    const all=this.model.getAll();
+    const targetOptions='<option value="">Este botão</option>'+all.map(item=>'<option value="'+esc(item.id)+'">'+esc(item.name)+'</option>').join('');
+    const actionLabels={setText:'Alterar texto',toggleVisibility:'Mostrar / ocultar',setProperty:'Alterar propriedade',log:'Registrar mensagem'};
+    const actionOptions=Object.entries(actionLabels).map(([value,label])=>'<option value="'+value+'">'+label+'</option>').join('');
+    const renderAction=(action,index)=>{
+      const type=action.type||'setText';
+      const target=action.targetId||'';
+      let config='';
+      if(type==='setText')config='<div class="field"><label>Texto novo</label><textarea data-action-value="'+index+'" rows="2">'+esc(action.value??'Texto atualizado')+'</textarea></div>';
+      else if(type==='setProperty')config='<div class="field"><label>Propriedade</label><select data-action-property="'+index+'"><option value="visible">Visibilidade</option><option value="opacity">Opacidade</option><option value="backgroundColor">Cor de fundo</option><option value="textColor">Cor do texto</option></select></div><div class="field"><label>Valor</label><input data-action-value="'+index+'" value="'+esc(action.value??'')+'" placeholder="Ex.: #2563eb, 0.5, true"></div>';
+      else if(type==='log')config='<div class="field"><label>Mensagem</label><input data-action-value="'+index+'" value="'+esc(action.message??'Ação executada')+'"></div>';
+      return '<article class="event-action-card"><div class="event-action-heading"><strong>Ação '+(index+1)+'</strong><button type="button" class="event-remove-action" data-remove-action="'+index+'" aria-label="Remover ação">Remover</button></div><div class="field"><label>O que fazer?</label><select data-action-type="'+index+'">'+actionOptions.replace('value="'+type+'"','value="'+type+'" selected')+'</select></div><div class="field"><label>Em qual objeto?</label><select data-action-target="'+index+'">'+targetOptions.replace('value="'+target+'"','value="'+target+'" selected')+'</select></div>'+config+'</article>';
+    };
+    if(!event){
+      host.innerHTML='<p class="event-editor-note">Este botão ainda não tem ações. Adicione uma para definir o que acontece quando alguém tocar nele na prévia.</p><button type="button" class="btn primary event-add-trigger" id="event-create">＋ Criar evento Ao clicar</button>';
+      host.querySelector('#event-create').onclick=()=>{
+        this.project.events.push({id:this.makeId(),nodeId:node.id,event:'click',actions:[]});
+        this.renderEventEditor(node,box);this.scheduleSave();
+      };
+      return;
+    }
+    if(!Array.isArray(event.actions))event.actions=[];
+    host.innerHTML='<div class="event-trigger-card"><span class="event-trigger-dot"></span><div><strong>Ao clicar</strong><small>Quando alguém tocar neste botão na prévia</small></div><button type="button" class="event-delete-trigger" id="event-delete">Excluir</button></div>'+
+      (event.actions.length?event.actions.map(renderAction).join(''):'<p class="event-editor-note">O evento está criado, mas ainda não faz nada. Adicione sua primeira ação.</p>')+
+      '<button type="button" class="btn event-add-action" id="event-add-action">＋ Adicionar ação</button>';
+    host.querySelector('#event-delete').onclick=()=>{
+      this.project.events=this.project.events.filter(item=>item!==event);this.renderEventEditor(node,box);this.scheduleSave();
+    };
+    host.querySelector('#event-add-action').onclick=()=>{
+      event.actions.push({type:'setText',targetId:'',value:'Texto atualizado'});this.renderEventEditor(node,box);this.scheduleSave();
+    };
+    host.querySelectorAll('[data-remove-action]').forEach(button=>button.onclick=()=>{
+      event.actions.splice(Number(button.dataset.removeAction),1);this.renderEventEditor(node,box);this.scheduleSave();
+    });
+    host.querySelectorAll('[data-action-type]').forEach(select=>select.onchange=()=>{
+      const index=Number(select.dataset.actionType),type=select.value;
+      event.actions[index]=type==='setText'?{type,targetId:event.actions[index].targetId||'',value:'Texto atualizado'}:type==='toggleVisibility'?{type,targetId:event.actions[index].targetId||''}:type==='setProperty'?{type,targetId:event.actions[index].targetId||'',property:'backgroundColor',value:'#2563eb'}:{type,targetId:event.actions[index].targetId||'',message:'Ação executada'};
+      this.renderEventEditor(node,box);this.scheduleSave();
+    });
+    host.querySelectorAll('[data-action-target]').forEach(select=>select.onchange=()=>{
+      event.actions[Number(select.dataset.actionTarget)].targetId=select.value;this.scheduleSave();
+    });
+    host.querySelectorAll('[data-action-value]').forEach(input=>input.onchange=()=>{
+      const action=event.actions[Number(input.dataset.actionValue)];
+      if(action.type==='log')action.message=input.value;
+      else if(action.type==='setProperty'){
+        const property=host.querySelector('[data-action-property="'+input.dataset.actionValue+'"]')?.value||'backgroundColor';
+        action.property=property;
+        if(property==='visible')action.value=input.value==='true';
+        else if(property==='opacity')action.value=Math.min(1,Math.max(0,Number(input.value)||0));
+        else action.value=input.value;
+      }else action.value=input.value;
+      this.scheduleSave();
+    });
+    host.querySelectorAll('[data-action-property]').forEach(select=>{
+      select.value=event.actions[Number(select.dataset.actionProperty)].property||'backgroundColor';
+      select.onchange=()=>{
+        const action=event.actions[Number(select.dataset.actionProperty)];action.property=select.value;
+        action.value=select.value==='visible'?true:select.value==='opacity'?1:select.value==='backgroundColor'?'#2563eb':'#ffffff';
+        this.renderEventEditor(node,box);this.scheduleSave();
+      };
+    });
   }
 
   deleteSelected() {
