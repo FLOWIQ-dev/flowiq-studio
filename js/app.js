@@ -18,6 +18,8 @@ class FlowiqStudio {
     this.assets = [];
     this.objectUrls = new Map();
     this.saveTimer = 0;
+    this.savePromise = null;
+    this.savePending = false;
     this.drag = null;
     this.previewScene = null;
     this.dialogResolve = null;
@@ -88,7 +90,7 @@ class FlowiqStudio {
     $('zoom-in').addEventListener('click', () => this.setZoom(this.zoom + 0.1));
     $('zoom-out').addEventListener('click', () => this.setZoom(this.zoom - 0.1));
     $('zoom-fit').addEventListener('click', () => this.fitStage());
-    $('save-project').addEventListener('click', () => this.saveProject());
+    $('save-project').addEventListener('click', () => this.saveProject().catch(() => {}));
     $('add-assets').addEventListener('click', () => $('asset-upload').click());
     $('asset-upload').addEventListener('change', event => this.uploadAssets(event.target.files));
     $('asset-list').addEventListener('click', event => {
@@ -217,7 +219,7 @@ class FlowiqStudio {
     if (this.store.state.screen === 'editor' && this.dirty) {
       const choice = await this.dialog({ title: 'Salvar alterações?', message: 'Existem mudanças neste projeto.', choices: [{ value: 'save', label: 'Salvar e sair' }, { value: 'discard', label: 'Sair sem salvar' }, { value: 'cancel', label: 'Continuar editando' }] });
       if (choice === 'cancel' || !choice) return;
-      if (choice === 'save') await this.saveProject();
+      if (choice === 'save') { try { await this.saveProject(); } catch { return; } }
     }
     this.stopPreview(false);
     this.project = null;
@@ -230,17 +232,27 @@ class FlowiqStudio {
   async saveProject() {
     if (!this.project) return;
     clearTimeout(this.saveTimer);
-    this.project.scene = this.scene.toJSON();
-    this.project.updatedAt = new Date().toISOString();
-    try {
-      await this.db.saveProject(this.project);
+    if (this.savePromise) { this.savePending = true; return this.savePromise; }
+    this.savePromise = (async () => {
+      do {
+        this.savePending = false;
+        this.project.scene = this.scene.toJSON();
+        this.project.updatedAt = new Date().toISOString();
+        const snapshot = JSON.parse(JSON.stringify(this.project));
+        await this.db.saveProject(snapshot);
+      } while (this.savePending);
       this.dirty = false;
       $('save-state').textContent = 'Salvo';
       $('save-state').dataset.state = 'saved';
       await this.refreshProjects();
+    })();
+    try {
+      await this.savePromise;
     } catch (error) {
       this.toast('Falha ao salvar: ' + error.message, 'error');
       throw error;
+    } finally {
+      this.savePromise = null;
     }
   }
 
@@ -284,6 +296,7 @@ class FlowiqStudio {
   }
 
   saveButtonAction(nodeId, value) {
+    this.history.checkpoint(this.historySnapshot());
     const text = String(value || '').slice(0, 200);
     const events = Array.isArray(this.project.events) ? this.project.events : [];
     const existing = events.find(rule => rule.nodeId === nodeId && rule.event === 'click');
