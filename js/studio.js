@@ -288,46 +288,6 @@ class StudioApp {
     return (bytes/1048576).toFixed(2)+' MB';
   }
 
-  renderLibrary() {
-    const total=this.assets.reduce((sum,a)=>sum+(Number(a.size)||0),0);
-    $('library-summary-text').textContent=this.assets.length+' arquivos · '+this.formatBytes(total)+' usados';
-    $('home-asset-count').textContent=String(this.assets.length);
-    const folders=[...new Set(this.assets.map(a=>a.folder).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'pt-BR'));
-    const select=$('asset-folder-filter'),previous=this.assetFolder;
-    select.innerHTML='<option value="">Todas as pastas</option>'+folders.map(f=>'<option value="'+esc(f)+'">'+esc(f)+'</option>').join('');
-    if(folders.includes(previous))select.value=previous;else this.assetFolder='';
-    const filtered=this.assets.filter(a=>(!this.assetFolder||a.folder===this.assetFolder)&&(!this.assetSearch||(a.name+' '+a.mime+' '+(a.folder||'')).toLocaleLowerCase('pt-BR').includes(this.assetSearch)));
-    const list=$('asset-list');
-    if(!filtered.length){list.innerHTML='<div class="empty-project-state"><span class="empty-project-icon">▤</span><strong>'+(this.assets.length?'Nenhum arquivo encontrado':'Sua biblioteca está vazia')+'</strong><small>'+(this.assets.length?'Tente outro termo ou remova o filtro.':'Adicione imagens, vídeos, áudios ou documentos para usar nos projetos.')+'</small>'+(this.assets.length?'':'<button class="btn primary" data-empty-upload>Adicionar arquivos</button>')+'</div>';const emptyUpload=list.querySelector('[data-empty-upload]');if(emptyUpload)emptyUpload.onclick=()=>$('asset-file-input').click();return;}
-    list.innerHTML=filtered.map(a=>{
-      const isImage=a.mime?.startsWith('image/'),isVideo=a.mime?.startsWith('video/'),isAudio=a.mime?.startsWith('audio/');
-      let thumb='<span class="asset-kind-icon">'+(isVideo?'VID':isAudio?'AUD':a.mime?.includes('font')?'FNT':a.mime==='application/pdf'?'PDF':'FILE')+'</span>';
-      if(isImage){try{thumb='<img src="'+this.assetUrl(a)+'" alt="" loading="lazy">';}catch{thumb='<span class="asset-kind-icon">IMG</span>';}}
-      const selected=this.selectedAssetId===a.id;
-      let preview='';
-      if(selected){
-        let body='<div class="inline-preview-empty">Prévia não disponível para este formato.<small>Você ainda pode baixar o arquivo.</small></div>';
-        try{
-          const url=this.assetUrl(a);
-          if(isImage)body='<div class="inline-preview-stage"><img class="inline-preview-image" src="'+url+'" alt="'+esc(a.name)+'"></div>';
-          else if(isVideo)body='<div class="inline-preview-stage"><video src="'+url+'" controls playsinline preload="metadata"></video></div>';
-          else if(isAudio)body='<div class="inline-preview-audio"><span>ÁUDIO</span><audio src="'+url+'" controls preload="metadata"></audio></div>';
-          else if(a.mime==='application/pdf')body='<iframe class="inline-preview-document" src="'+url+'" title="'+esc(a.name)+'"></iframe>';
-          else if(/(text|json|svg|xml)/i.test(a.mime||'')||/\.(txt|json|svg|xml)$/i.test(a.name))body='<iframe class="inline-preview-document inline-preview-text" src="'+url+'" title="'+esc(a.name)+'"></iframe>';
-        }catch(error){body='<div class="inline-preview-empty">Não foi possível abrir a prévia neste navegador.</div>';}
-        preview='<div class="asset-inline-preview">'+body+'<div class="asset-inline-actions"><button data-preview-download="'+esc(a.id)+'">Baixar</button><button data-preview-rename="'+esc(a.id)+'">Renomear</button><button data-preview-delete="'+esc(a.id)+'" class="danger-action">Excluir</button></div></div>';
-      }
-      const kind=(a.mime||'Arquivo').split('/').pop().toUpperCase();
-      return '<article class="asset-entry '+(selected?'is-open':'')+'"><button class="asset-entry-main" data-asset-open="'+esc(a.id)+'"><span class="asset-entry-thumb">'+thumb+'</span><span class="asset-entry-copy"><strong>'+esc(a.name)+'</strong><small>'+esc(a.folder||'Sem pasta')+' <i>·</i> '+esc(kind)+' <i>·</i> '+this.formatBytes(a.size||0)+'</small></span><span class="asset-entry-chevron">'+(selected?'⌃':'⌄')+'</span></button>'+preview+'</article>';
-    }).join('');
-    list.querySelectorAll('[data-asset-open]').forEach(b=>b.onclick=()=>{this.selectedAssetId=this.selectedAssetId===b.dataset.assetOpen?null:b.dataset.assetOpen;this.renderLibrary();});
-    list.querySelectorAll('[data-preview-download]').forEach(b=>b.onclick=()=>this.downloadAsset(b.dataset.previewDownload));
-    list.querySelectorAll('[data-preview-rename]').forEach(b=>b.onclick=async()=>{await this.renameAsset(b.dataset.previewRename);});
-    list.querySelectorAll('[data-preview-delete]').forEach(b=>b.onclick=()=>this.deleteAsset(b.dataset.previewDelete));
-    list.querySelectorAll('.inline-preview-image').forEach(img=>img.onerror=()=>{img.closest('.inline-preview-stage').innerHTML='<div class="inline-preview-empty">A imagem não pôde ser decodificada pelo navegador.</div>';});
-    if(this.assetBrowser)this.renderProjectLibraryBrowser(this.assetBrowser.node);
-  }
-
   openAsset(id) { this.selectedAssetId=id;this.renderLibrary(); }
 
   async openProjectLibrary(node=null) {
