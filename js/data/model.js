@@ -3,7 +3,7 @@ const TYPES = new Set(['Frame', 'TextButton', 'TextLabel', 'ImageLabel']);
 const DEFAULTS = Object.freeze({
   Frame: { x: 24, y: 24, width: 320, height: 220, background: '#1b2940', radius: 14, opacity: 1, visible: true, border: '#334155', borderWidth: 0 },
   TextButton: { x: 24, y: 24, width: 160, height: 48, background: '#2563eb', color: '#ffffff', radius: 10, fontSize: 15, text: 'Botão', opacity: 1, visible: true, border: '#334155', borderWidth: 0 },
-  TextLabel: { x: 24, y: 24, width: 220, height: 42, background: 'transparent', color: '#f8fafc', radius: 0, fontSize: 16, text: 'Texto', opacity: 1, visible: true, border: '#334155', borderWidth: 0 },
+  TextLabel: { x: 24, y: 24, width: 220, height: 42, background: '#121e2e', color: '#f8fafc', radius: 0, fontSize: 16, text: 'Texto', opacity: 1, visible: true, border: '#334155', borderWidth: 0 },
   ImageLabel: { x: 24, y: 24, width: 140, height: 120, background: '#24344c', color: '#ffffff', radius: 10, opacity: 1, visible: true, border: '#334155', borderWidth: 0, assetId: '', fit: 'cover' }
 });
 const cleanName = (value, fallback) => String(value ?? '').trim().slice(0, 64) || fallback;
