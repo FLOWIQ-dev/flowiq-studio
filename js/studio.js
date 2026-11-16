@@ -1,5 +1,5 @@
-import { DataModel, Instance } from './datamodel.js?v=2026.11.16.40';
-import { VirtualFS } from './vfs.js?v=2026.11.16.40';
+import { DataModel, Instance } from './datamodel.js?v=2026.11.16.41';
+import { VirtualFS } from './vfs.js?v=2026.11.16.41';
 
 const $ = (id) => document.getElementById(id);
 const esc = (value) => String(value ?? '').replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -227,9 +227,16 @@ class StudioApp {
         this.project.updatedAt = new Date().toISOString();
         await this.vfs.saveProject(this.project);
       } while (this.savePending);
-      $('btn-save').innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg><span>Salvo</span>'; 
-
-      setTimeout(() => { if ($('btn-save')) $('btn-save').textContent = 'Salvar'; }, 1200);
+      $('btn-save').innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg>';
+      $('btn-save').title = 'Salvo'; $('btn-save').setAttribute('aria-label','Salvo');
+      clearTimeout(this.saveFeedbackTimer);
+      this.saveFeedbackTimer = setTimeout(() => {
+        const button = $('btn-save');
+        if (button) {
+          button.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h12l3 3v13H4V4z"/><path d="M8 4v6h8V4M8 20v-6h8v6"/></svg>';
+          button.title = 'Salvar'; button.setAttribute('aria-label','Salvar');
+        }
+      }, 1200);
     } catch (e) {
       this.log('Erro ao salvar: '+e.message,'error');
     } finally {
