@@ -1,4 +1,4 @@
-const CACHE_NAME = 'flowiq-studio-v13-2026-11-16-29';
+const CACHE_NAME = 'flowiq-studio-v13-2026-11-16-30';
 const APP_FILES = [
   './',
   './index.html',
