@@ -1,7 +1,7 @@
-import { DataModel, Instance } from './datamodel.js?v=2026.11.16.58';
-import { VirtualFS } from './vfs.js?v=2026.11.16.58';
-import { createProjectRecord, normalizeProject, FlowiqRuntime } from './engine.js?v=2026.11.16.58';
-import { createBackupFile, inspectBackupFile, restoreBackup } from './backup.js?v=2026.11.16.58';
+import { DataModel, Instance } from './datamodel.js?v=2026.11.16.60';
+import { VirtualFS } from './vfs.js?v=2026.11.16.60';
+import { createProjectRecord, normalizeProject, FlowiqRuntime } from './engine.js?v=2026.11.16.60';
+import { createBackupFile, inspectBackupFile, restoreBackup } from './backup.js?v=2026.11.16.60';
 
 const $ = (id) => document.getElementById(id);
 const esc = (value) => String(value ?? '').replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -169,7 +169,7 @@ class StudioApp {
     $('settings-export-project').disabled=!this.project;
     $('settings-export-project').classList.toggle('is-disabled',!this.project);
     $('settings-export-project').querySelector('small').textContent=this.project?'Salvar '+this.project.name+' e os arquivos que ele utiliza.':'Abra um projeto para habilitar esta opção.';
-    $('settings-version').textContent='Versão 2026.11.16.58';
+    $('settings-version').textContent='Versão 2026.11.16.60';
     $('settings-return-project').hidden=!this.project;
     this.applyPreferences();
   }
