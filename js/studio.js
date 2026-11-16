@@ -1,5 +1,5 @@
-import { DataModel, Instance } from './datamodel.js?v=2026.11.16.10';
-import { VirtualFS } from './vfs.js?v=2026.11.16.10';
+import { DataModel, Instance } from './datamodel.js?v=2026.11.16.11';
+import { VirtualFS } from './vfs.js?v=2026.11.16.11';
 
 const $ = (id) => document.getElementById(id);
 const esc = (value) => String(value ?? '').replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -247,7 +247,7 @@ class StudioApp {
       if (node.className === 'TextButton' && this.playMode) {
         el.type = 'button'; el.onclick = () => this.log('Ação executada: '+node.name,'ok');
       } else if (!this.playMode) {
-        el.onclick = (e) => { e.stopPropagation(); if(this.selected!==node)this.select(node); };
+        el.onclick = (e) => { e.stopPropagation(); };
       }
       parentEl.append(el);
       if (node.className === 'Frame') node.children.forEach(child => renderNode(child,el));
@@ -264,12 +264,14 @@ class StudioApp {
     const el=(handle||rotate)?[...$('canvas').querySelectorAll('[data-node-id]')].find(item=>item.dataset.nodeId===(handle||rotate).dataset.nodeId):event.target.closest('[data-node-id]');
     if(!el)return;
     const node=this.model.find(el.dataset.nodeId);if(!node)return;
-    if(this.selected!==node){
-      this.select(node);
-      const now=Date.now();
-      this.lastTap={id:node.id,time:now};
-      clearTimeout(this.lastTapTimer);
-      this.lastTapTimer=setTimeout(()=>{this.lastTap=null;},380);
+    const wasSelected=this.selected===node;
+    if(!wasSelected){
+      this.drag={
+        node,el,pointerId:event.pointerId,mode:'select',
+        startX:event.clientX,startY:event.clientY,moved:false
+      };
+      try{$('canvas').setPointerCapture(event.pointerId);}catch(_){}
+      event.preventDefault();
       return;
     }
     const activeEl=[...$('canvas').querySelectorAll('[data-node-id]')].find(item=>item.dataset.nodeId===node.id);
@@ -297,7 +299,11 @@ class StudioApp {
   moveDrag(event) {
     const d=this.drag;if(!d||event.pointerId!==d.pointerId)return;
     const distance=Math.hypot(event.clientX-d.startX,event.clientY-d.startY);
-    if(!d.moved&&distance<7)return;
+    if(d.mode==='select'){
+      if(distance>10)d.moved=true;
+      return;
+    }
+    if(!d.moved&&distance<8)return;
     if(!d.moved){d.moved=true;d.historyRecorded=false;}
     if(!d.historyRecorded){this.pushHistory();d.historyRecorded=true;}
     const dx=(event.clientX-d.startX)/(d.scaleX||1),dy=(event.clientY-d.startY)/(d.scaleY||1);
@@ -329,17 +335,20 @@ class StudioApp {
   endDrag(event) {
     const d=this.drag;if(!d||(event?.pointerId!==undefined&&event.pointerId!==d.pointerId))return;
     this.drag=null;
-    if(d.moved){this.updateSelectionHandles();this.scheduleSave();return;}
-    if(event?.type==='pointerup'&&event.pointerType==='touch'){
-      const now=Date.now(),last=this.lastTap;
-      if(last&&last.id===d.node.id&&now-last.time<360){
-        clearTimeout(this.lastTapTimer);this.lastTap=null;
-        this.selected=d.node;this.renderInspector();this.togglePanel('inspector');
-      }else{
-        this.lastTap={id:d.node.id,time:now};
-        clearTimeout(this.lastTapTimer);
-        this.lastTapTimer=setTimeout(()=>{this.lastTap=null;},380);
-      }
+    if(event?.type!=='pointerup')return;
+    if(d.moved){
+      if(d.mode!=='select'){this.updateSelectionHandles();this.scheduleSave();}
+      return;
+    }
+    if(d.mode==='select')this.select(d.node);
+    const now=Date.now(),last=this.lastTap;
+    if(last&&last.id===d.node.id&&now-last.time<360){
+      clearTimeout(this.lastTapTimer);this.lastTap=null;
+      this.selected=d.node;this.renderInspector();this.togglePanel('inspector');
+    }else{
+      this.lastTap={id:d.node.id,time:now};
+      clearTimeout(this.lastTapTimer);
+      this.lastTapTimer=setTimeout(()=>{this.lastTap=null;},380);
     }
   }
 
