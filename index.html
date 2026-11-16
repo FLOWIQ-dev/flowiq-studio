@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#0b1220"><meta name="flowiq-build" content="2026.11.16.21"><title>Flowiq Studio</title><link rel="manifest" href="./manifest.json"><link rel="icon" href="./assets/icon.svg" type="image/svg+xml">
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#0b1220"><meta name="flowiq-build" content="2026.11.16.22"><title>Flowiq Studio</title><link rel="manifest" href="./manifest.json"><link rel="icon" href="./assets/icon.svg" type="image/svg+xml">
 <style>
 
 :root{color-scheme:dark;--bg:#15181d;--panel:#1b1f25;--panel-raised:#22272e;--panel-hover:#292f37;--line:#30363f;--line-soft:#272d35;--text:#e7eaf0;--muted:#929ba8;--faint:#69727f;--accent:#579cff;--accent-dim:#203b59;--danger:#e17878;--radius:6px}
@@ -133,9 +133,126 @@ button,input,textarea{font:inherit}button{cursor:pointer}.screen{display:none;wi
  .history-buttons .icon-action,.stage-zoom .icon-action{width:32px;height:36px;min-width:32px}
  .stage-toolbar #btn-play{min-width:62px;padding-inline:6px}
 }
+
+/* Global layout consistency */
+:root{--control-h:36px;--control-radius:4px;--panel-pad:12px}
+button{font-family:inherit}
+.btn{min-height:var(--control-h);display:inline-flex;align-items:center;justify-content:center;gap:7px;line-height:1.15;border-radius:var(--control-radius);vertical-align:middle}
+.icon-action{flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;padding:0;line-height:0;border-radius:var(--control-radius)}
+.icon-action svg,.tree-menu-trigger svg,.tree-type-icon svg,.instance-symbol svg,.nav-icon svg{display:block;flex:none}
+.topbar{gap:10px}
+.topbar-brand,.breadcrumb,.topbar-actions{align-self:stretch;display:flex;align-items:center}
+.topbar-brand{flex:none}
+.breadcrumb{flex:0 1 auto}
+.topbar-actions{gap:6px}
+.editor-layout{grid-template-columns:clamp(220px,20vw,270px) minmax(320px,1fr) clamp(260px,23vw,310px)}
+.side-panel{min-width:0}
+.panel-header{padding-inline:14px}
+.panel-content{padding:var(--panel-pad)}
+.explorer .panel-content{position:relative}
+.tree-row{display:flex;align-items:center;min-width:0;line-height:1.2}
+.tree-row>*{align-self:center}
+.tree-disclosure,.tree-menu-trigger{flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;line-height:1}
+.tree-type-icon{flex:0 0 24px;display:inline-flex;align-items:center;justify-content:center;line-height:0}
+.tree-row .node-name{flex:1 1 0;min-width:0;line-height:1.25}
+.tree-count{flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center}
+.tree-menu-trigger{margin-left:auto}
+.explorer-toolbar{min-height:42px;align-items:center}
+.instance-add{display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto}
+.instance-library{z-index:65}
+.instance-category>button{display:flex;align-items:center;text-align:left}
+.instance-category>button>span:last-child{min-width:0}
+.properties-object-heading{min-width:0;align-items:center}
+.properties-object-heading>.tree-type-icon{flex:0 0 32px}
+.field-grid{align-items:start}
+.field{min-width:0}
+.field input,.field textarea,.field select{display:block;width:100%;max-width:100%;border-radius:4px}
+.property-group{min-width:0}
+.property-group summary{display:flex;align-items:center;justify-content:flex-start;line-height:1.2}
+.visibility-control{display:flex;align-items:center}
+.inspector-actions{align-items:stretch}
+.inspector-actions .btn{width:100%;min-width:0}
+.stage-area{min-width:0}
+.stage-toolbar{display:flex;align-items:center;min-width:0;gap:7px}
+.stage-toolbar>.spacer{flex:1 1 auto;min-width:8px}
+.history-buttons,.stage-zoom{display:flex;align-items:center;justify-content:center;flex:0 0 auto}
+.stage-toolbar .icon-action{display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto}
+.stage-zoom output{display:inline-flex;align-items:center;justify-content:center;line-height:1;font-variant-numeric:tabular-nums}
+.stage-scroll{min-width:0}
+#stage-wrap{min-width:0}
+#canvas{flex:0 0 auto}
+.console-header{display:flex;align-items:center}
+.console-header .btn{min-height:26px;padding:3px 9px}
+.modal-box{max-height:calc(100dvh - 36px);overflow:auto}
+.modal-actions{display:flex;align-items:center;flex-wrap:wrap}
+.mobile-nav{grid-template-columns:repeat(2,minmax(0,1fr))}
+.mobile-nav button{display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:0;line-height:1.1}
+.mobile-nav .nav-icon{display:flex;align-items:center;justify-content:center;flex:0 0 22px;line-height:0}
+.mobile-nav .nav-label{display:block;line-height:1.1}
+@media(max-width:900px) and (min-width:761px){
+ .editor-layout{grid-template-columns:210px minmax(280px,1fr) 250px}
+ .panel-content{padding:9px}
+ .stage-toolbar{gap:5px;padding-inline:7px}
+ .stage-toolbar .icon-action{width:32px;height:32px;min-width:32px;min-height:32px}
+ .stage-zoom output{min-width:34px}
+}
+@media(max-width:760px){
+ :root{--control-h:42px;--panel-pad:12px}
+ .topbar{display:grid;grid-template-columns:24px minmax(0,1fr) auto;align-items:center;gap:0 8px}
+ .topbar-brand{display:flex;align-items:center;justify-content:flex-start;align-self:center}
+ .breadcrumb{display:block;align-self:center;line-height:1.25}
+ .topbar-actions{display:flex;align-items:center;align-self:center;gap:4px}
+ .topbar-actions .icon-action{width:40px;height:40px;min-width:40px;min-height:40px}
+ .editor-layout{display:block}
+ .stage-toolbar{display:grid;grid-template-columns:auto minmax(0,1fr) auto;grid-template-areas:"history zoom preview";align-items:center;gap:4px;padding:4px 6px}
+ .stage-toolbar>.spacer{display:none}
+ .history-buttons{grid-area:history;justify-self:start;gap:2px}
+ .stage-zoom{grid-area:zoom;justify-self:center;gap:2px;min-width:0}
+ .stage-toolbar #btn-play{grid-area:preview;justify-self:end;display:inline-flex;align-items:center;justify-content:center}
+ .stage-toolbar .icon-action,.history-buttons .icon-action,.stage-zoom .icon-action{width:36px;height:38px;min-width:36px;min-height:38px}
+ .stage-zoom output{min-width:34px}
+ .stage-scroll{padding:12px 9px 18px}
+ #stage-wrap{width:100%;justify-content:center;align-items:flex-start}
+ #canvas{width:100%;height:620px;min-width:0}
+ .side-panel{width:100%;height:min(70dvh,590px);max-height:calc(100% - 76px - env(safe-area-inset-bottom));bottom:calc(64px + env(safe-area-inset-bottom));border-radius:8px 8px 0 0}
+ .panel-header{display:flex;align-items:center;justify-content:space-between}
+ .panel-header button{display:inline-flex;align-items:center;justify-content:center;flex:0 0 42px}
+ .panel-content{overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+ .tree-row{min-height:44px}
+ .tree-disclosure{width:30px;height:38px}
+ .tree-type-icon{flex-basis:27px;width:27px;height:27px}
+ .tree-menu-trigger{width:40px;height:40px;min-width:40px}
+ .explorer-toolbar{min-height:46px}
+ .instance-library{position:fixed;left:12px;right:12px;top:auto;bottom:calc(76px + env(safe-area-inset-bottom));max-height:65dvh}
+ .field-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+ .field input,.field textarea,.field select{min-height:44px;font-size:14px}
+ .property-group summary{min-height:46px}
+ .mobile-nav{height:calc(64px + env(safe-area-inset-bottom));padding:4px 7px calc(4px + env(safe-area-inset-bottom));gap:4px}
+ .mobile-nav button{min-height:56px;padding:4px 2px}
+ .drawer-backdrop{bottom:calc(64px + env(safe-area-inset-bottom))}
+ .modal-backdrop{padding:12px}
+ .modal-box{width:100%;padding:16px}
+ .modal-actions .btn{flex:1 1 auto}
+}
+@media(max-width:380px){
+ .topbar{padding-inline:7px;gap:0 5px;grid-template-columns:22px minmax(0,1fr) auto}
+ .topbar-actions{gap:2px}
+ .topbar-actions .icon-action{width:36px;height:36px;min-width:36px;min-height:36px}
+ .stage-toolbar{grid-template-columns:auto minmax(0,1fr) auto;gap:2px;padding-inline:4px}
+ .stage-toolbar .icon-action,.history-buttons .icon-action,.stage-zoom .icon-action{width:32px;height:36px;min-width:32px;min-height:36px}
+ .stage-zoom output{min-width:28px;font-size:9px}
+ .stage-toolbar #btn-play{min-width:58px;padding-inline:5px}
+ .field-grid{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:7px}
+}
+@media(min-width:761px){
+ .side-panel{transform:none!important}
+ .panel-header button{display:none}
+ .mobile-nav,.drawer-backdrop{display:none!important}
+}
+
 </style></head><body>
 <main id="hub" class="screen active"><header class="hub-header"><div class="brand"><img src="./assets/icon.svg" alt="">Flowiq Studio</div><button class="btn primary" id="btn-new">Novo projeto</button></header><section class="hub-main"><h1>Projetos</h1><p>Seus espaços de criação. Continue de onde parou ou inicie um novo projeto.</p><div class="hub-toolbar"><div><h2>Meus projetos</h2><small id="project-count">0 projetos</small></div><div><button class="btn" id="btn-import">↑ Importar</button><input type="file" id="file-input" accept=".flowiq,.json,application/json" hidden></div></div><div id="project-list"><div class="empty">Carregando projetos…</div></div></section></main>
-<main id="workspace" class="screen"><header class="topbar"><div class="topbar-brand"><img src="./assets/icon.svg" alt="">Flowiq Studio</div><span class="build-tag" title="Versão do Studio">v2026.11.16.21</span><div class="breadcrumb">/ <span id="project-title">Projeto</span></div><div class="topbar-spacer"></div><div class="topbar-actions"><button class="icon-action" id="btn-hub" title="Projetos" aria-label="Projetos"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7.5h6l2 2h8v9H4z"/><path d="M4 7.5V5h6l2 2"/></svg></button><button class="icon-action" id="btn-export" title="Exportar" aria-label="Exportar" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m-4-4 4 4 4-4"/><path d="M5 17v3h14v-3"/></svg></button><button class="icon-action primary" id="btn-save" title="Salvar" aria-label="Salvar" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h12l3 3v13H4V4z"/><path d="M8 4v6h8V4M8 20v-6h8v6"/></svg></button></div></header>
+<main id="workspace" class="screen"><header class="topbar"><div class="topbar-brand"><img src="./assets/icon.svg" alt="">Flowiq Studio</div><span class="build-tag" title="Versão do Studio">v2026.11.16.22</span><div class="breadcrumb">/ <span id="project-title">Projeto</span></div><div class="topbar-spacer"></div><div class="topbar-actions"><button class="icon-action" id="btn-hub" title="Projetos" aria-label="Projetos"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7.5h6l2 2h8v9H4z"/><path d="M4 7.5V5h6l2 2"/></svg></button><button class="icon-action" id="btn-export" title="Exportar" aria-label="Exportar" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m-4-4 4 4 4-4"/><path d="M5 17v3h14v-3"/></svg></button><button class="icon-action primary" id="btn-save" title="Salvar" aria-label="Salvar" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h12l3 3v13H4V4z"/><path d="M8 4v6h8V4M8 20v-6h8v6"/></svg></button></div></header>
 <div class="editor-layout"><aside class="side-panel explorer" id="explorer"><div class="panel-header"><h2>Explorer</h2><button data-close-panel aria-label="Fechar Explorer">×</button></div><div class="panel-content"><div class="explorer-search"><input id="tree-search" type="search" placeholder="Buscar objetos..." aria-label="Buscar objetos"></div><div class="explorer-toolbar"><small>HIERARCHY</small><button class="icon-action instance-add" id="open-instances" title="Adicionar instância" aria-label="Adicionar instância"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button></div><div id="tree" role="tree" aria-label="Hierarquia do projeto"></div><section class="instance-library" id="instance-library" aria-label="Biblioteca de instâncias" hidden><header><strong>Inserir instância</strong><button class="icon-action" id="close-instances" aria-label="Fechar">×</button></header><p id="instance-parent-label">Adicionar em Projeto</p><div class="instance-category"><small>INTERFACE</small><button data-instance="Frame"><span class="instance-symbol" data-instance-icon="Frame"></span><span><b>Frame</b><small>Container visual</small></span></button><button data-instance="TextButton"><span class="instance-symbol" data-instance-icon="TextButton"></span><span><b>TextButton</b><small>Botão com texto</small></span></button><button data-instance="TextLabel"><span class="instance-symbol" data-instance-icon="TextLabel"></span><span><b>TextLabel</b><small>Texto</small></span></button></div><div class="instance-category"><small>MÍDIA</small><button data-instance="ImageLabel"><span class="instance-symbol" data-instance-icon="ImageLabel"></span><span><b>ImageLabel</b><small>Imagem</small></span></button></div></section></div></aside>
 <section class="stage-area"><div class="stage-toolbar"><strong id="stage-mode-label">PALCO 2D</strong><span>Arraste para posicionar</span><div class="spacer"></div><div class="history-buttons" aria-label="Histórico"><button class="icon-action" id="undo-action" title="Desfazer (Ctrl+Z)" aria-label="Desfazer"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14 4 9l5-5"/><path d="M4 9h9a7 7 0 0 1 0 14h-2"/></svg></button><button class="icon-action" id="redo-action" title="Refazer (Ctrl+Shift+Z)" aria-label="Refazer"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 14 5-5-5-5"/><path d="M20 9h-9a7 7 0 0 0 0 14h2"/></svg></button></div><div class="stage-zoom" aria-label="Zoom do palco"><button class="icon-action" id="zoom-out" aria-label="Diminuir zoom" title="Diminuir zoom"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/></svg></button><output id="zoom-level">100%</output><button class="icon-action" id="zoom-in" aria-label="Aumentar zoom" title="Aumentar zoom"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button><button class="icon-action fit-action" id="zoom-fit" title="Ajustar ao palco" aria-label="Ajustar ao palco"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3H3v5M16 3h5v5M3 16v5h5M21 16v5h-5"/></svg></button></div><button class="btn" id="btn-play">▶ Prévia</button></div><div class="stage-scroll" id="stage-scroll"><div id="stage-wrap"><div id="canvas"><div class="empty-canvas">Seu palco está vazio.<br>Adicione um Frame para começar.</div></div></div></div><section class="console"><div class="console-header"><strong>Console</strong><button id="clear-console" class="btn">Limpar</button></div><div id="console-log" aria-live="polite"></div></section></section>
 <aside class="side-panel inspector" id="inspector"><div class="panel-header"><h2>Properties</h2><button data-close-panel aria-label="Fechar Properties">×</button></div><div class="panel-content" id="inspector-content"><p class="muted">Selecione um objeto para editar.</p></div></aside></div><div class="drawer-backdrop" id="drawer-backdrop"></div><nav class="mobile-nav"><button data-panel="explorer"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 5h16v14H4zM9 5v14M9 9h11M9 14h11"/></svg></span><span class="nav-label">Explorer</span></button><button data-panel="inspector"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3v3m0 12v3M3 12h3m12 0h3M5.6 5.6l2.1 2.1m8.6 8.6 2.1 2.1m0-12.8-2.1 2.1m-8.6 8.6-2.1 2.1"/><circle cx="12" cy="12" r="4"/></svg></span><span class="nav-label">Properties</span></button></nav></main>
@@ -151,7 +268,7 @@ button,input,textarea{font:inherit}button{cursor:pointer}.screen{display:none;wi
   });
   window.addEventListener('load', async () => {
     try {
-      const registration = await navigator.serviceWorker.register('./sw.js?v=2026.11.16.21', { updateViaCache: 'none' });
+      const registration = await navigator.serviceWorker.register('./sw.js?v=2026.11.16.22', { updateViaCache: 'none' });
       if (registration.waiting) registration.waiting.postMessage({ type: 'SKIP_WAITING' });
       await registration.update();
       window.addEventListener('pageshow', () => registration.update().catch(() => {}));
@@ -165,4 +282,4 @@ button,input,textarea{font:inherit}button{cursor:pointer}.screen{display:none;wi
 })();
 </script>
 
-<script type="module" src="./js/studio.js?v=2026.11.16.21"></script></body></html>
+<script type="module" src="./js/studio.js?v=2026.11.16.22"></script></body></html>
