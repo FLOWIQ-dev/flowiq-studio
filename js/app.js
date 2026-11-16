@@ -240,11 +240,11 @@ class FlowiqStudio {
         this.project.updatedAt = new Date().toISOString();
         const snapshot = JSON.parse(JSON.stringify(this.project));
         await this.db.saveProject(snapshot);
+        await this.refreshProjects();
       } while (this.savePending);
       this.dirty = false;
       $('save-state').textContent = 'Salvo';
       $('save-state').dataset.state = 'saved';
-      await this.refreshProjects();
     })();
     try {
       await this.savePromise;
@@ -584,7 +584,7 @@ class FlowiqStudio {
     const editing = ['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement?.tagName);
     if (event.key === 'Escape') { this.stopPreview(false); $('add-menu').hidden = true; this.resolveDialog(null); }
     if (editing) return;
-    if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 's') { event.preventDefault(); this.saveProject(); }
+    if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 's') { event.preventDefault(); this.saveProject().catch(() => {}); }
     if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'z') { event.preventDefault(); event.shiftKey ? this.redo() : this.undo(); }
     if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'y') { event.preventDefault(); this.redo(); }
     if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'd' && this.store.state.screen === 'editor') { event.preventDefault(); this.duplicateSelected(); }
