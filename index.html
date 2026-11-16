@@ -1011,7 +1011,7 @@ html,body{background:#111820}
   });
   window.addEventListener('load', async () => {
     try {
-      const registration = await navigator.serviceWorker.register('./sw.js?v=2026.11.16.61', { updateViaCache: 'none' });
+      const registration = await navigator.serviceWorker.register('./sw.js?v=2026.11.16.64', { updateViaCache: 'none' });
       if (registration.waiting) registration.waiting.postMessage({ type: 'SKIP_WAITING' });
       await registration.update();
       window.addEventListener('pageshow', () => registration.update().catch(() => {}));
@@ -1040,4 +1040,4 @@ html,body{background:#111820}
 })();
 </script>
 
-<script type="module" src="./js/studio.js?v=2026.11.16.61"></script></body></html>
+<script type="module" src="./js/studio.js?v=2026.11.16.64"></script></body></html>
