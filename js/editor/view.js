@@ -7,6 +7,8 @@ const el = (tag, className, text) => {
 };
 
 export function renderScene(container, scene, { selectedId = null, preview = false, assets = [], onRun = () => {} } = {}) {
+  for (const url of container._objectUrls || []) URL.revokeObjectURL(url);
+  container._objectUrls = [];
   container.replaceChildren();
   const assetMap = new Map(assets.map(asset => [asset.id, asset]));
   const build = (id, parent) => {
@@ -32,6 +34,7 @@ export function renderScene(container, scene, { selectedId = null, preview = fal
       const asset = assetMap.get(p.assetId);
       if (asset?.blob) {
         const url = URL.createObjectURL(asset.blob);
+        container._objectUrls.push(url);
         item.style.backgroundImage = 'url("' + url + '")';
         item.style.backgroundSize = p.fit || 'cover';
         item.style.backgroundPosition = 'center';
@@ -94,7 +97,7 @@ export function renderInspector(container, node, { onChange, onDelete, assets = 
       input.type = type;
       if (type === 'number') { input.min = options.min ?? '0'; input.max = options.max ?? '2000'; input.step = options.step ?? '1'; }
     }
-    input.value = String(node.props[key] ?? options.fallback ?? '');
+    input.value = String(key === 'name' ? node.name : (node.props[key] ?? options.fallback ?? ''));
     input.addEventListener('change', () => {
       const value = type === 'number' ? Number(input.value) : type === 'checkbox' ? input.checked : input.value;
       onChange(key, value);
@@ -134,7 +137,9 @@ export function renderInspector(container, node, { onChange, onDelete, assets = 
     }
     select.value = node.props.assetId || '';
     select.addEventListener('change', () => onAsset(select.value));
-    media.append(el('label', 'property-field'), select);
+    const assetLabel = el('label', 'property-field');
+    assetLabel.append(el('span', '', 'Arquivo da biblioteca'), select);
+    media.append(assetLabel);
     container.append(media);
     section('Aparência', [field('Ajuste', 'fit', 'select', { values: [{ value: 'cover', label: 'Preencher' }, { value: 'contain', label: 'Conter' }, { value: 'fill', label: 'Esticar' }] }), field('Arredondamento', 'radius', 'number', { min: 0, max: 120 })]);
   }
