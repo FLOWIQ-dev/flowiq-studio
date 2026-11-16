@@ -254,6 +254,7 @@ export class VirtualFS {
       mime: String(asset.mime || asset.blob.type || 'application/octet-stream').slice(0, 120),
       size: asset.blob.size,
       createdAt: asset.createdAt || new Date().toISOString(),
+      folder: String(asset.folder || '').trim().slice(0,48),
       blob: asset.blob
     };
     const db = await this.openDB();
@@ -263,6 +264,18 @@ export class VirtualFS {
       tx.oncomplete = () => resolve(record);
       tx.onerror = () => reject(tx.error || new Error('Falha ao salvar arquivo.'));
       tx.onabort = () => reject(tx.error || new Error('Salvamento do arquivo cancelado.'));
+    });
+  }
+
+  async deleteAsset(id) {
+    if (!id) throw new Error('Identificador do arquivo não informado.');
+    const db = await this.openDB();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(ASSET_STORE, 'readwrite');
+      tx.objectStore(ASSET_STORE).delete(id);
+      tx.oncomplete = () => resolve(true);
+      tx.onerror = () => reject(tx.error || new Error('Falha ao excluir arquivo.'));
+      tx.onabort = () => reject(tx.error || new Error('Exclusão cancelada.'));
     });
   }
 
