@@ -152,7 +152,7 @@ class StudioApp {
     node.properties.positionX = 18 + (count%5)*12;
     node.properties.positionY = 18 + (count%5)*12;
     node.setParent(parent);
-    this.select(node); this.closePanels();
+    this.select(node);
     this.log(type+' adicionado.','ok'); this.scheduleSave();
   }
 
