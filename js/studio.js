@@ -66,7 +66,6 @@ class StudioApp {
     $('asset-file-input').onchange = e => this.uploadAssets(e.target.files);
     $('asset-search').oninput = e => { this.assetSearch=e.target.value.trim().toLocaleLowerCase('pt-BR'); this.renderLibrary(); };
     $('asset-folder-filter').onchange = e => { this.assetFolder=e.target.value; this.renderLibrary(); };
-    $('asset-folder-create').onclick = () => this.createAssetFolder();
     $('backup-file-input').onchange = (e) => this.importFullBackup(e.target.files?.[0]);
     $('file-input').onchange = (e) => this.importProject(e.target.files?.[0]);
     $('open-instances').onclick = () => this.toggleInstanceLibrary();
@@ -191,13 +190,6 @@ class StudioApp {
       alert(added+' arquivo(s) adicionado(s).'+(errors.length?'\n\nNão adicionados:\n'+errors.join('\n'):''));
     }catch(error){alert('Falha ao adicionar arquivos: '+error.message);}
     finally{button.disabled=false;$('asset-file-input').value='';}
-  }
-
-  createAssetFolder() {
-    const name=$('asset-folder-name').value.trim().slice(0,48);
-    if(!name){$('asset-folder-name').focus();return;}
-    this.assetFolder=name;this.renderLibrary();
-    $('asset-folder-filter').value=name;
   }
 
   openAsset(id) {
@@ -851,7 +843,7 @@ class StudioApp {
         <div class="field-grid">${field('Posição X','p-x',p.positionX??0,'number')}${field('Posição Y','p-y',p.positionY??0,'number')}${field('Largura','p-w',p.width??100,'number','min="1"')}${field('Altura','p-h',p.height??40,'number','min="1"')}${field('Rotação','p-rotation',p.rotation??0,'number')}</div>
       </details>
       <details class="property-group" open><summary>${isFrame?'Aparência do Frame':isImage?'Imagem':'Aparência e texto'}</summary>
-        ${isImage?field('URL da imagem','p-image-url',p.imageUrl||'','url','placeholder="https://..."')+select('Ajuste da imagem','p-image-fit',p.imageFit||'cover',[['cover','Preencher'],['contain','Conter']]):''}
+        ${isImage?'<div class="field"><label>Imagem da biblioteca</label><button type="button" class="btn" id="choose-image-asset">'+(p.assetId?'Trocar imagem da biblioteca':'Selecionar da biblioteca')+'</button><small class="muted">'+esc(this.assets.find(a=>a.id===p.assetId)?.name||'Nenhuma imagem selecionada')+'</small><button type="button" class="btn" id="clear-image-asset" '+(!p.assetId?'disabled':'')+'>Remover imagem</button></div>'+field('URL da imagem (opcional)','p-image-url',p.imageUrl||'','url','placeholder="https://..."')+select('Ajuste da imagem','p-image-fit',p.imageFit||'cover',[['cover','Preencher'],['contain','Conter']]):''}
         ${isText?'<div class="field"><label for="p-text">Texto</label><textarea id="p-text" rows="3">'+esc(p.text||'')+'</textarea></div>'+field('Tamanho da fonte','p-font',p.fontSize??14,'number','min="8" max="96"')+select('Peso da fonte','p-weight',p.fontWeight||'normal',[['normal','Regular'],['bold','Negrito']])+select('Alinhamento','p-align',p.textAlign||'center',[['left','Esquerda'],['center','Centro'],['right','Direita']]):''}
         <div class="field-grid">${field('Cor de fundo','p-bg',color(p.backgroundColor,'#182235'),'color')}${isText?field('Cor do texto','p-fg',color(p.textColor,'#ffffff'),'color'):''}</div>
         <div class="field-grid">${field('Raio da borda','p-radius',p.borderRadius??8,'number','min="0" max="100"')}${field('Espessura da borda','p-border-width',p.borderWidth??0,'number','min="0" max="12"')}</div>
@@ -877,9 +869,25 @@ class StudioApp {
       'p-image-url':v=>p.imageUrl=v,'p-image-fit':v=>p.imageFit=v
     };
     Object.entries(setters).forEach(([id,set])=>{const input=$(id);if(!input)return;input.onfocus=()=>this.pushHistory();input.oninput=e=>{set(e.target.value);this.renderCanvas();this.scheduleSave();};input.onchange=e=>{set(e.target.value);this.renderCanvas();this.scheduleSave();};});
+    if(isImage){
+      $('choose-image-asset').onclick=()=>this.chooseImageAsset(node);
+      $('clear-image-asset').onclick=()=>{this.pushHistory();p.assetId='';this.renderInspector();this.renderCanvas();this.scheduleSave();};
+    }
     $('p-visible').onfocus=()=>this.pushHistory();$('p-visible').onchange=e=>{p.visible=e.target.checked;this.renderCanvas();this.scheduleSave();};
     $('delete-node').onclick=()=>this.deleteSelected();$('duplicate-node').onclick=()=>this.duplicateSelected();
     this.renderEventEditor(node,box);
+  }
+
+  async chooseImageAsset(node) {
+    await this.refreshLibrary();
+    const choices=this.assets.filter(asset=>asset.mime?.startsWith('image/'));
+    if(!choices.length){alert('Sua biblioteca ainda não tem imagens. Abra a aba Biblioteca na página inicial e adicione uma imagem.');return;}
+    const options=choices.map(asset=>'<option value="'+esc(asset.id)+'">'+esc(asset.name)+' · '+this.formatBytes(asset.size)+'</option>').join('');
+    $('modal-content').innerHTML='<h2>Escolher imagem</h2><p class="dialog-message">Selecione uma imagem da Biblioteca do Studio.</p><div class="field"><label>Imagem</label><select id="image-asset-choice">'+options+'</select></div><div class="modal-actions"><button class="btn" id="image-asset-cancel">Cancelar</button><button class="btn primary" id="image-asset-confirm">Usar imagem</button></div>';
+    $('modal').classList.add('open');
+    const select=$('image-asset-choice');if(choices.some(a=>a.id===node.properties.assetId))select.value=node.properties.assetId;
+    $('image-asset-cancel').onclick=()=>this.hideModal();
+    $('image-asset-confirm').onclick=()=>{this.pushHistory();node.properties.assetId=select.value;node.properties.imageUrl='';this.hideModal();this.renderInspector();this.renderCanvas();this.scheduleSave();};
   }
 
   renderEventEditor(node,box){
