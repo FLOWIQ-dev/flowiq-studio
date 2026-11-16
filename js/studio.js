@@ -122,7 +122,7 @@ class StudioApp {
     window.addEventListener('resize', () => { this.renderSelectionHandles(); });
     document.addEventListener('click', (e) => { if(this.treeMenu && !this.treeMenu.contains(e.target)) this.closeTreeMenu(); });
     document.addEventListener('keydown', (e) => {
-      if(e.key==='Escape'){$('asset-preview-pane')?.classList.remove('asset-preview-open');}
+      if(e.key==='Escape'){$('asset-preview-pane')?.classList.remove('asset-preview-open');document.body.classList.remove('asset-viewer-open');}
       const editingText = ['INPUT','TEXTAREA'].includes(document.activeElement?.tagName);
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z' && !editingText) { e.preventDefault(); e.shiftKey ? this.redo() : this.undo(); }
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'y' && !editingText) { e.preventDefault(); this.redo(); }
@@ -238,7 +238,7 @@ class StudioApp {
     const list=$('asset-list');
     if(!filtered.length){
       this.previewRequestId=(this.previewRequestId||0)+1;
-      this.selectedAssetId=null;$('asset-preview-pane').classList.remove('asset-preview-open');
+      this.selectedAssetId=null;$('asset-preview-pane').classList.remove('asset-preview-open');document.body.classList.remove('asset-viewer-open');
       list.innerHTML='<div class="empty-project-state"><span class="empty-project-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v15H4zM8 9h8M8 13h5"/></svg></span><strong>'+(this.assets.length?'Nenhum arquivo encontrado':'Biblioteca vazia')+'</strong><small>'+(this.assets.length?'Altere a busca ou o filtro de pasta.':'Adicione imagens, áudio, vídeo e documentos para usar nos projetos.')+'</small></div>';
       $('asset-preview-pane').innerHTML='<div class="preview-empty"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="m4 17 5-5 4 4 3-3 4 4"/></svg><strong>Nenhum arquivo selecionado</strong><span>Escolha um arquivo na lista para visualizar.</span></div>';
       return;
@@ -256,7 +256,7 @@ class StudioApp {
     };
     list.innerHTML=filtered.map(a=>{let thumb=iconFor(a);if(a.mime?.startsWith('image/')){try{thumb='<img src="'+this.assetUrl(a)+'" alt="">';}catch{}}return '<button class="asset-entry '+(a.id===this.selectedAssetId?'selected':'')+'" data-asset-select="'+esc(a.id)+'"><span class="asset-entry-thumb">'+thumb+'</span><span class="asset-entry-copy"><strong>'+esc(a.name)+'</strong><small>'+esc(a.folder||'Sem pasta')+' · '+this.formatBytes(a.size||0)+'</small></span><svg class="asset-entry-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></button>';}).join('');
     list.querySelectorAll('[data-asset-select]').forEach(b=>b.onclick=()=>{this.selectedAssetId=b.dataset.assetSelect;this.renderLibrary();});
-    if(this.selectedAssetId)this.renderAssetPreview(this.assets.find(a=>a.id===this.selectedAssetId));else $('asset-preview-pane').classList.remove('asset-preview-open');
+    if(this.selectedAssetId)this.renderAssetPreview(this.assets.find(a=>a.id===this.selectedAssetId));else {$('asset-preview-pane').classList.remove('asset-preview-open');document.body.classList.remove('asset-viewer-open');}
   }
 
   async renderAssetPreview(asset) {
@@ -279,8 +279,8 @@ class StudioApp {
       catch{content='<div class="preview-unsupported"><strong>Não foi possível ler o arquivo.</strong></div>';}
     }
     if(requestId!==this.previewRequestId||this.selectedAssetId!==asset.id)return;
-    pane.classList.add('asset-preview-open');pane.setAttribute('role','dialog');pane.setAttribute('aria-label','Visualizador de arquivos');pane.innerHTML='<div class="preview-pane-heading"><div><strong>'+esc(name)+'</strong><small>'+esc(mime||'Arquivo')+' · '+this.formatBytes(asset.size||0)+'</small></div><button class="icon-action preview-close" id="preview-clear" aria-label="Fechar pré-visualização"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button></div><div class="preview-pane-content">'+content+'</div><div class="preview-pane-actions"><button class="btn" id="preview-rename">Renomear</button><button class="btn danger" id="preview-delete">Excluir</button><button class="btn primary" id="preview-download"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m-4-4 4 4 4-4"/><path d="M5 17v3h14v-3"/></svg>Baixar</button></div>';
-    $('preview-clear').onclick=()=>{pane.classList.remove('asset-preview-open');pane.removeAttribute('role');this.selectedAssetId=null;this.renderLibrary();};
+    document.body.classList.add('asset-viewer-open');pane.classList.add('asset-preview-open');pane.setAttribute('role','dialog');pane.setAttribute('aria-label','Visualizador de arquivos');pane.innerHTML='<div class="preview-pane-heading"><div><strong>'+esc(name)+'</strong><small>'+esc(mime||'Arquivo')+' · '+this.formatBytes(asset.size||0)+'</small></div><button class="icon-action preview-close" id="preview-clear" aria-label="Fechar pré-visualização"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button></div><div class="preview-pane-content">'+content+'</div><div class="preview-pane-actions"><button class="btn" id="preview-rename">Renomear</button><button class="btn danger" id="preview-delete">Excluir</button><button class="btn primary" id="preview-download"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m-4-4 4 4 4-4"/><path d="M5 17v3h14v-3"/></svg>Baixar</button></div>';
+    $('preview-clear').onclick=()=>{pane.classList.remove('asset-preview-open');document.body.classList.remove('asset-viewer-open');pane.removeAttribute('role');this.selectedAssetId=null;this.renderLibrary();};
     $('preview-rename').onclick=()=>this.renameAsset(asset.id);
     $('preview-delete').onclick=()=>this.deleteAsset(asset.id);
     $('preview-download').onclick=()=>this.downloadAsset(asset.id);
