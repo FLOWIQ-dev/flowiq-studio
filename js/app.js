@@ -321,16 +321,21 @@ class FlowiqStudio {
     this.renderEditor();
   }
 
-  saveButtonAction(nodeId, value) {
+  saveButtonAction(nodeId, actions) {
     this.history.checkpoint(this.historySnapshot());
-    const text = String(value || '').slice(0, 200);
-    const events = Array.isArray(this.project.events) ? this.project.events : [];
-    const existing = events.find(rule => rule && rule.nodeId === nodeId && rule.event === 'click');
-    if (existing) existing.actions = text ? [{ type: 'setText', targetId: nodeId, value: text }] : [];
-    else if (text) events.push({ id: makeId(), nodeId, event: 'click', actions: [{ type: 'setText', targetId: nodeId, value: text }] });
-    this.project.events = events.filter(rule => rule && rule.actions?.length);
+    const events = Array.isArray(this.project.events) ? [...this.project.events] : [];
+    const index = events.findIndex(rule => rule && rule.nodeId === nodeId && rule.event === 'click');
+    if (actions === null) {
+      if (index >= 0) events.splice(index, 1);
+    } else if (index >= 0) {
+      events[index] = { ...events[index], actions: JSON.parse(JSON.stringify(actions)) };
+    } else {
+      events.push({ id: makeId(), nodeId, event: 'click', actions: JSON.parse(JSON.stringify(actions)) });
+    }
+    this.project.events = events.filter(rule => rule && (rule.actions || []).length);
     this.scheduleSave();
-    this.toast('Ação do botão salva.');
+    this.renderInspectorPanel(this.scene.get(nodeId));
+    this.toast('Interação atualizada.');
   }
 
   duplicateSelected() {
@@ -415,7 +420,8 @@ class FlowiqStudio {
       onDelete: () => this.deleteSelected(),
       onAsset: id => this.updateProperty('assetId', id),
       events: this.project?.events || [],
-      onEventSave: (nodeId, value) => this.saveButtonAction(nodeId, value)
+      nodes: [...this.scene.nodes.values()],
+      onEventSave: (nodeId, actions) => this.saveButtonAction(nodeId, actions)
     });
   }
 
