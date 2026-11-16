@@ -1,7 +1,7 @@
-import { DataModel, Instance } from './datamodel.js?v=2026.11.16.64';
-import { VirtualFS } from './vfs.js?v=2026.11.16.64';
-import { createProjectRecord, normalizeProject, FlowiqRuntime } from './engine.js?v=2026.11.16.64';
-import { createBackupFile, inspectBackupFile, restoreBackup } from './backup.js?v=2026.11.16.64';
+import { DataModel, Instance } from './datamodel.js?v=2026.11.16.65';
+import { VirtualFS } from './vfs.js?v=2026.11.16.65';
+import { createProjectRecord, normalizeProject, FlowiqRuntime } from './engine.js?v=2026.11.16.65';
+import { createBackupFile, inspectBackupFile, restoreBackup } from './backup.js?v=2026.11.16.65';
 
 const $ = (id) => document.getElementById(id);
 const esc = (value) => String(value ?? '').replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -41,6 +41,7 @@ class StudioApp {
     this.assets = [];
     this.assetSearch = '';
     this.assetFolder = '';
+    this.assetType = 'all';
     this.project = null;
     this.selected = null;
     this.expandedNodes = new Set();
@@ -100,6 +101,7 @@ class StudioApp {
     $('asset-file-input').onchange = e => this.uploadAssets(e.target.files);
     $('asset-search').oninput = e => { this.assetSearch=e.target.value.trim().toLocaleLowerCase('pt-BR'); this.renderLibrary(); };
     $('asset-folder-filter').onchange = e => { this.assetFolder=e.target.value; this.renderLibrary(); };
+    $('asset-type-filter').onchange = e => { this.assetType=e.target.value; this.renderLibrary(); };
     $('open-project-library').onclick = () => this.openProjectLibrary();
     $('backup-file-input').onchange = (e) => this.importFullBackup(e.target.files?.[0]);
     $('file-input').onchange = (e) => this.importProject(e.target.files?.[0]);
@@ -181,7 +183,7 @@ class StudioApp {
     $('settings-export-project').disabled=!this.project;
     $('settings-export-project').classList.toggle('is-disabled',!this.project);
     $('settings-export-project').querySelector('small').textContent=this.project?'Salvar '+this.project.name+' e os arquivos que ele utiliza.':'Abra um projeto para habilitar esta opção.';
-    $('settings-version').textContent='Versão 2026.11.16.64';
+    $('settings-version').textContent='Versão 2026.11.16.65';
     this.applyPreferences();
   }
 
@@ -272,8 +274,10 @@ class StudioApp {
     const folderSelect=$('asset-folder-filter'),previous=this.assetFolder;
     folderSelect.innerHTML='<option value="">Todas as pastas</option>'+folders.map(f=>'<option value="'+esc(f)+'">'+esc(f)+'</option>').join('');
     if(folders.includes(previous))folderSelect.value=previous;else this.assetFolder='';
+    const typeSelect=$('asset-type-filter');if(typeSelect)typeSelect.value=this.assetType;
     this.enhanceSelects($('hub-library-view'));
-    const filtered=this.assets.filter(a=>(!this.assetFolder||a.folder===this.assetFolder)&&(!this.assetSearch||(a.name+' '+a.mime+' '+(a.folder||'')).toLocaleLowerCase('pt-BR').includes(this.assetSearch)));
+    const category=a=>{const mime=a.mime||'',name=a.name||'';if(mime.startsWith('image/')||/\.(png|jpe?g|gif|webp|avif|bmp)$/i.test(name))return'image';if(mime.startsWith('video/'))return'video';if(mime.startsWith('audio/'))return'audio';if(mime.startsWith('font/')||/\.(woff2?|ttf|otf)$/i.test(name))return'font';return'document';};
+    const filtered=this.assets.filter(a=>(!this.assetFolder||a.folder===this.assetFolder)&&(this.assetType==='all'||category(a)===this.assetType)&&(!this.assetSearch||(a.name+' '+a.mime+' '+(a.folder||'')).toLocaleLowerCase('pt-BR').includes(this.assetSearch)));
     const list=$('asset-list');
     if(!filtered.length){
       this.previewRequestId=(this.previewRequestId||0)+1;
@@ -368,7 +372,8 @@ class StudioApp {
       const use=node?'<button class="btn primary" data-library-use="'+esc(a.id)+'">Usar</button>':'';
       return '<article class="browser-file-row"><div class="browser-file-thumb">'+thumb+'</div><button class="browser-file-info" data-library-preview="'+esc(a.id)+'"><strong>'+esc(a.name)+'</strong><small>'+esc(a.folder||'Sem pasta')+' · '+this.formatBytes(a.size||0)+'</small></button><div class="browser-file-actions">'+use+'<button class="btn" data-library-rename="'+esc(a.id)+'" aria-label="Renomear arquivo">Renomear</button><button class="btn" data-library-download="'+esc(a.id)+'" aria-label="Baixar arquivo">Baixar</button><button class="btn danger" data-library-delete="'+esc(a.id)+'" aria-label="Excluir arquivo">Excluir</button></div></article>';
     }).join('');
-    $('modal-content').innerHTML='<header class="asset-browser-head"><div><h2>Arquivos do projeto</h2><p>'+(node?'Escolha uma imagem para o objeto selecionado.':'Biblioteca local do Flowiq Studio')+'</p></div><button class="icon-action" id="close-asset-browser" aria-label="Fechar biblioteca"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button></header><div class="asset-browser-tools"><input id="browser-asset-search" type="search" placeholder="Buscar por nome..." value="'+esc(state.query)+'"><select id="browser-asset-folder"><option value="">Todas as pastas</option>'+folders.map(f=>'<option value="'+esc(f)+'" '+(state.folder===f?'selected':'')+'>'+esc(f)+'</option>').join('')+'</select><button class="btn primary" id="browser-asset-upload">Adicionar arquivos</button></div><div class="asset-browser-path"><span>Biblioteca</span><span>›</span><strong>'+(state.folder?esc(state.folder):'Todos os arquivos')+'</strong><small>'+filtered.length+' itens</small></div><div class="asset-browser-list">'+(rows||'<div class="empty">'+(this.assets.length?'Nenhum arquivo corresponde a esta busca.': 'Nenhum arquivo ainda. Adicione imagens, vídeos ou outros recursos.')+'</div>')+'</div><p class="asset-browser-foot">Os arquivos permanecem neste navegador. Renomear não altera os objetos que já os utilizam.</p>';
+    $('modal-content').classList.toggle('image-picker',!!node);
+    $('modal-content').innerHTML='<header class="asset-browser-head"><div><h2>'+(node?'Selecionar imagem':'Biblioteca')+'</h2><p>'+(node?'Escolha uma imagem para o objeto selecionado.':'Biblioteca local do Flowiq Studio')+'</p></div><button class="icon-action" id="close-asset-browser" aria-label="Fechar biblioteca"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button></header><div class="asset-browser-tools"><input id="browser-asset-search" type="search" placeholder="Buscar por nome..." value="'+esc(state.query)+'"><select id="browser-asset-folder"><option value="">Todas as pastas</option>'+folders.map(f=>'<option value="'+esc(f)+'" '+(state.folder===f?'selected':'')+'>'+esc(f)+'</option>').join('')+'</select><button class="btn primary" id="browser-asset-upload">Adicionar arquivos</button></div><div class="asset-browser-path"><span>Biblioteca</span><span>›</span><strong>'+(state.folder?esc(state.folder):'Todos os arquivos')+'</strong><small>'+filtered.length+' itens</small></div><div class="asset-browser-list">'+(rows||'<div class="empty">'+(this.assets.length?'Nenhum arquivo corresponde a esta busca.': 'Nenhum arquivo ainda. Adicione imagens, vídeos ou outros recursos.')+'</div>')+'</div><p class="asset-browser-foot">Os arquivos permanecem neste navegador. Renomear não altera os objetos que já os utilizam.</p>';
     $('modal-content').classList.add('asset-browser-modal');
     $('close-asset-browser').onclick=()=>{this.assetBrowser=null;this.hideModal();};
     $('browser-asset-search').oninput=e=>{state.query=e.target.value.trim().toLocaleLowerCase('pt-BR');this.renderProjectLibraryBrowser(node);const input=$('browser-asset-search');input.focus();input.setSelectionRange(input.value.length,input.value.length);};
