@@ -299,7 +299,7 @@ class FlowiqStudio {
     this.history.checkpoint(this.historySnapshot());
     const text = String(value || '').slice(0, 200);
     const events = Array.isArray(this.project.events) ? this.project.events : [];
-    const existing = events.find(rule => rule.nodeId === nodeId && rule.event === 'click');
+    const existing = events.find(rule => rule && rule.nodeId === nodeId && rule.event === 'click');
     if (existing) existing.actions = text ? [{ type: 'setText', targetId: nodeId, value: text }] : [];
     else if (text) events.push({ id: makeId(), nodeId, event: 'click', actions: [{ type: 'setText', targetId: nodeId, value: text }] });
     this.project.events = events.filter(rule => rule.actions?.length);
@@ -315,7 +315,7 @@ class FlowiqStudio {
     const copy = this.scene.duplicate(id);
     const duplicates = this.scene.descendants(copy.id);
     const remap = new Map(originals.map((node, index) => [node.id, duplicates[index]?.id]).filter(([, value]) => value));
-    const clonedEvents = (this.project.events || []).filter(rule => remap.has(rule.nodeId)).map(rule => ({
+    const clonedEvents = (this.project.events || []).filter(rule => rule && remap.has(rule.nodeId)).map(rule => ({
       ...JSON.parse(JSON.stringify(rule)),
       id: makeId(),
       nodeId: remap.get(rule.nodeId),
@@ -332,8 +332,8 @@ class FlowiqStudio {
     this.history.checkpoint(this.historySnapshot());
     const removedIds = new Set(this.scene.descendants(id).map(node => node.id));
     this.scene.remove(id);
-    this.project.events = (this.project.events || []).filter(rule => !removedIds.has(rule.nodeId) && !(rule.actions || []).some(action => removedIds.has(action.targetId)));
-    this.project.scripts = (this.project.scripts || []).filter(item => !removedIds.has(item.nodeId));
+    this.project.events = (this.project.events || []).filter(rule => rule && !removedIds.has(rule.nodeId) && !(Array.isArray(rule.actions) ? rule.actions : []).some(action => action && removedIds.has(action.targetId)));
+    this.project.scripts = (this.project.scripts || []).filter(item => item && !removedIds.has(item.nodeId));
     this.project.animations = (this.project.animations || []).filter(item => !removedIds.has(item.nodeId));
     this.store.set({ selectedId: null });
     this.scheduleSave();
