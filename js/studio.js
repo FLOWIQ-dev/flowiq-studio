@@ -32,6 +32,9 @@ class StudioApp {
     this.runtime = new FlowiqRuntime({ model:this.model, onChange:()=>this.renderCanvas(), onLog:message=>this.log(message,'warn') });
     this.projects = [];
     this.assetBrowser = null;
+    this.libraryReturnTo = 'hub';
+    this.settingsReturnTo = 'hub';
+    this.focusMode = false;
     this.selectedAssetId = null;
     this.preferences = this.loadPreferences();
     this.assetUrls = new Map();
@@ -67,15 +70,25 @@ class StudioApp {
     $('btn-new').onclick = () => this.createProject();
     const hubButton=$('btn-hub');
     if(hubButton)hubButton.onclick=async()=>{await this.save();await this.toHub();};
-    $('btn-library-nav').onclick = async () => { await this.save(); $('workspace').classList.remove('active'); $('hub').classList.add('active'); await this.loadHub(); this.showHubView('library'); };
+    $('library-back').onclick=()=>this.closeLibrary();
+    document.addEventListener('click',async event=>{
+      const toggle=event.target.closest('[data-studio-menu-toggle]');
+      if(toggle){event.stopPropagation();const menu=toggle.parentElement.querySelector('[data-studio-menu]');const opening=menu.hidden;document.querySelectorAll('[data-studio-menu]').forEach(item=>item.hidden=true);document.querySelectorAll('[data-studio-menu-toggle]').forEach(item=>item.setAttribute('aria-expanded','false'));menu.hidden=!opening;toggle.setAttribute('aria-expanded',String(opening));return;}
+      if(!event.target.closest('.studio-menu-wrap')){document.querySelectorAll('[data-studio-menu]').forEach(item=>item.hidden=true);document.querySelectorAll('[data-studio-menu-toggle]').forEach(item=>item.setAttribute('aria-expanded','false'));}
+      const action=event.target.closest('[data-studio-action]');if(!action)return;
+      document.querySelectorAll('[data-studio-menu]').forEach(item=>item.hidden=true);document.querySelectorAll('[data-studio-menu-toggle]').forEach(item=>item.setAttribute('aria-expanded','false'));
+      if(action.dataset.studioAction==='settings')await this.openSettingsFromEditor();
+      if(action.dataset.studioAction==='library')await this.openLibrary();
+      if(action.dataset.studioAction==='fullscreen')document.documentElement.requestFullscreen?.({navigationUI:'hide'}).catch(()=>{});
+    });
+    $('btn-focus-stage').onclick=()=>this.toggleFocusMode();
     $('hub-return-project').onclick = () => this.returnToEditor();
     $('preview-exit').onclick = () => this.play(false);
     document.addEventListener('pointerdown',event=>{if(event.target.closest('[data-color-id]')||event.target.closest('[data-color-popover]'))return;document.querySelectorAll('[data-color-popover]').forEach(pop=>{pop.hidden=true;pop.remove();});document.querySelectorAll('[data-color-toggle]').forEach(btn=>btn.setAttribute('aria-expanded','false'));});
     document.addEventListener('scroll',event=>{if(event.target?.closest?.('[data-color-popover]')||document.activeElement?.closest?.('[data-color-popover]'))return;document.querySelectorAll('[data-color-popover]').forEach(pop=>{pop.hidden=true;pop.remove();});document.querySelectorAll('[data-color-toggle]').forEach(btn=>btn.setAttribute('aria-expanded','false'));},true);
     window.addEventListener('resize',()=>{if(document.activeElement?.closest?.('[data-color-popover]'))return;document.querySelectorAll('[data-color-popover]').forEach(pop=>{pop.hidden=true;pop.remove();});document.querySelectorAll('[data-color-toggle]').forEach(btn=>btn.setAttribute('aria-expanded','false'));});
-    $('settings-return-project').onclick = () => this.returnToEditor();
+    $('settings-return-project').onclick = () => this.returnFromSettings();
     $('btn-save').onclick = () => this.save();
-    $('btn-settings').onclick = () => this.openSettingsFromEditor();
     $('settings-export-backup').onclick = () => this.exportFullBackup();
     $('settings-restore-backup').onclick = () => $('backup-file-input').click();
     $('settings-import-project').onclick = () => $('file-input').click();
@@ -123,7 +136,7 @@ class StudioApp {
     window.addEventListener('resize', () => { this.renderSelectionHandles(); });
     document.addEventListener('click', (e) => { if(this.treeMenu && !this.treeMenu.contains(e.target)) this.closeTreeMenu(); });
     document.addEventListener('keydown', (e) => {
-      if(e.key==='Escape'){$('asset-preview-pane')?.classList.remove('asset-preview-open');document.body.classList.remove('asset-viewer-open');}
+      if(e.key==='Escape'){document.querySelectorAll('[data-studio-menu]').forEach(item=>item.hidden=true);document.querySelectorAll('[data-studio-menu-toggle]').forEach(item=>item.setAttribute('aria-expanded','false'));$('asset-preview-pane')?.classList.remove('asset-preview-open');document.body.classList.remove('asset-viewer-open');}
       const editingText = ['INPUT','TEXTAREA'].includes(document.activeElement?.tagName);
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z' && !editingText) { e.preventDefault(); e.shiftKey ? this.redo() : this.undo(); }
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'y' && !editingText) { e.preventDefault(); this.redo(); }
@@ -177,11 +190,44 @@ class StudioApp {
 
   async openSettingsFromEditor() {
     if(this.playMode)this.play(false);
+    this.settingsReturnTo=$('library-screen').classList.contains('active')?'library':(this.project?'editor':'hub');
     if(this.project)await this.save();
-    $('workspace').classList.remove('active');
+    $('workspace').classList.remove('active');$('library-screen').classList.remove('active');
     $('hub').classList.add('active');
     await this.loadHub();
     this.showHubView('settings');
+  }
+
+  async returnFromSettings() {
+    if(this.settingsReturnTo==='library'){await this.openLibrary();return;}
+    if(this.settingsReturnTo==='editor'&&this.project){await this.returnToEditor();return;}
+    this.showHubView('home');
+  }
+
+  async openLibrary() {
+    if(this.playMode)this.play(false);
+    this.libraryReturnTo=$('workspace').classList.contains('active')?'editor':'hub';
+    if(this.project)await this.save();
+    $('workspace').classList.remove('active');$('hub').classList.remove('active');
+    $('library-screen').classList.add('active');
+    await this.loadHub();
+    this.renderLibrary();
+  }
+
+  async closeLibrary() {
+    $('library-screen').classList.remove('active');
+    if(this.libraryReturnTo==='editor'&&this.project){$('workspace').classList.add('active');this.refresh();this.applyPreferences();requestAnimationFrame(()=>this.fitCanvas());}
+    else{$('hub').classList.add('active');this.showHubView('home');}
+  }
+
+  toggleFocusMode(force) {
+    this.focusMode=typeof force==='boolean'?force:!this.focusMode;
+    $('workspace').classList.toggle('focus-mode',this.focusMode);
+    $('btn-focus-stage').setAttribute('aria-pressed',String(this.focusMode));
+    $('btn-focus-stage').setAttribute('aria-label',this.focusMode?'Sair do foco no palco':'Focar no palco');
+    $('btn-focus-stage').title=this.focusMode?'Mostrar painéis':'Focar no palco';
+    if(this.focusMode)this.closePanels();
+    requestAnimationFrame(()=>{this.renderSelectionHandles();this.updateRotateHandlePlacement();this.fitCanvas();});
   }
 
   async returnToEditor() {
@@ -216,14 +262,10 @@ class StudioApp {
   }
 
   showHubView(view) {
-    const active=['home','projects','library','settings'].includes(view)?view:'home';
+    const active=['home','projects','settings'].includes(view)?view:'home';
     $('hub-return-project').hidden=!this.project;
-    for(const key of ['home','projects','library','settings']){
-      $('hub-'+key+'-view').classList.toggle('active',key===active);
-      $('hub-tab-'+key).setAttribute('aria-selected',String(key===active));
-    }
-    $('btn-new').hidden=active==='library'||active==='settings';
-    if(active==='library')this.refreshLibrary();
+    for(const key of ['home','projects','settings'])$('hub-'+key+'-view').classList.toggle('active',key===active);
+    $('btn-new').hidden=active==='settings';
     if(active==='settings')this.renderSettings();
   }
 
@@ -530,7 +572,7 @@ class StudioApp {
   async toHub() {
     this.runtime.stop(); this.model = this.runtime.model;
     this.project = null; this.selected = null; this.playMode = false;
-    $('workspace').classList.remove('active'); $('hub').classList.add('active');
+    $('workspace').classList.remove('active'); $('library-screen').classList.remove('active'); $('hub').classList.add('active');
     $('btn-save').disabled = true; $('btn-export').disabled = true;
     this.closePanels(); await this.loadHub(); this.showHubView('projects');
   }
