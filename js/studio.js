@@ -36,7 +36,7 @@ class StudioApp {
     $('add-image').onclick = () => this.add('ImageLabel');
     $('btn-play').onclick = () => this.play();
     $('mobile-play').onclick = () => this.play();
-    $('mobile-add').onclick = () => this.togglePanel('explorer');
+    $('mobile-add').onclick = () => { this.closePanels(); this.togglePanel('explorer'); };
     $('zoom-in').onclick = () => this.setZoom(this.zoom + 0.1);
     $('zoom-out').onclick = () => this.setZoom(this.zoom - 0.1);
     $('zoom-fit').onclick = () => this.fitCanvas();
@@ -53,6 +53,7 @@ class StudioApp {
     document.addEventListener('pointermove', (e) => this.moveDrag(e));
     document.addEventListener('pointerup', () => this.endDrag());
     document.addEventListener('pointercancel', () => this.endDrag());
+    window.addEventListener('resize', () => { this.closePanels(); this.renderSelectionHandles(); });
     document.addEventListener('keydown', (e) => {
       const editingText = ['INPUT','TEXTAREA'].includes(document.activeElement?.tagName);
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z' && !editingText) { e.preventDefault(); e.shiftKey ? this.redo() : this.undo(); }
@@ -256,6 +257,7 @@ class StudioApp {
 
   startDrag(event) {
     if (!this.project || this.playMode || event.button !== 0) return;
+    if (window.matchMedia('(max-width: 760px)').matches) return;
     const handle=event.target.closest('[data-resize]');
     const el=handle?[...$('canvas').querySelectorAll('[data-node-id]')].find(item=>item.dataset.nodeId===handle.dataset.nodeId):event.target.closest('[data-node-id]');
     if(!el)return;
@@ -297,6 +299,7 @@ class StudioApp {
 
   renderSelectionHandles(){
     const canvas=$('canvas');canvas.querySelector('.selection-box')?.remove();
+    if (window.matchMedia('(max-width: 760px)').matches) return;
     if(!this.selected||this.playMode)return;
     const el=[...canvas.querySelectorAll('[data-node-id]')].find(item=>item.dataset.nodeId===this.selected.id);if(!el)return;
     const overlay=document.createElement('div'),cr=canvas.getBoundingClientRect(),r=el.getBoundingClientRect();
@@ -394,6 +397,7 @@ class StudioApp {
 
   togglePanel(which) {
     const panel=$(which); if(!panel)return;
+    if (window.matchMedia('(max-width: 760px)').matches) { const nav=document.querySelector('[data-panel="'+which+'"]'); if(panel.classList.contains('mobile-open')) { this.closePanels(); return; } }
     const opening=!panel.classList.contains('mobile-open');
     this.closePanels();
     if(opening){
