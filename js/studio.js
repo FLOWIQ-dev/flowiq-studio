@@ -1,7 +1,7 @@
-import { DataModel, Instance } from './datamodel.js?v=2026.11.16.65';
-import { VirtualFS } from './vfs.js?v=2026.11.16.65';
-import { createProjectRecord, normalizeProject, FlowiqRuntime } from './engine.js?v=2026.11.16.65';
-import { createBackupFile, inspectBackupFile, restoreBackup } from './backup.js?v=2026.11.16.65';
+import { DataModel, Instance } from './datamodel.js?v=2026.11.16.66';
+import { VirtualFS } from './vfs.js?v=2026.11.16.66';
+import { createProjectRecord, normalizeProject, FlowiqRuntime } from './engine.js?v=2026.11.16.66';
+import { createBackupFile, inspectBackupFile, restoreBackup } from './backup.js?v=2026.11.16.66';
 
 const $ = (id) => document.getElementById(id);
 const esc = (value) => String(value ?? '').replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -183,7 +183,7 @@ class StudioApp {
     $('settings-export-project').disabled=!this.project;
     $('settings-export-project').classList.toggle('is-disabled',!this.project);
     $('settings-export-project').querySelector('small').textContent=this.project?'Salvar '+this.project.name+' e os arquivos que ele utiliza.':'Abra um projeto para habilitar esta opção.';
-    $('settings-version').textContent='Versão 2026.11.16.65';
+    $('settings-version').textContent='Versão 2026.11.16.66';
     this.applyPreferences();
   }
 
@@ -230,7 +230,7 @@ class StudioApp {
   }
 
   async returnToEditor() {
-    if(!this.project){this.showHubView('projects');return;}
+    if(!this.project){this.showHubView('home');return;}
     $('hub').classList.remove('active');
     $('workspace').classList.add('active');
     this.refresh();
@@ -252,7 +252,6 @@ class StudioApp {
     const card=p=>'<article class="project-card"><button class="project-card-open" data-open="'+esc(p.id)+'"><span class="project-glyph"><img src="./assets/icon.svg" alt=""></span><span class="project-card-copy"><strong>'+esc(p.name)+'</strong><small>Modificado em '+new Date(p.updatedAt||Date.now()).toLocaleDateString('pt-BR')+'</small></span><svg class="project-card-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14m-6-6 6 6-6 6"/></svg></button><div class="project-card-tools"><button data-rename-project="'+esc(p.id)+'">Renomear</button><button data-delete="'+esc(p.id)+'">Excluir</button></div></article>';
     const empty='<div class="empty-project-state"><span class="empty-project-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></span><strong>'+(this.projectSearch?'Nenhum projeto encontrado':'Seu primeiro projeto começa aqui')+'</strong><small>'+(this.projectSearch?'Tente outro nome.':'Use o botão “Novo projeto” no topo para começar sua criação.')+'</small></div>';
     $('project-list').innerHTML=matches.length?matches.map(card).join(''):empty;
-    $('home-recent-list').innerHTML=sorted.length?sorted.slice(0,4).map(p=>'<button class="recent-project" data-open="'+esc(p.id)+'"><span class="recent-project-icon"><img src="./assets/icon.svg" alt=""></span><span><strong>'+esc(p.name)+'</strong><small>'+new Date(p.updatedAt||Date.now()).toLocaleDateString('pt-BR')+'</small></span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14m-6-6 6 6-6 6"/></svg></button>').join(''):'<div class="empty-project-state"><strong>Nenhum projeto criado</strong><small>Use “Novo projeto” no topo para começar sua primeira criação.</small></div>';
     document.querySelectorAll('[data-open]').forEach(b=>b.onclick=()=>this.openProject(b.dataset.open));
     document.querySelectorAll('[data-delete]').forEach(b=>b.onclick=()=>this.deleteProject(b.dataset.delete));
     document.querySelectorAll('[data-rename-project]').forEach(b=>b.onclick=()=>this.renameProject(b.dataset.renameProject));
@@ -261,8 +260,8 @@ class StudioApp {
   }
 
   showHubView(view) {
-    const active=['home','projects','settings'].includes(view)?view:'home';
-    for(const key of ['home','projects','settings'])$('hub-'+key+'-view').classList.toggle('active',key===active);
+    const active=view==='settings'?'settings':'home';
+    for(const key of ['home','settings'])$('hub-'+key+'-view').classList.toggle('active',key===active);
     $('btn-new').hidden=active==='settings';
     if(active==='settings')this.renderSettings();
   }
