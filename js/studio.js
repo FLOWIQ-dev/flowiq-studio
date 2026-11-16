@@ -1,5 +1,5 @@
-import { DataModel, Instance } from './datamodel.js?v=2026.11.16.21';
-import { VirtualFS } from './vfs.js?v=2026.11.16.21';
+import { DataModel, Instance } from './datamodel.js?v=2026.11.16.22';
+import { VirtualFS } from './vfs.js?v=2026.11.16.22';
 
 const $ = (id) => document.getElementById(id);
 const esc = (value) => String(value ?? '').replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
