@@ -1,5 +1,5 @@
-import { DataModel, Instance } from './datamodel.js?v=2026.11.16.36';
-import { VirtualFS } from './vfs.js?v=2026.11.16.36';
+import { DataModel, Instance } from './datamodel.js?v=2026.11.16.37';
+import { VirtualFS } from './vfs.js?v=2026.11.16.37';
 
 const $ = (id) => document.getElementById(id);
 const esc = (value) => String(value ?? '').replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -201,7 +201,7 @@ class StudioApp {
       $('btn-save').disabled = false; $('btn-export').disabled = false;
       $('project-title').textContent = p.name;
       this.closePanels(); this.refresh();
-      this.log('Projeto "'+p.name+'" aberto.','ok');
+
     } catch (e) { this.log('Não foi possível abrir o projeto: '+e.message,'error'); }
   }
 
@@ -228,7 +228,7 @@ class StudioApp {
         await this.vfs.saveProject(this.project);
       } while (this.savePending);
       $('btn-save').textContent = 'Salvo ✓';
-      this.log('Projeto salvo.','ok');
+
       setTimeout(() => { if ($('btn-save')) $('btn-save').textContent = 'Salvar'; }, 1200);
     } catch (e) {
       this.log('Erro ao salvar: '+e.message,'error');
@@ -259,7 +259,7 @@ class StudioApp {
     this.select(node);
     this.focusNode(node);
     this.closeInstanceLibrary();
-    this.log(type+' adicionado em '+parent.name+'.','ok'); this.scheduleSave();
+    this.scheduleSave();
   }
 
   select(node) {
@@ -684,7 +684,7 @@ class StudioApp {
     const overlay=document.createElement('div');overlay.className='selection-box';
     this.positionSelectionOverlay(overlay,el);
     ['nw','n','ne','e','se','s','sw','w'].forEach(dir=>{const h=document.createElement('button');h.type='button';h.className='resize-handle';h.dataset.resize=dir;h.dataset.nodeId=this.selected.id;h.setAttribute('aria-label','Redimensionar '+dir);overlay.append(h);});
-    const rotate=document.createElement('button');rotate.type='button';rotate.className='rotate-handle';rotate.dataset.rotate='true';rotate.dataset.nodeId=this.selected.id;rotate.setAttribute('aria-label','Rotacionar objeto');rotate.textContent='↻';overlay.append(rotate);
+    const rotate=document.createElement('button');rotate.type='button';rotate.className='rotate-handle';rotate.dataset.rotate='true';rotate.dataset.nodeId=this.selected.id;rotate.setAttribute('aria-label','Rotacionar objeto');rotate.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 1 0 1 4M20 4v7h-7"/></svg>';overlay.append(rotate);
     canvas.append(overlay);
     this.updateRotateHandlePlacement();
   }
@@ -729,7 +729,7 @@ class StudioApp {
         <label class="visibility-control"><input type="checkbox" id="p-visible" ${p.visible!==false?'checked':''}> Visível</label>
         ${isFrame?'<p class="muted" style="font-size:10px">Os objetos filhos acompanham a hierarquia deste Frame.</p>':''}
       </details>
-      <div class="inspector-actions"><button class="btn" id="duplicate-node">⧉ Duplicar</button><button class="btn danger" id="delete-node">⌫ Excluir</button></div>`;
+      <div class="inspector-actions"><button class="btn" id="duplicate-node">⧉ Duplicar</button><button class="btn danger" id="delete-node"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M10 11v6m4-6v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg> Excluir</button></div>`;
     const setters={
       'p-name':v=>{node.name=v;const title=box.querySelector('.properties-object-heading strong');if(title)title.textContent=v;this.renderTree();this.scheduleSave();},
       'p-x':v=>p.positionX=Number(v)||0,'p-y':v=>p.positionY=Number(v)||0,'p-w':v=>p.width=Math.max(1,Number(v)||1),'p-h':v=>p.height=Math.max(1,Number(v)||1),'p-rotation':v=>p.rotation=Number(v)||0,
@@ -769,7 +769,7 @@ class StudioApp {
       imported.data=this.model.toJSON();
       await this.vfs.saveProject(imported);
       $('file-input').value='';await this.loadHub();await this.openProject(imported.id);
-      this.log('Projeto importado com sucesso.','ok');
+
     } catch(e) { this.log('Falha na importação: '+e.message,'error'); }
   }
 
@@ -778,11 +778,11 @@ class StudioApp {
     this.playMode=typeof force==='boolean'?force:!this.playMode;
     this.closePanels();
     $('workspace').classList.toggle('preview-mode',this.playMode);
-    $('btn-play').textContent=this.playMode?'↩ Editor':'▶ Prévia';
+    $('btn-play').innerHTML=this.playMode?'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5 3 12l6 7M4 12h10a6 6 0 0 1 0 12h-2"/></svg><span>Editor</span>':'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8 5 11 7-11 7z"/></svg><span>Prévia</span>';
     const modeLabel=$('stage-mode-label');
     if(modeLabel)modeLabel.textContent=this.playMode?'PRÉ-VISUALIZAÇÃO':'PALCO 2D';
     this.renderCanvas();
-    this.log(this.playMode?'Prévia iniciada.':'Modo de edição.','ok');
+
   }
 
   togglePanel(which) {
