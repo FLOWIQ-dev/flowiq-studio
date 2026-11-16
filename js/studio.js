@@ -1225,7 +1225,7 @@ class StudioApp {
   }
 
   async exportFullBackup() {
-    const button=$('btn-backup-export'); if(button)button.disabled=true;
+    const button=$('settings-export-backup'); if(button)button.disabled=true;
     try {
       const result=await createBackupFile(this.vfs);
       const name='Flowiq-Backup-'+new Date().toISOString().slice(0,10)+'.flowiq-backup';
@@ -1272,7 +1272,7 @@ class StudioApp {
       await this.loadHub();
       this.notify('Restauração concluída!\nProjetos adicionados: '+result.projects+'\nArquivos adicionados: '+result.assets+'\n\nOs dados anteriores foram preservados.');
     }catch(e){this.notify('Backup não restaurado: '+e.message+'\n\nNenhum dado existente foi substituído.');}
-    finally{$('backup-file-input').value='';}
+    finally{$('backup-file-input').value='';$('file-input').value='';}
   }
 
   async exportProject() {
