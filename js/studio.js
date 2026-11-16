@@ -1,5 +1,5 @@
-import { DataModel, Instance } from './datamodel.js?v=2026.11.16.41';
-import { VirtualFS } from './vfs.js?v=2026.11.16.41';
+import { DataModel, Instance } from './datamodel.js?v=2026.11.16.42';
+import { VirtualFS } from './vfs.js?v=2026.11.16.42';
 
 const $ = (id) => document.getElementById(id);
 const esc = (value) => String(value ?? '').replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -646,42 +646,31 @@ class StudioApp {
   }
 
   positionSelectionOverlay(overlay,el){
-    const canvas=$('canvas'),cr=canvas.getBoundingClientRect(),r=el.getBoundingClientRect();
+    const canvas=$('canvas'),canvasRect=canvas.getBoundingClientRect(),objectRect=el.getBoundingClientRect();
+    const scaleX=canvas.offsetWidth?canvasRect.width/canvas.offsetWidth:(this.zoom||1);
+    const scaleY=canvas.offsetHeight?canvasRect.height/canvas.offsetHeight:(this.zoom||1);
     const width=Math.max(1,el.offsetWidth),height=Math.max(1,el.offsetHeight);
-    const centerX=(r.left+r.width/2-cr.left)/this.zoom;
-    const centerY=(r.top+r.height/2-cr.top)/this.zoom;
+    const centerX=(objectRect.left+objectRect.width/2-canvasRect.left-canvas.clientLeft)/Math.max(.01,scaleX);
+    const centerY=(objectRect.top+objectRect.height/2-canvasRect.top-canvas.clientTop)/Math.max(.01,scaleY);
     const rotation=this.getWorldRotation(this.model.find(el.dataset.nodeId));
+    const handleScale=1/Math.max(.01,Math.min(scaleX,scaleY));
     overlay.style.left=(centerX-width/2)+'px';
     overlay.style.top=(centerY-height/2)+'px';
     overlay.style.width=width+'px';overlay.style.height=height+'px';
     overlay.style.transform='rotate('+rotation+'deg)';
-    overlay.style.setProperty('--handle-scale',String(1/Math.max(.25,this.zoom)));
+    overlay.style.setProperty('--handle-scale',String(handleScale));
+    overlay.dataset.rotation=String(rotation);
   }
 
   updateRotateHandlePlacement(){
     const overlay=$('canvas')?.querySelector('.selection-box');
     const rotate=overlay?.querySelector('[data-rotate]');
     if(!rotate||!this.selected)return;
-    const el=[...$('canvas').querySelectorAll('[data-node-id]')].find(item=>item.dataset.nodeId===this.selected.id);
-    const area=$('stage-scroll');
-    if(!el||!area)return;
-    const objectRect=el.getBoundingClientRect(),areaRect=area.getBoundingClientRect();
-    const overlayElement=rotate.parentElement,canvas=$('canvas'),canvasRect=canvas.getBoundingClientRect();
-    const half=24,margin=half+5;
-    const minX=Math.min(areaRect.right-margin,areaRect.left+margin),maxX=Math.max(minX,areaRect.right-margin);
-    const minY=Math.min(areaRect.bottom-margin,areaRect.top+margin),maxY=Math.max(minY,areaRect.bottom-margin);
-    const cx=Math.max(minX,Math.min(maxX,objectRect.left+objectRect.width/2));
-    let cy=objectRect.top-half-10,placement='above';
-    if(cy<minY){cy=objectRect.bottom+half+10;placement='below';}
-    if(cy>maxY){cy=Math.max(minY,Math.min(maxY,objectRect.top+objectRect.height/2));placement='inside';}
-    cy=Math.max(minY,Math.min(maxY,cy));
-    const angle=this.getWorldRotation(this.selected)*Math.PI/180,cos=Math.cos(angle),sin=Math.sin(angle),zoom=this.zoom||1;
-    const sx=cx-(objectRect.left+objectRect.width/2),sy=cy-(objectRect.top+objectRect.height/2);
-    const localX=(sx*cos+sy*sin)/zoom,localY=(-sx*sin+sy*cos)/zoom;
-    rotate.dataset.placement=placement;
-    rotate.style.left=(overlayElement.offsetWidth/2+localX)+'px';
-    rotate.style.top=(overlayElement.offsetHeight/2+localY)+'px';
-    rotate.style.transform='translate(-50%,-50%)';
+    const handleScale=Number.parseFloat(overlay.style.getPropertyValue('--handle-scale'))||1;
+    const rotation=Number(overlay.dataset.rotation)||0;
+    rotate.style.left=(overlay.offsetWidth/2)+'px';
+    rotate.style.top=(-22*handleScale)+'px';
+    rotate.style.transform='translate(-50%,-50%) rotate('+(-rotation)+'deg)';
   }
 
   renderSelectionHandles(){
