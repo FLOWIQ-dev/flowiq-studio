@@ -1,5 +1,5 @@
-import { DataModel, Instance } from './datamodel.js';
-import { VirtualFS } from './vfs.js';
+import { DataModel, Instance } from './datamodel.js?v=2026.11.16.3';
+import { VirtualFS } from './vfs.js?v=2026.11.16.3';
 
 const $ = (id) => document.getElementById(id);
 const esc = (value) => String(value ?? '').replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -36,7 +36,7 @@ class StudioApp {
     $('mobile-add').onclick = () => this.add('TextButton');
     $('clear-console').onclick = () => $('console-log').replaceChildren();
     $('drawer-backdrop').onclick = () => this.closePanels();
-    document.querySelectorAll('[data-panel]').forEach((b) => b.onclick = () => this.togglePanel(b.dataset.panel));
+    document.querySelectorAll('[data-panel]').forEach((b) => { b.setAttribute('aria-expanded', 'false'); b.onclick = () => this.togglePanel(b.dataset.panel); });
     document.querySelectorAll('[data-close-panel]').forEach((b) => b.onclick = () => this.closePanels());
     $('canvas').addEventListener('click', (e) => {
       if (e.target === $('canvas') && !this.playMode) this.select(null);

@@ -1,11 +1,11 @@
-const CACHE_NAME = 'flowiq-studio-v2';
+const CACHE_NAME = 'flowiq-studio-v3-2026-11-16-3';
 const APP_FILES = [
   './',
   './index.html',
   './manifest.json',
-  './js/studio.js',
-  './js/datamodel.js',
-  './js/vfs.js',
+  './js/studio.js?v=2026.11.16.3',
+  './js/datamodel.js?v=2026.11.16.3',
+  './js/vfs.js?v=2026.11.16.3',
   './assets/icon.svg'
 ];
 
@@ -15,6 +15,10 @@ self.addEventListener('install', (event) => {
       .then((cache) => cache.addAll(APP_FILES))
       .then(() => self.skipWaiting())
   );
+});
+
+self.addEventListener('message', (event) => {
+  if (event.data?.type === 'SKIP_WAITING') self.skipWaiting();
 });
 
 self.addEventListener('activate', (event) => {
@@ -34,13 +38,13 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return;
 
-  // Always ask the network for the newest app shell and modules first.
-  // Keep the last good response only as an offline fallback.
   event.respondWith((async () => {
     const cache = await caches.open(CACHE_NAME);
-    const cacheKey = request.mode === 'navigate' ? './index.html' : request;
+    const cacheKey = request.mode === 'navigate'
+      ? new Request(new URL('./index.html', self.location.href).href)
+      : request;
     try {
-      const fresh = await fetch(request, { cache: 'no-cache' });
+      const fresh = await fetch(request, { cache: 'no-store' });
       if (fresh && fresh.ok && fresh.type === 'basic') {
         await cache.put(cacheKey, fresh.clone());
       }
