@@ -162,6 +162,7 @@ class StudioApp {
   }
 
   async openSettingsFromEditor() {
+    if(this.playMode)this.play(false);
     if(this.project)await this.save();
     $('workspace').classList.remove('active');
     $('hub').classList.add('active');
@@ -220,6 +221,8 @@ class StudioApp {
     const filtered=this.assets.filter(a=>(!this.assetFolder||a.folder===this.assetFolder)&&(!this.assetSearch||(a.name+' '+a.mime+' '+(a.folder||'')).toLocaleLowerCase('pt-BR').includes(this.assetSearch)));
     const list=$('asset-list');
     if(!filtered.length){
+      this.previewRequestId=(this.previewRequestId||0)+1;
+      this.selectedAssetId=null;
       list.innerHTML='<div class="empty-project-state"><span class="empty-project-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v15H4zM8 9h8M8 13h5"/></svg></span><strong>'+(this.assets.length?'Nenhum arquivo encontrado':'Biblioteca vazia')+'</strong><small>'+(this.assets.length?'Altere a busca ou o filtro de pasta.':'Adicione imagens, áudio, vídeo e documentos para usar nos projetos.')+'</small></div>';
       $('asset-preview-pane').innerHTML='<div class="preview-empty"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="m4 17 5-5 4 4 3-3 4 4"/></svg><strong>Nenhum arquivo selecionado</strong><span>Escolha um arquivo na lista para visualizar.</span></div>';
       return;
@@ -235,7 +238,7 @@ class StudioApp {
       const path=image?'<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m4 17 5-5 4 4 3-3 4 4"/>':video?'<rect x="3" y="5" width="18" height="14" rx="2"/><path d="m10 9 5 3-5 3z"/>':audio?'<path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>':pdf?'<path d="M6 3h9l4 4v14H6zM14 3v5h5M9 13h6M9 16h6"/>':font?'<path d="m4 20 8-17 8 17M7 14h10"/>':'<path d="M5 3h9l5 5v13H5zM14 3v5h5"/>';
       return '<svg viewBox="0 0 24 24" aria-hidden="true">'+path+'</svg>';
     };
-    list.innerHTML=filtered.map(a=>'<button class="asset-entry '+(a.id===this.selectedAssetId?'selected':'')+'" data-asset-select="'+esc(a.id)+'"><span class="asset-entry-thumb">'+(a.mime?.startsWith('image/')?'<img src="'+this.assetUrl(a)+'" alt="">':iconFor(a))+'</span><span class="asset-entry-copy"><strong>'+esc(a.name)+'</strong><small>'+esc(a.folder||'Sem pasta')+' · '+this.formatBytes(a.size||0)+'</small></span><svg class="asset-entry-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></button>').join('');
+    list.innerHTML=filtered.map(a=>{let thumb=iconFor(a);if(a.mime?.startsWith('image/')){try{thumb='<img src="'+this.assetUrl(a)+'" alt="">';}catch{}}return '<button class="asset-entry '+(a.id===this.selectedAssetId?'selected':'')+'" data-asset-select="'+esc(a.id)+'"><span class="asset-entry-thumb">'+thumb+'</span><span class="asset-entry-copy"><strong>'+esc(a.name)+'</strong><small>'+esc(a.folder||'Sem pasta')+' · '+this.formatBytes(a.size||0)+'</small></span><svg class="asset-entry-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></button>';}).join('');
     list.querySelectorAll('[data-asset-select]').forEach(b=>b.onclick=()=>{this.selectedAssetId=b.dataset.assetSelect;this.renderLibrary();});
     this.renderAssetPreview(this.assets.find(a=>a.id===this.selectedAssetId));
   }
@@ -537,7 +540,7 @@ class StudioApp {
       $('hub').classList.remove('active'); $('workspace').classList.add('active');
       $('btn-save').disabled = false; $('btn-export').disabled = false;
       $('project-title').textContent = p.name;
-      this.closePanels(); this.refresh();
+      this.closePanels(); this.refresh(); this.applyPreferences();
 
     } catch (e) { this.log('Não foi possível abrir o projeto: '+e.message,'error'); }
   }
