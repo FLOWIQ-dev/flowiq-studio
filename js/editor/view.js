@@ -1,4 +1,11 @@
 const $ = id => document.getElementById(id);
+const ICONS = {
+  Frame: '<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M8 8h8v8H8z"/>',
+  TextButton: '<rect x="3" y="5" width="18" height="14" rx="3"/><path d="M8 9h8M12 9v6m-3 0h6"/>',
+  TextLabel: '<path d="M4 6h16M12 6v13M8 19h8"/>',
+  ImageLabel: '<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9" r="1.5"/><path d="m4 17 5-5 3 3 3-4 5 6"/>'
+};
+const icon = type => '<svg viewBox="0 0 24 24" aria-hidden="true">' + (ICONS[type] || ICONS.Frame) + '</svg>';
 const el = (tag, className, text) => {
   const node = document.createElement(tag);
   if (className) node.className = className;
@@ -70,7 +77,7 @@ export function renderTree(container, scene, selectedId, onSelect) {
     const row = el('button', 'tree-row' + (node.id === selectedId ? ' is-active' : ''));
     row.type = 'button';
     row.style.setProperty('--depth', depth);
-    const marker = el('span', 'tree-marker', node.type === 'Frame' ? '▣' : node.type === 'TextButton' ? '▰' : node.type === 'ImageLabel' ? '▧' : 'T');
+    const marker = el('span', 'tree-marker'); marker.innerHTML = icon(node.type);
     const name = el('span', 'tree-name', node.name);
     const type = el('span', 'tree-type', node.type);
     row.append(marker, name, type);
