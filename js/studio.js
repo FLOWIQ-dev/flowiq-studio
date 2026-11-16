@@ -33,6 +33,7 @@ class StudioApp {
     this.lastTapTimer = null;
     this.saveTimer = null;
     this.saving = false;
+    this.savePending = false;
     this.playMode = false;
     this.zoom = 1;
     this.undoStack = [];
@@ -162,18 +163,32 @@ class StudioApp {
   }
 
   async save() {
-    if (!this.project || this.saving) return;
+    if (!this.project) return;
     clearTimeout(this.saveTimer);
+    if (this.saving) {
+      this.savePending = true;
+      return;
+    }
     this.saving = true;
     try {
-      this.project.data = this.model.toJSON();
-      this.project.updatedAt = new Date().toISOString();
-      await this.vfs.saveProject(this.project);
+      do {
+        this.savePending = false;
+        this.project.data = this.model.toJSON();
+        this.project.updatedAt = new Date().toISOString();
+        await this.vfs.saveProject(this.project);
+      } while (this.savePending);
       $('btn-save').textContent = 'Salvo ✓';
       this.log('Projeto salvo.','ok');
       setTimeout(() => { if ($('btn-save')) $('btn-save').textContent = 'Salvar'; }, 1200);
-    } catch (e) { this.log('Erro ao salvar: '+e.message,'error'); }
-    finally { this.saving = false; }
+    } catch (e) {
+      this.log('Erro ao salvar: '+e.message,'error');
+    } finally {
+      this.saving = false;
+      if (this.savePending) {
+        this.savePending = false;
+        this.scheduleSave();
+      }
+    }
   }
 
   scheduleSave() {
