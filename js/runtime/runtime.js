@@ -8,7 +8,7 @@ export class Runtime {
   }
 
   start(project, scene) {
-    this.project = structuredClone(project);
+    this.project = JSON.parse(JSON.stringify(project));
     this.scene = scene;
     this.running = true;
     this.onLog('Pré-visualização iniciada.', 'success');
