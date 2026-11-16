@@ -1,5 +1,5 @@
-import { DataModel, Instance } from './datamodel.js?v=2026.11.16.18';
-import { VirtualFS } from './vfs.js?v=2026.11.16.18';
+import { DataModel, Instance } from './datamodel.js?v=2026.11.16.19';
+import { VirtualFS } from './vfs.js?v=2026.11.16.19';
 
 const $ = (id) => document.getElementById(id);
 const esc = (value) => String(value ?? '').replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -14,6 +14,8 @@ class StudioApp {
     this.selected = null;
     this.expandedNodes = new Set();
     this.treeQuery = '';
+    this.treeDragId = null;
+    this.treeMenu = null;
     this.drag = null;
     this.lastTap = null;
     this.lastTapTimer = null;
@@ -40,7 +42,6 @@ class StudioApp {
     $('add-image').onclick = () => this.add('ImageLabel');
     $('tree-search').oninput = (e) => { this.treeQuery = e.target.value.trim().toLocaleLowerCase('pt-BR'); this.renderTree(); };
     $('btn-play').onclick = () => this.play();
-    $('mobile-play').onclick = () => this.play();
     $('zoom-in').onclick = () => this.setZoom(this.zoom + 0.1);
     $('zoom-out').onclick = () => this.setZoom(this.zoom - 0.1);
     $('zoom-fit').onclick = () => this.fitCanvas();
@@ -58,6 +59,7 @@ class StudioApp {
     document.addEventListener('pointerup', (e) => this.endDrag(e));
     document.addEventListener('pointercancel', (e) => this.endDrag(e));
     window.addEventListener('resize', () => { this.renderSelectionHandles(); });
+    document.addEventListener('click', (e) => { if(this.treeMenu && !this.treeMenu.contains(e.target)) this.closeTreeMenu(); });
     document.addEventListener('keydown', (e) => {
       const editingText = ['INPUT','TEXTAREA'].includes(document.activeElement?.tagName);
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z' && !editingText) { e.preventDefault(); e.shiftKey ? this.redo() : this.undo(); }
@@ -65,8 +67,9 @@ class StudioApp {
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') { e.preventDefault(); this.save(); }
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === '0') { e.preventDefault(); this.fitCanvas(); }
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'd' && this.selected) { e.preventDefault(); this.duplicateSelected(); }
-      if (e.key === 'Escape') { this.closePanels(); this.hideModal(); if (this.playMode) this.play(false); }
+      if (e.key === 'Escape') { this.closeTreeMenu(); this.closePanels(); this.hideModal(); if (this.playMode) this.play(false); }
       if ((e.key === 'Delete' || e.key === 'Backspace') && this.selected && !['INPUT','TEXTAREA'].includes(document.activeElement.tagName)) this.deleteSelected();
+      if (e.key === 'F2' && this.selected && !editingText) this.renameNode(this.selected);
     });
     $('modal').onclick = (e) => { if (e.target === $('modal')) this.hideModal(); };
   }
@@ -127,6 +130,7 @@ class StudioApp {
       this.selected = null;
       this.expandedNodes = new Set(this.model.getAll().filter(n => n.children.length).map(n => n.id));
       this.treeQuery = '';
+      this.treeDragId = null;
       $('tree-search').value = '';
       this.undoStack = []; this.redoStack = [];
       this.playMode = false;
@@ -251,48 +255,96 @@ class StudioApp {
   refresh() { this.renderTree(); this.renderCanvas(); this.renderInspector(); this.updateHistoryButtons(); }
 
   renderTree() {
-    const root = $('tree'); root.replaceChildren();
-    const query = this.treeQuery || '';
-    const all = this.model.getAll();
-    const matching = new Set();
-    if (query) {
-      all.forEach(node => {
-        if ((node.name+' '+node.className).toLocaleLowerCase('pt-BR').includes(query)) {
-          for (let current=node; current && current!==this.model.root; current=current.parent) matching.add(current.id);
-        }
-      });
-    }
-    const makeRow = (node, depth, isRoot=false) => {
-      const children = isRoot ? this.model.root.children : node.children;
-      const id = isRoot ? 'project-root' : node.id;
-      const expanded = isRoot || query || this.expandedNodes.has(id);
-      const row = document.createElement('div');
-      row.className = 'tree-row'+(!isRoot && this.selected===node ? ' selected':'');
-      row.style.paddingLeft = (5+depth*13)+'px';
-      row.setAttribute('role','treeitem');
-      row.setAttribute('aria-level',String(depth+1));
-      row.setAttribute('aria-expanded',String(children.length>0 && !!expanded));
-      if (!isRoot) row.setAttribute('aria-selected',String(this.selected===node));
-      const disclosure=document.createElement('button');
-      disclosure.type='button';disclosure.className='tree-disclosure'+(children.length?'':' spacer');
-      disclosure.textContent=children.length?(expanded?'▾':'▸'):'·';
+    const root=$('tree');root.replaceChildren();
+    const query=this.treeQuery||'',all=this.model.getAll(),matching=new Set();
+    if(query)all.forEach(node=>{if((node.name+' '+node.className).toLocaleLowerCase('pt-BR').includes(query)){for(let cur=node;cur&&cur!==this.model.root;cur=cur.parent)matching.add(cur.id);}});
+    const makeRow=(node,depth,isRoot=false)=>{
+      const children=isRoot?this.model.root.children:node.children,id=isRoot?'project-root':node.id,expanded=isRoot||query||this.expandedNodes.has(id);
+      const row=document.createElement('div');row.className='tree-row'+(!isRoot&&this.selected===node?' selected':'');
+      row.style.paddingLeft=(5+depth*13)+'px';row.setAttribute('role','treeitem');row.setAttribute('aria-level',String(depth+1));row.setAttribute('aria-expanded',String(children.length>0&&!!expanded));
+      if(!isRoot)row.setAttribute('aria-selected',String(this.selected===node));
+      row.draggable=!isRoot;
+      const disclosure=document.createElement('button');disclosure.type='button';disclosure.className='tree-disclosure'+(children.length?'':' spacer');disclosure.textContent=children.length?(expanded?'▾':'▸'):'·';
       disclosure.setAttribute('aria-label',(expanded?'Recolher ':'Expandir ')+(isRoot?'Projeto':node.name));
-      disclosure.onclick=(event)=>{event.stopPropagation();if(isRoot)return;if(this.expandedNodes.has(id))this.expandedNodes.delete(id);else this.expandedNodes.add(id);this.renderTree();};
-      row.append(disclosure);
+      disclosure.onclick=event=>{event.stopPropagation();if(isRoot)return;if(this.expandedNodes.has(id))this.expandedNodes.delete(id);else this.expandedNodes.add(id);this.renderTree();};row.append(disclosure);
       const glyph=isRoot?'P':node.className==='Frame'?'F':node.className==='TextButton'?'B':node.className==='ImageLabel'?'I':'T';
       const type=document.createElement('span');type.className='tree-type-icon';type.textContent=glyph;type.title=isRoot?'Projeto':node.className;row.append(type);
       const name=document.createElement('span');name.className='node-name';name.textContent=isRoot?(this.project?.name||'Projeto'):node.name;row.append(name);
       if(children.length){const count=document.createElement('span');count.className='tree-count';count.textContent=String(children.length);row.append(count);}
-      if(!isRoot)row.onclick=()=>{this.select(node);};
+      const menu=document.createElement('button');menu.type='button';menu.className='tree-menu-trigger';menu.textContent='⋯';menu.title='Ações do objeto';menu.setAttribute('aria-label','Ações de '+(isRoot?'Projeto':node.name));menu.onclick=e=>{e.stopPropagation();this.showTreeMenu(node,menu,isRoot);};row.append(menu);
+      if(!isRoot)row.onclick=()=>this.select(node);
+      row.addEventListener('dragstart',e=>{if(isRoot)return;this.treeDragId=node.id;row.classList.add('dragging');e.dataTransfer.effectAllowed='move';e.dataTransfer.setData('text/plain',node.id);});
+      row.addEventListener('dragend',()=>{this.treeDragId=null;root.querySelectorAll('.dragging,.drop-target').forEach(el=>el.classList.remove('dragging','drop-target'));});
+      row.addEventListener('dragover',e=>{const targetParent=isRoot?this.model.root:node.className==='Frame'?node:null;if(!targetParent||!this.treeDragId||this.treeDragId===node.id)return;e.preventDefault();e.dataTransfer.dropEffect='move';row.classList.add('drop-target');});
+      row.addEventListener('dragleave',()=>row.classList.remove('drop-target'));
+      row.addEventListener('drop',e=>{e.preventDefault();row.classList.remove('drop-target');const dragged=this.model.find(e.dataTransfer.getData('text/plain')||this.treeDragId);const parent=isRoot?this.model.root:node.className==='Frame'?node:null;if(dragged&&parent)this.reparentNode(dragged,parent);});
       root.append(row);
-      if(expanded) children.forEach(child=>{if(!query||matching.has(child.id))makeRow(child,depth+1,false);});
+      if(expanded)children.forEach(child=>{if(!query||matching.has(child.id))makeRow(child,depth+1,false);});
     };
     makeRow(this.model.root,0,true);
     if(query&&!matching.size)root.innerHTML='<p class="muted" style="font-size:11px;padding:10px">Nenhum objeto encontrado.</p>';
     else if(!all.length)root.innerHTML='<p class="muted" style="font-size:11px;padding:10px">O projeto está vazio. Adicione um Frame para começar.</p>';
     const target=this.selected?.className==='Frame'?this.selected:this.selected?.parent?.className==='Frame'?this.selected.parent:null;
-    const targetLabel=target?target.name:(this.project?.name||'Projeto');
-    $('insert-target').textContent=targetLabel;
+    $('insert-target').textContent=target?target.name:(this.project?.name||'Projeto');
+  }
+
+  closeTreeMenu(){this.treeMenu?.remove();this.treeMenu=null;}
+  showTreeMenu(node,anchor,isRoot=false){
+    this.closeTreeMenu();
+    const menu=document.createElement('div');menu.className='tree-context-menu';menu.setAttribute('role','menu');
+    const add=(label,action,extra='')=>{const button=document.createElement('button');button.type='button';button.textContent=label;button.className=extra;button.onclick=()=>{this.closeTreeMenu();action();};menu.append(button);};
+    const sep=()=>{const line=document.createElement('div');line.className='menu-separator';menu.append(line);};
+    if(isRoot){add('＋ Novo Frame',()=>this.add('Frame'));add('Expandir tudo',()=>{this.model.getAll().forEach(n=>{if(n.children.length)this.expandedNodes.add(n.id);});this.renderTree();});add('Recolher tudo',()=>{this.expandedNodes.clear();this.renderTree();});}
+    else{
+      add('Selecionar',()=>this.select(node));
+      if(node.className==='Frame'){add('＋ Inserir Frame filho',()=>this.insertChild(node,'Frame'));add('＋ Inserir Botão',()=>this.insertChild(node,'TextButton'));add('＋ Inserir Texto',()=>this.insertChild(node,'TextLabel'));add('＋ Inserir Imagem',()=>this.insertChild(node,'ImageLabel'));}
+      add('Renomear  ·  F2',()=>this.renameNode(node));
+      add('Duplicar  ·  Ctrl+D',()=>{this.select(node);this.duplicateSelected();});
+      sep();
+      add('Mover para outro Frame…',()=>this.moveIntoFrame(node));
+      add('Mover para raiz',()=>this.reparentNode(node,this.model.root));
+      add('Mover para cima',()=>this.reorderNode(node,-1));
+      add('Mover para baixo',()=>this.reorderNode(node,1));
+      sep();
+      add('Excluir  ·  Delete',()=>{this.select(node);this.deleteSelected();},'danger');
+    }
+    document.body.append(menu);this.treeMenu=menu;
+    const r=anchor.getBoundingClientRect(),w=menu.offsetWidth,h=menu.offsetHeight;
+    menu.style.left=Math.max(8,Math.min(window.innerWidth-w-8,r.right-w))+'px';
+    menu.style.top=Math.max(8,Math.min(window.innerHeight-h-8,r.bottom+3))+'px';
+  }
+  renameNode(node){
+    const value=prompt('Nome do objeto:',node.name);if(value===null)return;
+    const name=value.trim().slice(0,64);if(!name)return;
+    this.pushHistory();node.name=name;this.refresh();this.scheduleSave();
+  }
+  insertChild(parent,type){
+    if(!parent||parent.className!=='Frame'||!['Frame','TextButton','TextLabel','ImageLabel'].includes(type))return;
+    this.pushHistory();const count=this.model.getAll().filter(n=>n.className===type).length;
+    const child=new Instance(type,type+'_'+(count+1));child.properties.positionX=18;child.properties.positionY=18;child.setParent(parent);
+    this.expandedNodes.add(parent.id);this.select(child);this.scheduleSave();
+  }
+  moveIntoFrame(node){
+    const frames=this.model.getAll().filter(n=>n.className==='Frame'&&n!==node&&!this.isDescendant(n,node));
+    if(!frames.length){this.log('Não há outro Frame disponível para receber este objeto.','error');return;}
+    const choices=frames.map((frame,index)=>(index+1)+'. '+frame.name).join('\\n');
+    const answer=prompt('Mover para qual Frame?\\n'+choices,'1');
+    if(answer===null)return;const target=frames[Number(answer)-1];if(target)this.reparentNode(node,target);
+  }
+  isDescendant(candidate,ancestor){
+    for(let current=candidate?.parent;current;current=current.parent)if(current===ancestor)return true;
+    return false;
+  }
+  reparentNode(node,parent){
+    if(!node||!parent||node===parent||node.parent===parent||this.playMode)return;
+    if(parent!==this.model.root&&parent.className!=='Frame')return;
+    try{this.pushHistory();node.setParent(parent);if(parent!==this.model.root)this.expandedNodes.add(parent.id);this.select(node);this.scheduleSave();this.log(node.name+' movido na hierarquia.','ok');}
+    catch(error){this.log('Não foi possível mover: '+error.message,'error');}
+  }
+  reorderNode(node,direction){
+    if(!node?.parent)return;const siblings=node.parent.children,index=siblings.indexOf(node),next=index+direction;
+    if(next<0||next>=siblings.length)return;
+    this.pushHistory();[siblings[index],siblings[next]]=[siblings[next],siblings[index]];this.renderTree();this.scheduleSave();
   }
 
   renderCanvas() {
@@ -308,12 +360,20 @@ class StudioApp {
       el.style.background = p.backgroundColor || 'transparent'; el.style.color = p.textColor || '#fff';
       el.style.borderRadius = Math.max(0,Number(p.borderRadius)||0)+'px';
       el.style.fontSize = Math.max(8,Number(p.fontSize)||14)+'px';
-      el.style.border = node.className === 'TextButton' ? '1px solid #ffffff30' : 'none';
+      el.style.opacity = String(Math.min(1,Math.max(0,Number(p.opacity??1))));
+      el.style.border = Number(p.borderWidth)>0 ? Math.min(12,Number(p.borderWidth))+'px solid '+(p.borderColor||'#64748b') : node.className === 'TextButton' ? '1px solid #ffffff30' : 'none';
+      el.style.fontWeight = p.fontWeight==='bold'?'700':'400';
+      el.style.textAlign = p.textAlign || 'center';
+      if(node.className==='ImageLabel' && /^https?:\/\//i.test(String(p.imageUrl||''))){
+        el.style.backgroundImage='url("'+String(p.imageUrl).replace(/["\\\\]/g,'')+'")';
+        el.style.backgroundSize=p.imageFit==='contain'?'contain':'cover';
+        el.style.backgroundPosition='center';el.style.backgroundRepeat='no-repeat';
+      }
       el.style.position = 'absolute';
       el.style.transform = 'rotate('+(Number(p.rotation)||0)+'deg)';
       el.style.transformOrigin = 'center center';
       if (node.className === 'Frame') { el.style.display='block'; el.style.overflow='hidden'; el.style.outlineOffset='2px'; }
-      el.textContent = p.text || (node.className === 'Frame' ? '' : node.name);
+      el.textContent = p.text || (node.className === 'Frame' || (node.className==='ImageLabel'&&p.imageUrl) ? '' : node.name);
       if (node.className === 'TextButton' && this.playMode) {
         el.type = 'button'; el.onclick = () => this.log('Ação executada: '+node.name,'ok');
       } else if (!this.playMode) {
@@ -481,35 +541,42 @@ class StudioApp {
   redo(){if(!this.redoStack.length)return;this.undoStack.push({data:JSON.parse(JSON.stringify(this.model.toJSON())),selectedId:this.selected?.id||null});this.restoreHistory(this.redoStack.pop());this.log('Ação refeita.','ok');}
   updateHistoryButtons(){const u=$('undo-action'),r=$('redo-action');if(u)u.disabled=!this.undoStack.length;if(r)r.disabled=!this.redoStack.length;}
 
-  renderInspector() {
-    const box=$('inspector-content'), node=this.selected;
+  renderInspector(){
+    const box=$('inspector-content'),node=this.selected;
     if(!node){box.innerHTML='<p class="muted">Selecione um objeto no Explorer ou no palco para editar suas propriedades.</p>';return;}
-    const p=node.properties;
-    box.innerHTML = `
-      <div class="field"><label>Nome</label><input id="p-name" maxlength="64" value="${esc(node.name)}"></div>
-      <div class="field"><label>Classe</label><input disabled value="${esc(node.className)}"></div><hr class="divider">
-      <details class="property-group" open><summary>Layout e tamanho</summary>
-        <div class="field-grid"><div class="field"><label>Posição X</label><input type="number" id="p-x" value="${p.positionX??0}"></div><div class="field"><label>Posição Y</label><input type="number" id="p-y" value="${p.positionY??0}"></div><div class="field"><label>Largura</label><input type="number" min="1" id="p-w" value="${p.width??100}"></div><div class="field"><label>Altura</label><input type="number" min="1" id="p-h" value="${p.height??40}"></div><div class="field"><label>Rotação</label><input type="number" id="p-rotation" value="${p.rotation??0}"></div></div>
+    const p=node.properties,isFrame=node.className==='Frame',isImage=node.className==='ImageLabel',isText=node.className==='TextButton'||node.className==='TextLabel';
+    const field=(label,id,value,type='text',attrs='')=>'<div class="field"><label for="'+id+'">'+label+'</label><input id="'+id+'" type="'+type+'" value="'+esc(value??'')+'" '+attrs+'></div>';
+    const select=(label,id,value,options)=>'<div class="field"><label for="'+id+'">'+label+'</label><select id="'+id+'">'+options.map(([v,l])=>'<option value="'+v+'" '+(value===v?'selected':'')+'>'+l+'</option>').join('')+'</select></div>';
+    box.innerHTML=`
+      <div class="properties-object-heading"><span class="tree-type-icon">${isFrame?'F':isImage?'I':node.className==='TextButton'?'B':'T'}</span><div><strong>${esc(node.name)}</strong><small>${esc(node.className)}</small></div></div>
+      <div class="field"><label for="p-name">Nome</label><input id="p-name" maxlength="64" value="${esc(node.name)}"></div>
+      <details class="property-group" open><summary>Transformação</summary>
+        <div class="field-grid">${field('Posição X','p-x',p.positionX??0,'number')}${field('Posição Y','p-y',p.positionY??0,'number')}${field('Largura','p-w',p.width??100,'number','min="1"')}${field('Altura','p-h',p.height??40,'number','min="1"')}${field('Rotação','p-rotation',p.rotation??0,'number')}</div>
       </details>
-      <details class="property-group" open><summary>Aparência</summary>
-        <div class="field"><label>Texto / Conteúdo</label><textarea id="p-text" rows="2">${esc(p.text||'')}</textarea></div>
-        <div class="field-grid"><div class="field"><label>Fundo</label><input type="color" id="p-bg" value="${color(p.backgroundColor,'#182235')}"></div><div class="field"><label>Texto</label><input type="color" id="p-fg" value="${color(p.textColor,'#ffffff')}"></div></div>
-        <div class="field-grid"><div class="field"><label>Raio da borda</label><input type="number" min="0" max="100" id="p-radius" value="${p.borderRadius??8}"></div><div class="field"><label>Tamanho da fonte</label><input type="number" min="8" max="72" id="p-font" value="${p.fontSize??14}"></div></div>
+      <details class="property-group" open><summary>${isFrame?'Aparência do Frame':isImage?'Imagem':'Aparência e texto'}</summary>
+        ${isImage?field('URL da imagem','p-image-url',p.imageUrl||'','url','placeholder="https://..."')+select('Ajuste da imagem','p-image-fit',p.imageFit||'cover',[['cover','Preencher'],['contain','Conter']]):''}
+        ${isText?'<div class="field"><label for="p-text">Texto</label><textarea id="p-text" rows="3">'+esc(p.text||'')+'</textarea></div>'+field('Tamanho da fonte','p-font',p.fontSize??14,'number','min="8" max="96"')+select('Peso da fonte','p-weight',p.fontWeight||'normal',[['normal','Regular'],['bold','Negrito']])+select('Alinhamento','p-align',p.textAlign||'center',[['left','Esquerda'],['center','Centro'],['right','Direita']]):''}
+        <div class="field-grid">${field('Cor de fundo','p-bg',color(p.backgroundColor,'#182235'),'color')}${isText?field('Cor do texto','p-fg',color(p.textColor,'#ffffff'),'color'):''}</div>
+        <div class="field-grid">${field('Raio da borda','p-radius',p.borderRadius??8,'number','min="0" max="100"')}${field('Espessura da borda','p-border-width',p.borderWidth??0,'number','min="0" max="12"')}</div>
+        ${field('Cor da borda','p-border-color',color(p.borderColor,'#64748b'),'color')}
+        ${field('Opacidade (0 a 1)','p-opacity',p.opacity??1,'number','min="0" max="1" step="0.05"')}
       </details>
-      <label class="visibility-control"><input type="checkbox" id="p-visible" ${p.visible!==false?'checked':''}> Visível</label>
+      <details class="property-group"><summary>Comportamento</summary>
+        <label class="visibility-control"><input type="checkbox" id="p-visible" ${p.visible!==false?'checked':''}> Visível</label>
+        ${isFrame?'<p class="muted" style="font-size:10px">Os objetos filhos acompanham a hierarquia deste Frame.</p>':''}
+      </details>
       <div class="inspector-actions"><button class="btn" id="duplicate-node">⧉ Duplicar</button><button class="btn danger" id="delete-node">⌫ Excluir</button></div>`;
-    const fields={
-      'p-name':v=>{node.name=v;this.renderTree();},
-      'p-x':v=>p.positionX=Number(v)||0,'p-y':v=>p.positionY=Number(v)||0,
-      'p-w':v=>p.width=Math.max(1,Number(v)||1),'p-h':v=>p.height=Math.max(1,Number(v)||1),'p-rotation':v=>p.rotation=Number(v)||0,
-      'p-text':v=>p.text=v,'p-bg':v=>p.backgroundColor=v,'p-fg':v=>p.textColor=v,
-      'p-radius':v=>p.borderRadius=Math.max(0,Number(v)||0),'p-font':v=>p.fontSize=Math.max(8,Number(v)||8)
+    const setters={
+      'p-name':v=>{node.name=v;const title=box.querySelector('.properties-object-heading strong');if(title)title.textContent=v;this.renderTree();},
+      'p-x':v=>p.positionX=Number(v)||0,'p-y':v=>p.positionY=Number(v)||0,'p-w':v=>p.width=Math.max(1,Number(v)||1),'p-h':v=>p.height=Math.max(1,Number(v)||1),'p-rotation':v=>p.rotation=Number(v)||0,
+      'p-bg':v=>p.backgroundColor=v,'p-radius':v=>p.borderRadius=Math.max(0,Number(v)||0),'p-border-width':v=>p.borderWidth=Math.min(12,Math.max(0,Number(v)||0)),
+      'p-border-color':v=>p.borderColor=v,'p-opacity':v=>p.opacity=Math.min(1,Math.max(0,Number(v)||0)),
+      'p-text':v=>p.text=v,'p-fg':v=>p.textColor=v,'p-font':v=>p.fontSize=Math.max(8,Number(v)||8),'p-weight':v=>p.fontWeight=v,'p-align':v=>p.textAlign=v,
+      'p-image-url':v=>p.imageUrl=v,'p-image-fit':v=>p.imageFit=v
     };
-    Object.entries(fields).forEach(([id,set])=>{const field=$(id);field.onfocus=()=>this.pushHistory();field.oninput=e=>{set(e.target.value);this.renderCanvas();this.scheduleSave();};});
-    $('p-visible').onfocus=()=>this.pushHistory();
-    $('p-visible').onchange=e=>{p.visible=e.target.checked;this.renderCanvas();this.scheduleSave();};
-    $('delete-node').onclick=()=>this.deleteSelected();
-    $('duplicate-node').onclick=()=>this.duplicateSelected();
+    Object.entries(setters).forEach(([id,set])=>{const input=$(id);if(!input)return;input.onfocus=()=>this.pushHistory();input.oninput=e=>{set(e.target.value);this.renderCanvas();this.scheduleSave();};input.onchange=e=>{set(e.target.value);this.renderCanvas();this.scheduleSave();};});
+    $('p-visible').onfocus=()=>this.pushHistory();$('p-visible').onchange=e=>{p.visible=e.target.checked;this.renderCanvas();this.scheduleSave();};
+    $('delete-node').onclick=()=>this.deleteSelected();$('duplicate-node').onclick=()=>this.duplicateSelected();
   }
 
   deleteSelected() {
@@ -547,8 +614,7 @@ class StudioApp {
     this.playMode=typeof force==='boolean'?force:!this.playMode;
     this.closePanels();
     $('workspace').classList.toggle('preview-mode',this.playMode);
-    $('btn-play').textContent=this.playMode?'↩ Voltar ao editor':'▶ Pré-visualizar';
-    $('mobile-play').innerHTML=this.playMode?'<span>↩</span>Voltar ao editor':'<span>▶</span>Prévia';
+    $('btn-play').textContent=this.playMode?'↩ Editor':'▶ Prévia';
     const modeLabel=$('stage-mode-label');
     if(modeLabel)modeLabel.textContent=this.playMode?'PRÉ-VISUALIZAÇÃO':'PALCO 2D';
     this.renderCanvas();
