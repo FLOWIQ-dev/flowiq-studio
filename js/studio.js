@@ -1,6 +1,6 @@
-import { DataModel, Instance } from './datamodel.js?v=2026.11.16.47';
-import { VirtualFS } from './vfs.js?v=2026.11.16.47';
-import { createProjectRecord, normalizeProject, FlowiqRuntime } from './engine.js?v=2026.11.16.47';
+import { DataModel, Instance } from './datamodel.js?v=2026.11.16.48';
+import { VirtualFS } from './vfs.js?v=2026.11.16.48';
+import { createProjectRecord, normalizeProject, FlowiqRuntime } from './engine.js?v=2026.11.16.48';
 
 const $ = (id) => document.getElementById(id);
 const esc = (value) => String(value ?? '').replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -36,6 +36,7 @@ class StudioApp {
     this.saveTimer = null;
     this.saving = false;
     this.savePending = false;
+    this.savePromise = null;
     this.playMode = false;
     this.zoom = 1;
     this.smartAlign = true;
@@ -218,39 +219,44 @@ class StudioApp {
   async save() {
     if (!this.project) return;
     clearTimeout(this.saveTimer);
-    if (this.saving) {
+    if (this.savePromise) {
       this.savePending = true;
-      return;
+      return this.savePromise;
     }
     this.saving = true;
-    try {
-      do {
-        this.savePending = false;
-        const sourceModel = this.playMode ? this.runtime.editorModel : this.model;
-        this.project.data = (sourceModel || this.model).toJSON();
-        this.project.schemaVersion = 2;
-        this.project.updatedAt = new Date().toISOString();
-        await this.vfs.saveProject(this.project);
-      } while (this.savePending);
-      $('btn-save').innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg>';
-      $('btn-save').title = 'Salvo'; $('btn-save').setAttribute('aria-label','Salvo');
-      clearTimeout(this.saveFeedbackTimer);
-      this.saveFeedbackTimer = setTimeout(() => {
-        const button = $('btn-save');
-        if (button) {
-          button.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h12l3 3v13H4V4z"/><path d="M8 4v6h8V4M8 20v-6h8v6"/></svg>';
-          button.title = 'Salvar'; button.setAttribute('aria-label','Salvar');
+    const task = (async () => {
+      try {
+        do {
+          this.savePending = false;
+          const sourceModel = this.playMode ? this.runtime.editorModel : this.model;
+          this.project.data = (sourceModel || this.model).toJSON();
+          this.project.schemaVersion = 2;
+          this.project.updatedAt = new Date().toISOString();
+          await this.vfs.saveProject(this.project);
+        } while (this.savePending);
+        $('btn-save').innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg>';
+        $('btn-save').title = 'Salvo'; $('btn-save').setAttribute('aria-label','Salvo');
+        clearTimeout(this.saveFeedbackTimer);
+        this.saveFeedbackTimer = setTimeout(() => {
+          const button = $('btn-save');
+          if (button) {
+            button.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h12l3 3v13H4V4z"/><path d="M8 4v6h8V4M8 20v-6h8v6"/></svg>';
+            button.title = 'Salvar'; button.setAttribute('aria-label','Salvar');
+          }
+        }, 1200);
+      } catch (e) {
+        this.log('Erro ao salvar: '+e.message,'error');
+      } finally {
+        this.saving = false;
+        this.savePromise = null;
+        if (this.savePending) {
+          this.savePending = false;
+          this.scheduleSave();
         }
-      }, 1200);
-    } catch (e) {
-      this.log('Erro ao salvar: '+e.message,'error');
-    } finally {
-      this.saving = false;
-      if (this.savePending) {
-        this.savePending = false;
-        this.scheduleSave();
       }
-    }
+    })();
+    this.savePromise = task;
+    return task;
   }
 
   scheduleSave() {
@@ -331,8 +337,10 @@ class StudioApp {
     const source = this.selected;
     if (!source || !source.parent || this.playMode) return;
     this.pushHistory();
+    const idMap = new Map();
     const cloneTree = (original, parent, isRoot = false) => {
       const copy = new Instance(original.className, original.name + '_copia');
+      idMap.set(original.id, copy.id);
       Object.assign(copy.properties, JSON.parse(JSON.stringify(original.properties)));
       if (isRoot) {
         copy.properties.positionX = (Number(copy.properties.positionX) || 0) + 16;
@@ -343,6 +351,20 @@ class StudioApp {
       return copy;
     };
     const copy = cloneTree(source, source.parent, true);
+    if (Array.isArray(this.project?.events)) {
+      const copiedEvents = this.project.events
+        .filter(event => idMap.has(event?.nodeId))
+        .map(event => ({
+          ...JSON.parse(JSON.stringify(event)),
+          id: this.makeId(),
+          nodeId: idMap.get(event.nodeId),
+          actions: (Array.isArray(event.actions) ? event.actions : []).map(action => ({
+            ...action,
+            ...(idMap.has(action?.targetId) ? { targetId: idMap.get(action.targetId) } : {})
+          }))
+        }));
+      this.project.events.push(...copiedEvents);
+    }
     this.select(copy);
     this.focusNode(copy);
     this.scheduleSave();
@@ -837,10 +859,22 @@ class StudioApp {
 
   deleteSelected() {
     if(!this.selected)return;
-    const old=this.selected; const parent=old.parent; this.pushHistory(); old.destroy(); this.selected=parent === this.model.root ? null : parent;
-    this.refresh(); if(this.selected)this.focusNode(this.selected);else this.closePanels(); this.scheduleSave(); this.log(old.name+' excluído.');
+    const old=this.selected;
+    const parent=old.parent;
+    this.pushHistory();
+    const removedIds=new Set([old,...old.getAll().slice(1)].map(node=>node.id));
+    if(Array.isArray(this.project?.events)){
+      this.project.events=this.project.events
+        .filter(event=>!removedIds.has(event?.nodeId))
+        .map(event=>({...event,actions:(Array.isArray(event.actions)?event.actions:[]).filter(action=>!removedIds.has(action?.targetId))}));
+    }
+    old.destroy();
+    this.selected=parent === this.model.root ? null : parent;
+    this.refresh();
+    if(this.selected)this.focusNode(this.selected);else this.closePanels();
+    this.scheduleSave();
+    this.log(old.name+' excluído.');
   }
-
   exportProject() {
     if(!this.project)return;
     const sourceModel=this.playMode?this.runtime.editorModel:this.model;
