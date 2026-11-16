@@ -16,6 +16,7 @@ class StudioApp {
     this.saveTimer = null;
     this.saving = false;
     this.playMode = false;
+    this.zoom = 1;
     this.bind();
     this.loadHub();
   }
@@ -33,7 +34,10 @@ class StudioApp {
     $('add-image').onclick = () => this.add('ImageLabel');
     $('btn-play').onclick = () => this.play();
     $('mobile-play').onclick = () => this.play();
-    $('mobile-add').onclick = () => this.add('TextButton');
+    $('mobile-add').onclick = () => this.togglePanel('explorer');
+    $('zoom-in').onclick = () => this.setZoom(this.zoom + 0.1);
+    $('zoom-out').onclick = () => this.setZoom(this.zoom - 0.1);
+    $('zoom-fit').onclick = () => this.fitCanvas();
     $('clear-console').onclick = () => $('console-log').replaceChildren();
     $('drawer-backdrop').onclick = () => this.closePanels();
     document.querySelectorAll('[data-panel]').forEach((b) => { b.setAttribute('aria-expanded', 'false'); b.onclick = () => this.togglePanel(b.dataset.panel); });
@@ -47,6 +51,8 @@ class StudioApp {
     document.addEventListener('pointercancel', () => this.endDrag());
     document.addEventListener('keydown', (e) => {
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') { e.preventDefault(); this.save(); }
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === '0') { e.preventDefault(); this.fitCanvas(); }
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'd' && this.selected) { e.preventDefault(); this.duplicateSelected(); }
       if (e.key === 'Escape') { this.closePanels(); this.hideModal(); if (this.playMode) this.play(false); }
       if ((e.key === 'Delete' || e.key === 'Backspace') && this.selected && !['INPUT','TEXTAREA'].includes(document.activeElement.tagName)) this.deleteSelected();
     });
@@ -157,6 +163,42 @@ class StudioApp {
   }
 
   select(node) { this.selected = node; this.refresh(); }
+
+  setZoom(value) {
+    this.zoom = Math.min(1.8, Math.max(0.4, Math.round(value * 10) / 10));
+    const canvas = $('canvas'), wrap = $('stage-wrap');
+    canvas.style.transform = 'scale(' + this.zoom + ')';
+    canvas.style.transformOrigin = 'top left';
+    wrap.style.width = (canvas.offsetWidth * this.zoom) + 'px';
+    wrap.style.minHeight = (canvas.offsetHeight * this.zoom) + 'px';
+    wrap.style.justifyContent = 'flex-start';
+    $('zoom-level').textContent = Math.round(this.zoom * 100) + '%';
+  }
+
+  fitCanvas() {
+    const area = $('stage-scroll'), canvas = $('canvas');
+    const available = Math.max(240, area.clientWidth - 24);
+    this.setZoom(Math.min(1, available / Math.max(1, canvas.offsetWidth)));
+    area.scrollTo({left:0,top:0,behavior:'smooth'});
+  }
+
+  duplicateSelected() {
+    const source = this.selected;
+    if (!source || !source.parent || this.playMode) return;
+    const cloneTree = (original, parent) => {
+      const copy = new Instance(original.className, original.name + '_copia');
+      Object.assign(copy.properties, JSON.parse(JSON.stringify(original.properties)));
+      copy.properties.positionX = (Number(copy.properties.positionX) || 0) + 16;
+      copy.properties.positionY = (Number(copy.properties.positionY) || 0) + 16;
+      copy.setParent(parent);
+      original.children.forEach(child => cloneTree(child, copy));
+      return copy;
+    };
+    const copy = cloneTree(source, source.parent);
+    this.select(copy);
+    this.scheduleSave();
+    this.log(source.name + ' duplicado.', 'ok');
+  }
   refresh() { this.renderTree(); this.renderCanvas(); this.renderInspector(); }
 
   renderTree() {
@@ -235,12 +277,16 @@ class StudioApp {
     box.innerHTML = `
       <div class="field"><label>Nome</label><input id="p-name" maxlength="64" value="${esc(node.name)}"></div>
       <div class="field"><label>Classe</label><input disabled value="${esc(node.className)}"></div><hr class="divider">
-      <div class="field-grid"><div class="field"><label>Posição X</label><input type="number" id="p-x" value="${p.positionX??0}"></div><div class="field"><label>Posição Y</label><input type="number" id="p-y" value="${p.positionY??0}"></div><div class="field"><label>Largura</label><input type="number" min="1" id="p-w" value="${p.width??100}"></div><div class="field"><label>Altura</label><input type="number" min="1" id="p-h" value="${p.height??40}"></div></div>
-      <div class="field"><label>Texto / Conteúdo</label><textarea id="p-text" rows="2">${esc(p.text||'')}</textarea></div>
-      <div class="field-grid"><div class="field"><label>Fundo</label><input type="color" id="p-bg" value="${color(p.backgroundColor,'#182235')}"></div><div class="field"><label>Texto</label><input type="color" id="p-fg" value="${color(p.textColor,'#ffffff')}"></div></div>
-      <div class="field-grid"><div class="field"><label>Raio da borda</label><input type="number" min="0" max="100" id="p-radius" value="${p.borderRadius??8}"></div><div class="field"><label>Tamanho da fonte</label><input type="number" min="8" max="72" id="p-font" value="${p.fontSize??14}"></div></div>
-      <label style="display:flex;align-items:center;gap:8px;font-size:12px;margin:8px 0 16px"><input type="checkbox" id="p-visible" ${p.visible!==false?'checked':''}> Visível</label>
-      <button class="btn danger" id="delete-node" style="width:100%">⌫ Excluir objeto</button>`;
+      <details class="property-group" open><summary>Layout e tamanho</summary>
+        <div class="field-grid"><div class="field"><label>Posição X</label><input type="number" id="p-x" value="${p.positionX??0}"></div><div class="field"><label>Posição Y</label><input type="number" id="p-y" value="${p.positionY??0}"></div><div class="field"><label>Largura</label><input type="number" min="1" id="p-w" value="${p.width??100}"></div><div class="field"><label>Altura</label><input type="number" min="1" id="p-h" value="${p.height??40}"></div></div>
+      </details>
+      <details class="property-group" open><summary>Aparência</summary>
+        <div class="field"><label>Texto / Conteúdo</label><textarea id="p-text" rows="2">${esc(p.text||'')}</textarea></div>
+        <div class="field-grid"><div class="field"><label>Fundo</label><input type="color" id="p-bg" value="${color(p.backgroundColor,'#182235')}"></div><div class="field"><label>Texto</label><input type="color" id="p-fg" value="${color(p.textColor,'#ffffff')}"></div></div>
+        <div class="field-grid"><div class="field"><label>Raio da borda</label><input type="number" min="0" max="100" id="p-radius" value="${p.borderRadius??8}"></div><div class="field"><label>Tamanho da fonte</label><input type="number" min="8" max="72" id="p-font" value="${p.fontSize??14}"></div></div>
+      </details>
+      <label class="visibility-control"><input type="checkbox" id="p-visible" ${p.visible!==false?'checked':''}> Visível</label>
+      <div class="inspector-actions"><button class="btn" id="duplicate-node">⧉ Duplicar</button><button class="btn danger" id="delete-node">⌫ Excluir</button></div>`;
     const fields={
       'p-name':v=>{node.name=v;this.renderTree();},
       'p-x':v=>p.positionX=Number(v)||0,'p-y':v=>p.positionY=Number(v)||0,
@@ -251,6 +297,7 @@ class StudioApp {
     Object.entries(fields).forEach(([id,set])=>$(id).oninput=e=>{set(e.target.value);this.renderCanvas();this.scheduleSave();});
     $('p-visible').onchange=e=>{p.visible=e.target.checked;this.renderCanvas();this.scheduleSave();};
     $('delete-node').onclick=()=>this.deleteSelected();
+    $('duplicate-node').onclick=()=>this.duplicateSelected();
   }
 
   deleteSelected() {
