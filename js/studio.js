@@ -1173,12 +1173,9 @@ class StudioApp {
         update(hsvToHex(hsv.h,hsv.s,hsv.v));
       };
       let activePointer=null;
-      square.onpointerdown=e=>{if(e.pointerType==='mouse'&&e.button!==0)return;dragging=true;activePointer=e.pointerId;setSquare(e);e.preventDefault();};
       const moveSquare=e=>{if(dragging&&e.pointerId===activePointer){setSquare(e);e.preventDefault();}};
-      const finishSquare=e=>{if(!dragging||(e&&e.pointerId!==activePointer))return;dragging=false;activePointer=null;this.scheduleSave();};
-      document.addEventListener('pointermove',moveSquare,{passive:false});
-      document.addEventListener('pointerup',finishSquare);
-      document.addEventListener('pointercancel',finishSquare);
+      const finishSquare=e=>{if(!dragging||(e&&e.pointerId!==activePointer))return;dragging=false;activePointer=null;document.removeEventListener('pointermove',moveSquare);document.removeEventListener('pointerup',finishSquare);document.removeEventListener('pointercancel',finishSquare);this.scheduleSave();};
+      square.onpointerdown=e=>{if(e.pointerType==='mouse'&&e.button!==0)return;dragging=true;activePointer=e.pointerId;document.addEventListener('pointermove',moveSquare,{passive:false});document.addEventListener('pointerup',finishSquare);document.addEventListener('pointercancel',finishSquare);setSquare(e);e.preventDefault();};
       pop.addEventListener('keydown',e=>{if(e.key==='Escape'){close();trigger.focus();}});
     });
   }
