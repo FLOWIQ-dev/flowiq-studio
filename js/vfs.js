@@ -1,7 +1,8 @@
 
 const DB_NAME = 'flowiq-studio';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 const STORE_NAME = 'projects';
+const ASSET_STORE = 'assets';
 
 export class VirtualFS {
   constructor() {
@@ -21,6 +22,11 @@ export class VirtualFS {
 
       request.onupgradeneeded = () => {
         const db = request.result;
+
+        if (!db.objectStoreNames.contains(ASSET_STORE)) {
+          const assets = db.createObjectStore(ASSET_STORE, { keyPath: 'id' });
+          assets.createIndex('createdAt', 'createdAt', { unique: false });
+        }
 
         if (!db.objectStoreNames.contains(STORE_NAME)) {
           const store = db.createObjectStore(STORE_NAME, {
@@ -223,6 +229,63 @@ export class VirtualFS {
       tx.onerror = () => {
         reject(tx.error || new Error('Falha ao concluir a limpeza.'));
       };
+    });
+  }
+
+
+  async getAssets() {
+    const db = await this.openDB();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(ASSET_STORE, 'readonly');
+      const request = tx.objectStore(ASSET_STORE).getAll();
+      request.onsuccess = () => resolve(request.result || []);
+      request.onerror = () => reject(request.error || new Error('Não foi possível listar a biblioteca.'));
+    });
+  }
+
+  async saveAsset(asset) {
+    if (!asset || typeof asset !== 'object' || typeof asset.id !== 'string' || !asset.id) {
+      throw new Error('Arquivo da biblioteca inválido.');
+    }
+    if (!(asset.blob instanceof Blob)) throw new Error('O conteúdo do arquivo é inválido.');
+    const record = {
+      id: asset.id,
+      name: String(asset.name || 'Arquivo').slice(0, 180),
+      mime: String(asset.mime || asset.blob.type || 'application/octet-stream').slice(0, 120),
+      size: asset.blob.size,
+      createdAt: asset.createdAt || new Date().toISOString(),
+      blob: asset.blob
+    };
+    const db = await this.openDB();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(ASSET_STORE, 'readwrite');
+      tx.objectStore(ASSET_STORE).put(record);
+      tx.oncomplete = () => resolve(record);
+      tx.onerror = () => reject(tx.error || new Error('Falha ao salvar arquivo.'));
+      tx.onabort = () => reject(tx.error || new Error('Salvamento do arquivo cancelado.'));
+    });
+  }
+
+  async restoreBackupData(projects, assets) {
+    if (!Array.isArray(projects) || !Array.isArray(assets)) {
+      throw new Error('Pacote de restauração inválido.');
+    }
+    const db = await this.openDB();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction([STORE_NAME, ASSET_STORE], 'readwrite');
+      const projectStore = tx.objectStore(STORE_NAME);
+      const assetStore = tx.objectStore(ASSET_STORE);
+      try {
+        for (const project of projects) projectStore.add(project);
+        for (const asset of assets) assetStore.add(asset);
+      } catch (error) {
+        try { tx.abort(); } catch (_) {}
+        reject(error);
+        return;
+      }
+      tx.oncomplete = () => resolve({ projects: projects.length, assets: assets.length });
+      tx.onerror = () => reject(tx.error || new Error('Falha ao restaurar o backup.'));
+      tx.onabort = () => reject(tx.error || new Error('Restauração cancelada. Nenhum dado foi aplicado.'));
     });
   }
 
