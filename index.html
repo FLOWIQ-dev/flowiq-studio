@@ -1079,10 +1079,10 @@ html,body{background:#111820}
  #workspace .stage-toolbar .stage-arrange-tools{grid-area:tools;justify-self:center;min-width:0}
  #workspace .stage-toolbar .stage-arrange-tools .stage-mode-switch .mode-option{min-width:58px;padding-inline:7px}
  #workspace .stage-scroll{min-width:0;max-width:100%;overflow:auto}
- #workspace .side-panel{top:0;bottom:0;left:0;right:0;width:100%;height:auto;max-height:none;z-index:42;transform:translateY(105%);border-radius:10px 10px 0 0}
+ #workspace .side-panel{top:auto;bottom:0;left:0;right:0;width:100%;height:min(70dvh,590px);max-height:calc(100% - 16px);z-index:42;transform:translateY(105%);border-radius:10px 10px 0 0}
  #workspace .side-panel.mobile-open{transform:translateY(0)}
  #workspace .drawer-backdrop{position:absolute;inset:0;z-index:35}
- #workspace .mobile-nav{position:relative;z-index:50;flex:0 0 calc(64px + env(safe-area-inset-bottom));height:calc(64px + env(safe-area-inset-bottom));padding:3px 8px calc(3px + env(safe-area-inset-bottom));margin:0}
+ #workspace .mobile-nav{position:relative;z-index:50;flex:0 0 calc(64px + env(safe-area-inset-bottom))!important;height:calc(64px + env(safe-area-inset-bottom));padding:3px 8px calc(3px + env(safe-area-inset-bottom));margin:0}
  #workspace .console{position:relative;flex:0 0 60px;height:60px;min-height:60px}
  #workspace .panel-content{padding-bottom:calc(18px + env(safe-area-inset-bottom))}
  .modal-backdrop{align-items:center;padding:14px}
