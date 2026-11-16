@@ -38,7 +38,6 @@ class StudioApp {
     $('add-image').onclick = () => this.add('ImageLabel');
     $('btn-play').onclick = () => this.play();
     $('mobile-play').onclick = () => this.play();
-    $('mobile-add').onclick = () => { this.closePanels(); this.togglePanel('explorer'); };
     $('zoom-in').onclick = () => this.setZoom(this.zoom + 0.1);
     $('zoom-out').onclick = () => this.setZoom(this.zoom - 0.1);
     $('zoom-fit').onclick = () => this.fitCanvas();
@@ -288,36 +287,27 @@ class StudioApp {
     if (!this.project || this.playMode || event.button !== 0 || this.drag) return;
     const handle=event.target.closest('[data-resize]');
     const rotate=event.target.closest('[data-rotate]');
-    const el=(handle||rotate)?[...$('canvas').querySelectorAll('[data-node-id]')].find(item=>item.dataset.nodeId===(handle||rotate).dataset.nodeId):event.target.closest('[data-node-id]');
+    const target=handle||rotate;
+    const el=target?[...$('canvas').querySelectorAll('[data-node-id]')].find(item=>item.dataset.nodeId===target.dataset.nodeId):event.target.closest('[data-node-id]');
     if(!el)return;
     const node=this.model.find(el.dataset.nodeId);if(!node)return;
     const wasSelected=this.selected===node;
     if(!wasSelected){
-      this.drag={
-        node,el,pointerId:event.pointerId,mode:'select',tapEligible:!handle&&!rotate,
-        startX:event.clientX,startY:event.clientY,moved:false
-      };
+      this.drag={node,el,pointerId:event.pointerId,mode:'select',tapEligible:!handle&&!rotate,startX:event.clientX,startY:event.clientY,moved:false};
       try{$('canvas').setPointerCapture(event.pointerId);}catch(_){}
-      event.preventDefault();
-      return;
+      event.preventDefault();return;
     }
-    const activeEl=[...$('canvas').querySelectorAll('[data-node-id]')].find(item=>item.dataset.nodeId===node.id);
-    if(!activeEl)return;
-    const parent=activeEl.parentElement,parentRect=parent.getBoundingClientRect();
-    const rect=activeEl.getBoundingClientRect();
+    const rect=el.getBoundingClientRect();
     const centerX=rect.left+rect.width/2,centerY=rect.top+rect.height/2;
     const startAngle=Math.atan2(event.clientY-centerY,event.clientX-centerX)*180/Math.PI;
     this.drag={
-      node,el:activeEl,pointerId:event.pointerId,tapEligible:!handle&&!rotate,
-      mode:rotate?'rotate':handle?'resize':'move',
-      direction:handle?.dataset.resize||'',
+      node,el,pointerId:event.pointerId,tapEligible:!handle&&!rotate,
+      mode:rotate?'rotate':handle?'resize':'move',direction:handle?.dataset.resize||'',
       startX:event.clientX,startY:event.clientY,
       baseX:Number(node.properties.positionX)||0,baseY:Number(node.properties.positionY)||0,
       baseW:Math.max(1,Number(node.properties.width)||1),baseH:Math.max(1,Number(node.properties.height)||1),
-      baseRotation:Number(node.properties.rotation)||0,startAngle,
-      centerX,centerY,moved:false,historyRecorded:false,
-      scaleX:parentRect.width/(parent.clientWidth||parentRect.width),
-      scaleY:parentRect.height/(parent.clientHeight||parentRect.height)
+      baseRotation:Number(node.properties.rotation)||0,startAngle,centerX,centerY,
+      moved:false,historyRecorded:false,scaleX:this.zoom||1,scaleY:this.zoom||1
     };
     try{$('canvas').setPointerCapture(event.pointerId);}catch(_){}
     event.preventDefault();
@@ -326,10 +316,7 @@ class StudioApp {
   moveDrag(event) {
     const d=this.drag;if(!d||event.pointerId!==d.pointerId)return;
     const distance=Math.hypot(event.clientX-d.startX,event.clientY-d.startY);
-    if(d.mode==='select'){
-      if(distance>10)d.moved=true;
-      return;
-    }
+    if(d.mode==='select'){if(distance>10)d.moved=true;return;}
     if(!d.moved&&distance<8)return;
     if(!d.moved){d.moved=true;d.historyRecorded=false;}
     if(!d.historyRecorded){this.pushHistory();d.historyRecorded=true;}
@@ -341,20 +328,22 @@ class StudioApp {
     }
     if(d.mode==='rotate'){
       const angle=Math.atan2(event.clientY-d.centerY,event.clientX-d.centerX)*180/Math.PI;
-      let rotation=d.baseRotation+angle-d.startAngle;
-      rotation=((rotation%360)+360)%360;
-      p.rotation=Math.round(rotation);
+      p.rotation=((d.baseRotation+angle-d.startAngle)%360+360)%360;
+      p.rotation=Math.round(p.rotation);
       d.el.style.transform='rotate('+p.rotation+'deg)';
     }else if(d.mode==='resize'){
+      // Resize in the object's unrotated coordinate space, but keep the
+      // original top-left anchoring behavior to avoid cumulative drift.
       const dir=d.direction;let x=d.baseX,y=d.baseY,w=d.baseW,h=d.baseH;
-      if(dir.includes('e'))w=Math.max(8,d.baseW+dx);
-      if(dir.includes('s'))h=Math.max(8,d.baseH+dy);
-      if(dir.includes('w')){w=Math.max(8,d.baseW-dx);x=d.baseX+d.baseW-w;}
-      if(dir.includes('n')){h=Math.max(8,d.baseH-dy);y=d.baseY+d.baseH-h;}
+      if(dir.includes('e'))w=Math.max(24,d.baseW+dx);
+      if(dir.includes('s'))h=Math.max(24,d.baseH+dy);
+      if(dir.includes('w')){w=Math.max(24,d.baseW-dx);x=d.baseX+d.baseW-w;}
+      if(dir.includes('n')){h=Math.max(24,d.baseH-dy);y=d.baseY+d.baseH-h;}
+      const localShiftX=x-d.baseX,localShiftY=y-d.baseY;
       const angle=(d.baseRotation||0)*Math.PI/180,cos=Math.cos(angle),sin=Math.sin(angle);
-      const shiftX=x-d.baseX,shiftY=y-d.baseY;
-      x=d.baseX+shiftX*cos-shiftY*sin;y=d.baseY+shiftX*sin+shiftY*cos;
-      p.positionX=Math.round(x);p.positionY=Math.round(y);p.width=Math.round(w);p.height=Math.round(h);
+      p.positionX=Math.round(d.baseX+localShiftX*cos-localShiftY*sin);
+      p.positionY=Math.round(d.baseY+localShiftX*sin+localShiftY*cos);
+      p.width=Math.round(w);p.height=Math.round(h);
       d.el.style.left=p.positionX+'px';d.el.style.top=p.positionY+'px';d.el.style.width=p.width+'px';d.el.style.height=p.height+'px';
       const width=$('p-w'),height=$('p-h'),px=$('p-x'),py=$('p-y');
       if(width)width.value=p.width;if(height)height.value=p.height;if(px)px.value=p.positionX;if(py)py.value=p.positionY;
