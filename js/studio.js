@@ -1,7 +1,7 @@
-import { DataModel, Instance } from './datamodel.js?v=2026.11.16.71';
-import { VirtualFS } from './vfs.js?v=2026.11.16.71';
-import { createProjectRecord, normalizeProject, FlowiqRuntime } from './engine.js?v=2026.11.16.71';
-import { createBackupFile, inspectBackupFile, restoreBackup } from './backup.js?v=2026.11.16.71';
+import { DataModel, Instance } from './datamodel.js?v=2026.11.16.72';
+import { VirtualFS } from './vfs.js?v=2026.11.16.72';
+import { createProjectRecord, normalizeProject, FlowiqRuntime } from './engine.js?v=2026.11.16.72';
+import { createBackupFile, inspectBackupFile, restoreBackup } from './backup.js?v=2026.11.16.72';
 
 const $ = (id) => document.getElementById(id);
 const esc = (value) => String(value ?? '').replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -185,7 +185,7 @@ class StudioApp {
     $('settings-export-project').disabled=!this.project;
     $('settings-export-project').classList.toggle('is-disabled',!this.project);
     $('settings-export-project').querySelector('small').textContent=this.project?'Salvar '+this.project.name+' e os arquivos que ele utiliza.':'Abra um projeto para habilitar esta opção.';
-    $('settings-version').textContent='Versão 2026.11.16.71';
+    $('settings-version').textContent='Versão 2026.11.16.72';
     this.applyPreferences();
   }
 
@@ -222,13 +222,20 @@ class StudioApp {
   }
 
   toggleFocusMode(force) {
-    this.focusMode=typeof force==='boolean'?force:!this.focusMode;
-    $('workspace').classList.toggle('focus-mode',this.focusMode);
-    $('btn-focus-stage').setAttribute('aria-pressed',String(this.focusMode));
-    $('btn-focus-stage').setAttribute('aria-label',this.focusMode?'Sair do foco no palco':'Focar no palco');
-    $('btn-focus-stage').title=this.focusMode?'Mostrar painéis':'Focar no palco';
-    if(this.focusMode)this.closePanels();
-    requestAnimationFrame(()=>{this.renderSelectionHandles();this.updateRotateHandlePlacement();});
+    const next=typeof force==='boolean'?force:!this.focusMode;
+    if(next===this.focusMode)return;
+    const workspace=$('workspace'),button=$('btn-focus-stage');
+    workspace.classList.add('layout-transitioning');
+    requestAnimationFrame(()=>{
+      this.focusMode=next;
+      workspace.classList.toggle('focus-mode',next);
+      button.setAttribute('aria-pressed',String(next));
+      button.setAttribute('aria-label',next?'Sair do foco no palco':'Focar no palco');
+      button.title=next?'Mostrar painéis':'Focar no palco';
+      if(next)this.closePanels();
+      requestAnimationFrame(()=>{this.renderSelectionHandles();this.updateRotateHandlePlacement();});
+      setTimeout(()=>workspace.classList.remove('layout-transitioning'),260);
+    });
   }
 
   async returnToEditor() {
