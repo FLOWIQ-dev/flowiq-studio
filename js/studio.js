@@ -597,7 +597,7 @@ class StudioApp {
     const area=$('stage-scroll');
     if(!el||!area)return;
     const objectRect=el.getBoundingClientRect(),areaRect=area.getBoundingClientRect();
-    const overlay=rotate.parentElement,canvas=$('canvas'),canvasRect=canvas.getBoundingClientRect();
+    const overlayElement=rotate.parentElement,canvas=$('canvas'),canvasRect=canvas.getBoundingClientRect();
     const half=24,margin=half+5;
     const minX=Math.min(areaRect.right-margin,areaRect.left+margin),maxX=Math.max(minX,areaRect.right-margin);
     const minY=Math.min(areaRect.bottom-margin,areaRect.top+margin),maxY=Math.max(minY,areaRect.bottom-margin);
@@ -610,8 +610,8 @@ class StudioApp {
     const sx=cx-(objectRect.left+objectRect.width/2),sy=cy-(objectRect.top+objectRect.height/2);
     const localX=(sx*cos+sy*sin)/zoom,localY=(-sx*sin+sy*cos)/zoom;
     rotate.dataset.placement=placement;
-    rotate.style.left=(overlay.offsetWidth/2+localX)+'px';
-    rotate.style.top=(overlay.offsetHeight/2+localY)+'px';
+    rotate.style.left=(overlayElement.offsetWidth/2+localX)+'px';
+    rotate.style.top=(overlayElement.offsetHeight/2+localY)+'px';
     rotate.style.transform='translate(-50%,-50%)';
   }
 
