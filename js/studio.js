@@ -593,7 +593,7 @@ class StudioApp {
     const menu=document.createElement('div');menu.className='tree-context-menu';menu.setAttribute('role','menu');
     const add=(label,action,extra='')=>{const button=document.createElement('button');button.type='button';button.textContent=label;button.className=extra;button.onclick=()=>{this.closeTreeMenu();action();};menu.append(button);};
     const sep=()=>{const line=document.createElement('div');line.className='menu-separator';menu.append(line);};
-    if(isRoot){add('Expandir tudo',()=>{this.model.getAll().forEach(n=>{if(n.children.length)this.expandedNodes.add(n.id);});this.renderTree();});add('Recolher tudo',()=>{this.expandedNodes.clear();this.renderTree();});}
+    if(isRoot){add('Renomear projeto',()=>this.renameProject(this.project.id));sep();add('Expandir tudo',()=>{this.model.getAll().forEach(n=>{if(n.children.length)this.expandedNodes.add(n.id);});this.renderTree();});add('Recolher tudo',()=>{this.expandedNodes.clear();this.renderTree();});}
     else{
       add('Selecionar',()=>this.select(node));
       add('＋ Inserir instância filha',()=>{this.select(node);this.toggleInstanceLibrary();});
