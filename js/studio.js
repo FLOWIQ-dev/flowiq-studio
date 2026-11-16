@@ -1,247 +1,318 @@
-import { Instance } from './datamodel.js';
-import { VFS } from './vfs.js';
+import { DataModel, Instance } from './datamodel.js';
+import { VirtualFS } from './vfs.js';
 
-let currentProject = null;
-let selectedInstance = null;
-
-async function initStudio() {
-    await renderProjectList();
-
-    document.getElementById('newProjectBtn').onclick = async () => {
-        const name = prompt("Nome do Sistema Operacional (ex: NeoOS):", "NeoOS");
-        if (!name) return;
-
-        const root = new Instance('ScreenRoot', 'ScreenRoot');
-        const bg = new Instance('Frame', 'Background');
-        bg.properties.backgroundColor = '#1e293b';
-        bg.properties.width = '100%';
-        bg.properties.height = '100%';
-        bg.properties.top = '0px';
-        bg.properties.left = '0px';
-        bg.setParent(root);
-
-        const newProj = {
-            id: Date.now(),
-            name: name,
-            created: new Date().toLocaleDateString(),
-            rootData: root.toJSON()
-        };
-
-        await VFS.saveProject(newProj);
-        openProject(newProj);
-    };
-
-    document.getElementById('backHubBtn').onclick = async () => {
-        if (currentProject) {
-            await saveActiveProject();
-        }
-        document.getElementById('workspaceScreen').classList.remove('active');
-        document.getElementById('hubScreen').classList.add('active');
-        await renderProjectList();
-        closeDrawers();
-    };
-
-    document.getElementById('addFrameBtn').onclick = () => addInstanceToActive('Frame');
-    document.getElementById('addButtonBtn').onclick = () => addInstanceToActive('TextButton');
-}
-
-async function renderProjectList() {
-    const list = document.getElementById('projectList');
-    const projects = await VFS.getAllProjects();
-
-    if (projects.length === 0) {
-        list.innerHTML = `<p style="color: var(--text-muted); font-size: 0.8rem; text-align: center; padding: 20px;">Nenhum projeto criado.</p>`;
-        return;
+class StudioApp {
+    constructor() {
+        this.vfs = new VirtualFS();
+        this.datamodel = new DataModel();
+        this.currentProjectId = null;
+        this.currentProjectName = '';
+        this.selectedInstance = null;
+        this.init();
     }
 
-    list.innerHTML = projects.map(p => `
-        <div style="background: var(--bg-card); border: 1px solid var(--border-subtle); padding: 12px; border-radius: var(--radius-md); display: flex; justify-content: space-between; align-items: center;">
-            <div>
-                <strong style="font-size: 0.85rem;">${p.name}</strong>
-                <div style="font-size: 0.65rem; color: var(--text-muted);">Criado em: ${p.created}</div>
+    async init() {
+        await this.loadHubProjects();
+        this.setupEvents();
+        lucide.createIcons();
+    }
+
+    async loadHubProjects() {
+        const listContainer = document.getElementById('hub-project-list');
+        const projects = await this.vfs.getProjects();
+
+        if (projects.length === 0) {
+            listContainer.innerHTML = `
+                <div class="text-center py-10 text-slate-500 text-xs flex flex-col items-center gap-2">
+                    <i data-lucide="folder-open" class="w-8 h-8 opacity-40"></i>
+                    Nenhum projeto encontrado. Crie o primeiro acima!
+                </div>
+            `;
+            lucide.createIcons();
+            return;
+        }
+
+        listContainer.innerHTML = projects.map(p => `
+            <div class="bg-slate-950/60 border border-slate-800 hover:border-indigo-500/50 p-3.5 rounded-xl flex justify-between items-center transition group">
+                <div class="flex items-center gap-3">
+                    <div class="p-2 rounded-lg bg-indigo-500/10 text-indigo-400">
+                        <i data-lucide="cpu" class="w-5 h-5"></i>
+                    </div>
+                    <div>
+                        <h4 class="font-semibold text-sm text-slate-200">${p.name}</h4>
+                        <span class="text-[10px] text-slate-500">Atualizado: ${new Date(p.updatedAt).toLocaleDateString()}</span>
+                    </div>
+                </div>
+                <div class="flex items-center gap-1">
+                    <button class="btn-open-proj bg-indigo-600/20 hover:bg-indigo-600 text-indigo-300 hover:text-white px-3 py-1.5 rounded-lg text-xs font-medium transition flex items-center gap-1" data-id="${p.id}">
+                        <i data-lucide="folder-open" class="w-3.5 h-3.5"></i> Abrir
+                    </button>
+                    <button class="btn-del-proj text-slate-500 hover:text-red-400 p-1.5 rounded-lg transition" data-id="${p.id}" title="Excluir">
+                        <i data-lucide="trash-2" class="w-4 h-4"></i>
+                    </button>
+                </div>
             </div>
-            <div style="display: flex; gap: 6px;">
-                <button class="btn" style="padding: 6px 12px; font-size: 0.75rem;" data-open="${p.id}">Abrir</button>
-                <button class="btn btn-secondary" style="padding: 6px 10px; font-size: 0.75rem; color: #ef4444;" data-del="${p.id}">🗑️</button>
-            </div>
-        </div>
-    `).join('');
+        `).join('');
+        lucide.createIcons();
 
-    list.querySelectorAll('[data-open]').forEach(btn => {
-        btn.onclick = async () => {
-            const id = Number(btn.getAttribute('data-open'));
-            const found = projects.find(p => p.id === id);
-            if (found) openProject(found);
-        };
-    });
-
-    list.querySelectorAll('[data-del]').forEach(btn => {
-        btn.onclick = async () => {
-            if (confirm("Deseja realmente excluir este projeto?")) {
-                const id = Number(btn.getAttribute('data-del'));
-                await VFS.deleteProject(id);
-                renderProjectList();
-            }
-        };
-    });
-}
-
-function openProject(projData) {
-    currentProject = {
-        ...projData,
-        rootInstance: Instance.fromJSON(projData.rootData)
-    };
-
-    document.getElementById('currentProjectTitle').innerText = currentProject.name;
-    document.getElementById('hubScreen').classList.remove('active');
-    document.getElementById('workspaceScreen').classList.add('active');
-    
-    selectedInstance = currentProject.rootInstance;
-    renderViewport();
-    renderExplorerTree();
-    renderInspector();
-}
-
-async function saveActiveProject() {
-    if (!currentProject) return;
-    currentProject.rootData = currentProject.rootInstance.toJSON();
-    await VFS.saveProject({
-        id: currentProject.id,
-        name: currentProject.name,
-        created: currentProject.created,
-        rootData: currentProject.rootData
-    });
-}
-
-function addInstanceToActive(className) {
-    if (!currentProject) return;
-    const name = className + "_" + (currentProject.rootInstance.children.length + 1);
-    const inst = new Instance(className, name);
-    inst.setParent(currentProject.rootInstance);
-    
-    saveActiveProject();
-    renderViewport();
-    renderExplorerTree();
-    closeDrawers();
-}
-
-function renderViewport() {
-    const viewport = document.getElementById('viewportCanvas');
-    viewport.innerHTML = '';
-
-    function renderNode(node) {
-        if (node.className !== 'ScreenRoot') {
-            const el = document.createElement('div');
-            el.className = 'ui-element';
-            el.style.backgroundColor = node.properties.backgroundColor;
-            el.style.width = node.properties.width;
-            el.style.height = node.properties.height;
-            el.style.top = node.properties.top;
-            el.style.left = node.properties.left;
-            el.style.borderRadius = '6px';
-            el.style.border = selectedInstance === node ? '2px solid #6366f1' : '1px solid rgba(255,255,255,0.2)';
-            el.innerText = node.name;
-            
-            el.onclick = (e) => {
-                e.stopPropagation();
-                selectedInstance = node;
-                renderViewport();
-                renderInspector();
+        listContainer.querySelectorAll('.btn-open-proj').forEach(btn => {
+            btn.onclick = () => this.openProject(btn.dataset.id);
+        });
+        listContainer.querySelectorAll('.btn-del-proj').forEach(btn => {
+            btn.onclick = async () => {
+                if (confirm('Deseja excluir este projeto permanentemente?')) {
+                    await this.vfs.deleteProject(btn.dataset.id);
+                    this.loadHubProjects();
+                }
             };
-            viewport.appendChild(el);
-        }
-        node.children.forEach(renderNode);
+        });
     }
 
-    renderNode(currentProject.rootInstance);
-}
+    setupEvents() {
+        document.getElementById('btn-new-project').onclick = async () => {
+            const name = prompt('Nome do seu Sistema Operacional (ex: NeoOS):', 'MeuOS');
+            if (!name) return;
 
-function renderExplorerTree() {
-    const tree = document.getElementById('instanceTree');
-    
-    function buildHTML(node, depth = 0) {
-        let html = `
-            <div class="tree-item" style="padding-left: ${depth * 14}px;" data-id="${node.id}">
-                <span>📁 ${node.name} <small style="color:var(--text-muted);">(${node.className})</small></span>
+            const newProj = {
+                id: 'proj_' + Math.random().toString(36).substr(2, 9),
+                name: name,
+                updatedAt: new Date().toISOString(),
+                data: []
+            };
+
+            const defaultGui = new Instance('ScreenGui', 'MainScreen');
+            const defaultFrame = new Instance('Frame', 'AppWindow');
+            defaultFrame.setParent(defaultGui);
+            newProj.data = defaultGui.toJSON();
+
+            await this.vfs.saveProject(newProj);
+            this.openProject(newProj.id);
+        };
+
+        document.getElementById('btn-back').onclick = () => this.switchToHub();
+
+        document.getElementById('btn-save').onclick = async () => {
+            if (!this.currentProjectId) return;
+            const projectData = {
+                id: this.currentProjectId,
+                name: this.currentProjectName,
+                updatedAt: new Date().toISOString(),
+                data: this.datamodel.root.children.map(c => c.toJSON())
+            };
+            await this.vfs.saveProject(projectData);
+            alert('Projeto salvo com sucesso no IndexedDB!');
+        };
+
+        document.getElementById('btn-add-frame').onclick = () => {
+            const inst = new Instance('Frame', 'Frame_' + Math.floor(Math.random()*100));
+            const target = this.selectedInstance || this.datamodel.root;
+            inst.setParent(target);
+            this.refreshWorkspace();
+        };
+
+        document.getElementById('btn-add-button').onclick = () => {
+            const inst = new Instance('TextButton', 'Button_' + Math.floor(Math.random()*100));
+            const target = this.selectedInstance || this.datamodel.root;
+            inst.setParent(target);
+            this.refreshWorkspace();
+        };
+
+        document.getElementById('btn-play').onclick = () => {
+            alert('Modo Simulação OS ativado!');
+        };
+    }
+
+    async openProject(id) {
+        const projects = await this.vfs.getProjects();
+        const proj = projects.find(p => p.id === id);
+        if (!proj) return;
+
+        this.currentProjectId = proj.id;
+        this.currentProjectName = proj.name;
+        this.datamodel.loadFromJSON(proj.data || []);
+        this.selectedInstance = this.datamodel.root.children[0] || null;
+
+        document.getElementById('view-hub').classList.add('hidden');
+        document.getElementById('view-workspace').classList.remove('hidden');
+        document.getElementById('btn-back').classList.remove('hidden');
+        document.getElementById('btn-save').classList.remove('hidden');
+        document.getElementById('btn-play').classList.remove('hidden');
+
+        this.refreshWorkspace();
+    }
+
+    switchToHub() {
+        this.currentProjectId = null;
+        document.getElementById('view-workspace').classList.add('hidden');
+        document.getElementById('view-hub').classList.remove('hidden');
+        document.getElementById('btn-back').classList.add('hidden');
+        document.getElementById('btn-save').classList.add('hidden');
+        document.getElementById('btn-play').classList.add('hidden');
+        this.loadHubProjects();
+    }
+
+    refreshWorkspace() {
+        this.renderExplorer();
+        this.renderViewport();
+        this.renderProperties();
+        lucide.createIcons();
+    }
+
+    renderExplorer() {
+        const tree = document.getElementById('explorer-tree');
+        tree.innerHTML = '';
+        this.renderNodeRecursive(this.datamodel.root, tree, 0);
+    }
+
+    renderNodeRecursive(instance, container, depth) {
+        const isSelected = this.selectedInstance === instance;
+        const div = document.createElement('div');
+        div.className = `flex items-center justify-between py-1.5 px-2 rounded-lg cursor-pointer text-xs transition ${isSelected ? 'bg-indigo-600 text-white font-medium shadow-sm' : 'text-slate-300 hover:bg-slate-800/80'}`;
+        div.style.paddingLeft = `${depth * 14 + 8}px`;
+
+        let iconName = 'folder';
+        if (instance.className === 'Frame') iconName = 'square';
+        if (instance.className === 'TextButton') iconName = 'mouse-pointer-click';
+        if (instance.className === 'ScreenGui') iconName = 'monitor';
+
+        div.innerHTML = `
+            <div class="flex items-center gap-2 truncate">
+                <i data-lucide="${iconName}" class="w-3.5 h-3.5 ${isSelected ? 'text-white' : 'text-indigo-400'}"></i>
+                <span class="truncate">${instance.name}</span>
             </div>
         `;
-        node.children.forEach(child => {
-            html += buildHTML(child, depth + 1);
-        });
-        return html;
-    }
 
-    tree.innerHTML = buildHTML(currentProject.rootInstance);
-
-    tree.querySelectorAll('.tree-item').forEach(item => {
-        item.onclick = () => {
-            const id = item.getAttribute('data-id');
-            selectedInstance = findNodeById(currentProject.rootInstance, id);
-            renderViewport();
-            renderInspector();
+        div.onclick = (e) => {
+            e.stopPropagation();
+            this.selectedInstance = instance;
+            this.refreshWorkspace();
         };
-    });
-}
 
-function findNodeById(node, id) {
-    if (node.id === id) return node;
-    for (let child of node.children) {
-        const found = findNodeById(child, id);
-        if (found) return found;
-    }
-    return null;
-}
+        container.appendChild(div);
 
-function renderInspector() {
-    const details = document.getElementById('propDetails');
-    if (!selectedInstance) {
-        details.innerHTML = "Nenhum nó selecionado.";
-        return;
+        instance.children.forEach(child => {
+            this.renderNodeRecursive(child, container, depth + 1);
+        });
     }
 
-    details.innerHTML = `
-        <div style="margin-bottom: 8px;"><b>Nome:</b> <input type="text" id="propName" value="${selectedInstance.name}" style="background:var(--bg-base); color:white; border:1px solid var(--border-subtle); padding:4px; border-radius:4px; width:100%;"></div>
-        <div style="margin-bottom: 8px;"><b>Tipo:</b> ${selectedInstance.className}</div>
-        <div style="margin-bottom: 8px; display:flex; align-items:center; gap:8px;">
-            <b>Cor:</b> <input type="color" id="propColor" value="${selectedInstance.properties.backgroundColor || '#3b82f6'}" style="background:none; border:none; width:35px; height:30px; cursor:pointer;">
-        </div>
-        <div style="margin-bottom: 8px;"><b>Altura:</b> <input type="text" id="propHeight" value="${selectedInstance.properties.height}" style="background:var(--bg-base); color:white; border:1px solid var(--border-subtle); padding:4px; border-radius:4px; width:100%;"></div>
-    `;
+    renderViewport() {
+        const canvas = document.getElementById('viewport-canvas');
+        canvas.innerHTML = '';
 
-    document.getElementById('propName').oninput = (e) => {
-        selectedInstance.name = e.target.value;
-        saveActiveProject();
-        renderExplorerTree();
-        renderViewport();
-    };
+        this.datamodel.root.children.forEach(screen => {
+            screen.children.forEach(el => {
+                const domEl = document.createElement('div');
+                domEl.className = `absolute rounded-xl shadow-lg flex items-center justify-center text-xs font-semibold cursor-pointer transition-all ${this.selectedInstance === el ? 'ring-2 ring-indigo-400 ring-offset-2 ring-offset-slate-950' : ''}`;
+                domEl.style.left = `${el.properties.positionX}px`;
+                domEl.style.top = `${el.properties.positionY}px`;
+                domEl.style.width = `${el.properties.width}px`;
+                domEl.style.height = `${el.properties.height}px`;
+                domEl.style.backgroundColor = el.properties.backgroundColor;
+                domEl.style.color = el.properties.textColor;
 
-    document.getElementById('propColor').oninput = (e) => {
-        selectedInstance.properties.backgroundColor = e.target.value;
-        saveActiveProject();
-        renderViewport();
-    };
+                domEl.innerText = el.className === 'TextButton' ? el.properties.text : el.name;
 
-    document.getElementById('propHeight').oninput = (e) => {
-        selectedInstance.properties.height = e.target.value;
-        saveActiveProject();
-        renderViewport();
-    };
-}
+                domEl.onclick = (e) => {
+                    e.stopPropagation();
+                    this.selectedInstance = el;
+                    this.refreshWorkspace();
+                };
 
-function toggleDrawer(drawerId) {
-    document.querySelectorAll('.studio-drawer').forEach(d => {
-        if (d.id === drawerId) {
-            d.classList.toggle('open');
-        } else {
-            d.classList.remove('open');
+                canvas.appendChild(domEl);
+            });
+        });
+
+        if (canvas.children.length === 0) {
+            canvas.innerHTML = `
+                <div class="text-center text-slate-600 text-xs flex flex-col items-center gap-2">
+                    <i data-lucide="layout" class="w-6 h-6 opacity-40"></i>
+                    Palco Vazio (Adicione elementos no Explorer)
+                </div>
+            `;
         }
-    });
+    }
+
+    renderProperties() {
+        const container = document.getElementById('properties-content');
+        if (!this.selectedInstance || this.selectedInstance === this.datamodel.root) {
+            container.innerHTML = `
+                <div class="text-slate-500 text-xs text-center py-10 flex flex-col items-center gap-2">
+                    <i data-lucide="mouse-pointer" class="w-6 h-6 opacity-40"></i>
+                    Selecione um objeto para editar.
+                </div>
+            `;
+            return;
+        }
+
+        const inst = this.selectedInstance;
+        container.innerHTML = `
+            <div class="space-y-4">
+                <div>
+                    <label class="text-[10px] text-slate-400 uppercase font-bold tracking-wider block mb-1">Nome</label>
+                    <input type="text" id="prop-name" value="${inst.name}" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-slate-200 outline-none focus:border-indigo-500">
+                </div>
+                <div>
+                    <label class="text-[10px] text-slate-400 uppercase font-bold tracking-wider block mb-1">Classe</label>
+                    <input type="text" disabled value="${inst.className}" class="w-full bg-slate-950/40 border border-slate-800 rounded-lg p-2 text-xs text-slate-500 cursor-not-allowed">
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="text-[10px] text-slate-400 uppercase font-bold tracking-wider block mb-1">Pos X (px)</label>
+                        <input type="number" id="prop-x" value="${inst.properties.positionX}" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-slate-200 outline-none">
+                    </div>
+                    <div>
+                        <label class="text-[10px] text-slate-400 uppercase font-bold tracking-wider block mb-1">Pos Y (px)</label>
+                        <input type="number" id="prop-y" value="${inst.properties.positionY}" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-slate-200 outline-none">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="text-[10px] text-slate-400 uppercase font-bold tracking-wider block mb-1">Largura</label>
+                        <input type="number" id="prop-w" value="${inst.properties.width}" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-slate-200 outline-none">
+                    </div>
+                    <div>
+                        <label class="text-[10px] text-slate-400 uppercase font-bold tracking-wider block mb-1">Altura</label>
+                        <input type="number" id="prop-h" value="${inst.properties.height}" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-slate-200 outline-none">
+                    </div>
+                </div>
+                <div>
+                    <label class="text-[10px] text-slate-400 uppercase font-bold tracking-wider block mb-1">Cor de Fundo</label>
+                    <input type="color" id="prop-bg" value="${inst.properties.backgroundColor}" class="w-full h-9 bg-slate-950 border border-slate-800 rounded-lg p-1 cursor-pointer">
+                </div>
+                ${inst.className === 'TextButton' ? `
+                <div>
+                    <label class="text-[10px] text-slate-400 uppercase font-bold tracking-wider block mb-1">Texto do Botão</label>
+                    <input type="text" id="prop-text" value="${inst.properties.text}" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-slate-200 outline-none">
+                </div>
+                ` : ''}
+                <div class="pt-4 border-t border-slate-800">
+                    <button id="btn-delete-inst" class="w-full bg-red-600/20 hover:bg-red-600 text-red-400 hover:text-white py-2 rounded-lg text-xs font-semibold transition flex items-center justify-center gap-1.5">
+                        <i data-lucide="trash-2" class="w-4 h-4"></i> Excluir Objeto
+                    </button>
+                </div>
+            </div>
+        `;
+
+        document.getElementById('prop-name').oninput = (e) => { inst.name = e.target.value; this.renderExplorer(); };
+        document.getElementById('prop-x').oninput = (e) => { inst.properties.positionX = parseInt(e.target.value) || 0; this.renderViewport(); };
+        document.getElementById('prop-y').oninput = (e) => { inst.properties.positionY = parseInt(e.target.value) || 0; this.renderViewport(); };
+        document.getElementById('prop-w').oninput = (e) => { inst.properties.width = parseInt(e.target.value) || 10; this.renderViewport(); };
+        document.getElementById('prop-h').oninput = (e) => { inst.properties.height = parseInt(e.target.value) || 10; this.renderViewport(); };
+        document.getElementById('prop-bg').oninput = (e) => { inst.properties.backgroundColor = e.target.value; this.renderViewport(); };
+        if (inst.className === 'TextButton') {
+            document.getElementById('prop-text').oninput = (e) => { inst.properties.text = e.target.value; this.renderViewport(); };
+        }
+        document.getElementById('btn-delete-inst').onclick = () => {
+            if (confirm(`Deseja excluir "${inst.name}"?`)) {
+                inst.destroy();
+                this.selectedInstance = null;
+                this.refreshWorkspace();
+            }
+        };
+    }
 }
 
-function closeDrawers() {
-    document.querySelectorAll('.studio-drawer').forEach(d => d.classList.remove('open'));
-}
-
-window.FlowiqStudio = { toggleDrawer, closeDrawers };
-initStudio();
-
+window.addEventListener('DOMContentLoaded', () => {
+    new StudioApp();
+});
+            
