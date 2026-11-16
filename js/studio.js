@@ -297,10 +297,11 @@ class StudioApp {
     if(isRoot){add('＋ Novo Frame',()=>this.add('Frame'));add('Expandir tudo',()=>{this.model.getAll().forEach(n=>{if(n.children.length)this.expandedNodes.add(n.id);});this.renderTree();});add('Recolher tudo',()=>{this.expandedNodes.clear();this.renderTree();});}
     else{
       add('Selecionar',()=>this.select(node));
-      if(node.className==='Frame')add('＋ Inserir objeto filho',()=>this.insertChild(node));
+      if(node.className==='Frame'){add('＋ Inserir Frame filho',()=>this.insertChild(node,'Frame'));add('＋ Inserir Botão',()=>this.insertChild(node,'TextButton'));add('＋ Inserir Texto',()=>this.insertChild(node,'TextLabel'));add('＋ Inserir Imagem',()=>this.insertChild(node,'ImageLabel'));}
       add('Renomear  ·  F2',()=>this.renameNode(node));
       add('Duplicar  ·  Ctrl+D',()=>{this.select(node);this.duplicateSelected();});
       sep();
+      add('Mover para outro Frame…',()=>this.moveIntoFrame(node));
       add('Mover para raiz',()=>this.reparentNode(node,this.model.root));
       add('Mover para cima',()=>this.reorderNode(node,-1));
       add('Mover para baixo',()=>this.reorderNode(node,1));
@@ -317,14 +318,22 @@ class StudioApp {
     const name=value.trim().slice(0,64);if(!name)return;
     this.pushHistory();node.name=name;this.refresh();this.scheduleSave();
   }
-  insertChild(parent){
-    if(!parent||parent.className!=='Frame')return;
-    const options=[['Frame','Frame'],['Botão','TextButton'],['Texto','TextLabel'],['Imagem','ImageLabel']];
-    const choice=prompt('Tipo de objeto: 1 Frame, 2 Botão, 3 Texto, 4 Imagem','2');
-    const type=options[Number(choice)-1]?.[1];if(!type)return;
+  insertChild(parent,type){
+    if(!parent||parent.className!=='Frame'||!['Frame','TextButton','TextLabel','ImageLabel'].includes(type))return;
     this.pushHistory();const count=this.model.getAll().filter(n=>n.className===type).length;
     const child=new Instance(type,type+'_'+(count+1));child.properties.positionX=18;child.properties.positionY=18;child.setParent(parent);
     this.expandedNodes.add(parent.id);this.select(child);this.scheduleSave();
+  }
+  moveIntoFrame(node){
+    const frames=this.model.getAll().filter(n=>n.className==='Frame'&&n!==node&&!this.isDescendant(n,node));
+    if(!frames.length){this.log('Não há outro Frame disponível para receber este objeto.','error');return;}
+    const choices=frames.map((frame,index)=>(index+1)+'. '+frame.name).join('\\n');
+    const answer=prompt('Mover para qual Frame?\\n'+choices,'1');
+    if(answer===null)return;const target=frames[Number(answer)-1];if(target)this.reparentNode(node,target);
+  }
+  isDescendant(candidate,ancestor){
+    for(let current=candidate?.parent;current;current=current.parent)if(current===ancestor)return true;
+    return false;
   }
   reparentNode(node,parent){
     if(!node||!parent||node===parent||node.parent===parent||this.playMode)return;
@@ -364,7 +373,7 @@ class StudioApp {
       el.style.transform = 'rotate('+(Number(p.rotation)||0)+'deg)';
       el.style.transformOrigin = 'center center';
       if (node.className === 'Frame') { el.style.display='block'; el.style.overflow='hidden'; el.style.outlineOffset='2px'; }
-      el.textContent = p.text || (node.className === 'Frame' ? '' : node.name);
+      el.textContent = p.text || (node.className === 'Frame' || (node.className==='ImageLabel'&&p.imageUrl) ? '' : node.name);
       if (node.className === 'TextButton' && this.playMode) {
         el.type = 'button'; el.onclick = () => this.log('Ação executada: '+node.name,'ok');
       } else if (!this.playMode) {
