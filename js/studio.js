@@ -262,8 +262,23 @@ class StudioApp {
     const el=handle?[...$('canvas').querySelectorAll('[data-node-id]')].find(item=>item.dataset.nodeId===handle.dataset.nodeId):event.target.closest('[data-node-id]');
     if(!el)return;
     const node=this.model.find(el.dataset.nodeId);if(!node)return;
-    // No celular, o primeiro toque seleciona. O próximo arrasta; as alças redimensionam.
-    if(isMobile && !handle && this.selected !== node){this.select(node);return;}
+    if(isMobile && !handle && event.pointerType==='touch'){
+      if(this.selected !== node){this.select(node);return;}
+      if(!this.allowTouchDrag){
+        clearTimeout(this.pendingTouch?.timer);
+        const pending={node,el,event,pointerId:event.pointerId};
+        this.pendingTouch=pending;
+        try{$('canvas').setPointerCapture(event.pointerId);}catch(_){}
+        pending.timer=setTimeout(()=>{
+          if(this.pendingTouch!==pending)return;
+          this.pendingTouch=null;
+          this.allowTouchDrag=true;
+          this.startDrag(event);
+          this.allowTouchDrag=false;
+        },260);
+        return;
+      }
+    }
     this.selected=node;
     const parent=el.parentElement,parentRect=parent.getBoundingClientRect();
     try{$('canvas').setPointerCapture(event.pointerId);}catch(_){}
@@ -275,6 +290,11 @@ class StudioApp {
   }
 
   moveDrag(event) {
+    if(this.pendingTouch){
+      const p=this.pendingTouch,dx=event.clientX-p.event.clientX,dy=event.clientY-p.event.clientY;
+      if(Math.hypot(dx,dy)>8){clearTimeout(p.timer);this.pendingTouch=null;}
+      return;
+    }
     if(!this.drag)return;
     const d=this.drag,dx=(event.clientX-d.startX)/(d.scaleX||1),dy=(event.clientY-d.startY)/(d.scaleY||1);
     if(Math.abs(dx)+Math.abs(dy)>3)d.moved=true;if(!d.moved)return;
@@ -298,7 +318,7 @@ class StudioApp {
     this.updateSelectionHandles();
   }
 
-  endDrag(){if(!this.drag)return;const moved=this.drag.moved;this.drag=null;if(moved){this.updateSelectionHandles();this.scheduleSave();}}
+  endDrag(){if(this.pendingTouch){clearTimeout(this.pendingTouch.timer);this.pendingTouch=null;}if(!this.drag)return;const moved=this.drag.moved;this.drag=null;if(moved){this.updateSelectionHandles();this.scheduleSave();}}
 
   renderSelectionHandles(){
     const canvas=$('canvas');canvas.querySelector('.selection-box')?.remove();
@@ -392,7 +412,12 @@ class StudioApp {
   play(force) {
     if(!this.project)return;
     this.playMode=typeof force==='boolean'?force:!this.playMode;
-    $('btn-play').textContent=this.playMode?'■ Editar':'▶ Prévia';
+    this.closePanels();
+    $('workspace').classList.toggle('preview-mode',this.playMode);
+    $('btn-play').textContent=this.playMode?'↩ Voltar ao editor':'▶ Pré-visualizar';
+    $('mobile-play').innerHTML=this.playMode?'<span>↩</span>Voltar ao editor':'<span>▶</span>Prévia';
+    const modeLabel=$('stage-mode-label');
+    if(modeLabel)modeLabel.textContent=this.playMode?'PRÉ-VISUALIZAÇÃO':'PALCO 2D';
     this.renderCanvas();
     this.log(this.playMode?'Prévia iniciada.':'Modo de edição.','ok');
   }
