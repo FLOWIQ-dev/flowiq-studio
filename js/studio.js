@@ -227,7 +227,7 @@ class StudioApp {
       $('asset-preview-pane').innerHTML='<div class="preview-empty"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="m4 17 5-5 4 4 3-3 4 4"/></svg><strong>Nenhum arquivo selecionado</strong><span>Escolha um arquivo na lista para visualizar.</span></div>';
       return;
     }
-    if(!filtered.some(a=>a.id===this.selectedAssetId))this.selectedAssetId=filtered[0].id;
+    if(!filtered.some(a=>a.id===this.selectedAssetId))this.selectedAssetId=null;
     const iconFor=a=>{
       const mime=a.mime||'',name=a.name||'';
       const image=mime.startsWith('image/')||/\.(png|jpe?g|gif|webp|avif|bmp)$/i.test(name);
