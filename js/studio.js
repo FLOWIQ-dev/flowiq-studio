@@ -194,7 +194,7 @@ class StudioApp {
 
   openAsset(id) {
     const asset=this.assets.find(a=>a.id===id);if(!asset)return;
-    const a=document.createElement('a');a.href=this.assetUrl(asset);a.target='_blank';a.rel='noopener';a.click();
+    const a=document.createElement('a');a.href=this.assetUrl(asset);a.download=asset.name||'flowiq-asset';a.rel='noopener';a.click();
   }
 
   async deleteAsset(id) {
