@@ -68,7 +68,6 @@ class StudioApp {
     $('undo-action').onclick = () => this.undo();
     $('redo-action').onclick = () => this.redo();
     $('clear-console').onclick = () => $('console-log').replaceChildren();
-    $('toggle-console').onclick = () => this.toggleConsole();
     $('drawer-backdrop').onclick = () => this.closePanels();
     document.querySelectorAll('[data-panel]').forEach((b) => { b.setAttribute('aria-expanded', 'false'); b.onclick = () => this.togglePanel(b.dataset.panel); });
     document.querySelectorAll('[data-close-panel]').forEach((b) => b.onclick = () => this.closePanels());
@@ -228,13 +227,6 @@ class StudioApp {
   }
 
   isMobile() { return window.matchMedia('(max-width: 820px)').matches; }
-
-  toggleConsole() {
-    const consolePanel=$('workspace').querySelector('.console');
-    const expanded=consolePanel.classList.toggle('expanded');
-    $('toggle-console').textContent=expanded?'Fechar':'Abrir';
-    $('toggle-console').setAttribute('aria-expanded',String(expanded));
-  }
 
   toggleDesktopPanel(which) {
     if(this.isMobile()) return;
@@ -752,14 +744,28 @@ class StudioApp {
   }
 
   togglePanel(which) {
-    const panel=$(which); if(!panel||!this.isMobile())return;
-    if(panel.classList.contains('mobile-open')){this.closePanels();return;}
+    if(!this.isMobile())return;
+    const panel=which==='console' ? $('console-panel') : $(which);
+    if(!panel)return;
+    const isOpen=which==='console' ? panel.classList.contains('expanded') : panel.classList.contains('mobile-open');
+    if(isOpen){this.closePanels();return;}
     this.openPanel(which);
   }
   closePanels() {
     $('explorer').classList.remove('mobile-open');$('inspector').classList.remove('mobile-open');
+    $('console-panel').classList.remove('expanded');
     $('drawer-backdrop').classList.remove('show');
     document.querySelectorAll('[data-panel]').forEach((tab)=>{tab.classList.remove('active');tab.setAttribute('aria-expanded','false');});
+  }
+  openPanel(which) {
+    if(!this.isMobile())return;
+    const panel=which==='console' ? $('console-panel') : $(which);
+    if(!panel)return;
+    this.closePanels();
+    panel.classList.add(which==='console' ? 'expanded' : 'mobile-open');
+    $('drawer-backdrop').classList.add('show');
+    const tab=document.querySelector('[data-panel="'+which+'"]');
+    if(tab){tab.classList.add('active');tab.setAttribute('aria-expanded','true');}
   }
 
   log(message,type='') {
