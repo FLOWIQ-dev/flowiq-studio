@@ -1,11 +1,11 @@
-const CACHE_NAME = 'flowiq-studio-v13-2026-11-16-28';
+const CACHE_NAME = 'flowiq-studio-v13-2026-11-16-29';
 const APP_FILES = [
   './',
   './index.html',
   './manifest.json',
-  './js/studio.js?v=2026.11.16.28',
-  './js/datamodel.js?v=2026.11.16.28',
-  './js/vfs.js?v=2026.11.16.28',
+  './js/studio.js?v=2026.11.16.29',
+  './js/datamodel.js?v=2026.11.16.29',
+  './js/vfs.js?v=2026.11.16.29',
   './assets/icon.svg'
 ];
 
