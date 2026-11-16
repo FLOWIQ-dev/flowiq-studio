@@ -61,9 +61,6 @@ class FlowiqStudio {
     $('scene').addEventListener('click', event => {
       if (event.target === $('scene') && this.store.state.selectedId) this.select(null);
     });
-    $('inspector').addEventListener('click', event => {
-      if (event.target.closest('[data-delete-node]')) this.deleteSelected();
-    });
     $('inspector').addEventListener('change', event => {
       const input = event.target.closest('[data-property]');
       if (!input) return;
@@ -287,6 +284,26 @@ class FlowiqStudio {
     this.renderEditor();
   }
 
+  saveButtonAction(nodeId, value) {
+    const text = String(value || '').slice(0, 200);
+    const events = Array.isArray(this.project.events) ? this.project.events : [];
+    const existing = events.find(rule => rule.nodeId === nodeId && rule.event === 'click');
+    if (existing) existing.actions = text ? [{ type: 'setText', targetId: nodeId, value: text }] : [];
+    else if (text) events.push({ id: makeId(), nodeId, event: 'click', actions: [{ type: 'setText', targetId: nodeId, value: text }] });
+    this.project.events = events.filter(rule => rule.actions?.length);
+    this.scheduleSave();
+    this.toast('Ação do botão salva.');
+  }
+
+  duplicateSelected() {
+    const id = this.store.state.selectedId;
+    if (!id) return;
+    this.history.checkpoint(this.scene.snapshot());
+    const copy = this.scene.duplicate(id);
+    this.select(copy.id);
+    this.scheduleSave();
+  }
+
   deleteSelected() {
     const id = this.store.state.selectedId;
     if (!id) return;
@@ -326,7 +343,9 @@ class FlowiqStudio {
       assets: this.assets,
       onChange: (key, value) => this.updateProperty(key, value),
       onDelete: () => this.deleteSelected(),
-      onAsset: id => this.updateProperty('assetId', id)
+      onAsset: id => this.updateProperty('assetId', id),
+      events: this.project.events || [],
+      onEventSave: (nodeId, value) => this.saveButtonAction(nodeId, value)
     });
     $('project-name').textContent = this.project.name;
     this.updateHistory(this.history.status);
@@ -500,6 +519,7 @@ class FlowiqStudio {
     if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 's') { event.preventDefault(); this.saveProject(); }
     if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'z') { event.preventDefault(); event.shiftKey ? this.redo() : this.undo(); }
     if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'y') { event.preventDefault(); this.redo(); }
+    if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'd' && this.store.state.screen === 'editor') { event.preventDefault(); this.duplicateSelected(); }
     if ((event.key === 'Delete' || event.key === 'Backspace') && this.store.state.screen === 'editor') this.deleteSelected();
   }
 
