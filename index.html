@@ -2,105 +2,403 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Flowiq Studio</title>
-    <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#0f172a">
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Lucide Icons -->
-    <script src="https://unpkg.com/lucide@latest"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Flowiq Studio - Mobile OS Engine</title>
+    <style>
+        :root {
+            --bg-base: #0f1117;
+            --bg-surface: #161b22;
+            --bg-card: #1f242d;
+            --border-subtle: rgba(255, 255, 255, 0.08);
+            --accent: #6366f1;
+            --accent-hover: #4f46e5;
+            --text-main: #f1f5f9;
+            --text-muted: #94a3b8;
+            --success: #10b981;
+            --radius-lg: 14px;
+            --radius-md: 8px;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; -webkit-tap-highlight-color: transparent; }
+        
+        body { 
+            background-color: var(--bg-base); 
+            color: var(--text-main); 
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100dvh; height: 100vh;
+            display: flex; flex-direction: column; overflow: hidden; 
+        }
+
+        header { 
+            background: var(--bg-surface); 
+            border-bottom: 1px solid var(--border-subtle); 
+            padding: 8px 16px; 
+            display: flex; justify-content: space-between; align-items: center; 
+            flex-shrink: 0; height: 48px; z-index: 10;
+        }
+
+        h1 { font-size: 0.9rem; font-weight: 600; color: var(--text-main); display: flex; align-items: center; gap: 6px; }
+
+        .header-actions { display: flex; align-items: center; gap: 8px; }
+        
+        .fs-btn {
+            background: var(--bg-card); border: 1px solid var(--border-subtle);
+            color: var(--text-main); padding: 5px 10px; border-radius: 6px; font-size: 0.7rem; cursor: pointer;
+        }
+
+        .main-container { flex: 1; display: flex; flex-direction: column; overflow: hidden; position: relative; }
+
+        .screen { display: none; flex: 1; flex-direction: column; overflow: hidden; height: 100%; }
+        .screen.active { display: flex; }
+
+        .hub-screen { padding: 14px; gap: 12px; overflow-y: auto; }
+
+        .card { background: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); padding: 14px; }
+
+        .btn { 
+            background: var(--accent); color: white; border: none; padding: 12px; 
+            border-radius: var(--radius-md); font-weight: 600; font-size: 0.85rem; width: 100%; cursor: pointer; text-align: center; 
+        }
+        .btn:active { background: var(--accent-hover); transform: scale(0.99); }
+        .btn-secondary { background: var(--bg-card); border: 1px solid var(--border-subtle); color: var(--text-main); }
+
+        .project-list { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
+        .project-item { 
+            background: var(--bg-card); border: 1px solid var(--border-subtle); 
+            padding: 10px 14px; border-radius: var(--radius-md); display: flex; justify-content: space-between; align-items: center; 
+        }
+
+        /* Workspace */
+        .workspace-header { 
+            background: var(--bg-surface); padding: 6px 14px; display: flex; justify-content: space-between; align-items: center; 
+            border-bottom: 1px solid var(--border-subtle); font-size: 0.75rem; flex-shrink: 0; height: 42px; 
+        }
+        
+        .workspace-body { 
+            flex: 1; position: relative; background: #090b10; 
+            display: flex; justify-content: center; align-items: center; overflow: hidden; padding: 8px;
+        }
+
+        .phone-viewport { 
+            width: 100%; max-width: 280px; height: 100%; max-height: 480px; 
+            background: #000; border: 2px solid #21262d; border-radius: 20px; position: relative; overflow: hidden; 
+            box-shadow: 0 8px 24px rgba(0,0,0,0.5); 
+        }
+
+        .ui-element { 
+            position: absolute; display: flex; align-items: center; justify-content: center; 
+            font-size: 0.7rem; color: white; box-sizing: border-box; border-radius: 6px; cursor: pointer;
+        }
+        .ui-element.selected { outline: 2px solid #818cf8; outline-offset: 1px; }
+
+        /* Navegação Inferior */
+        .studio-nav { 
+            background: var(--bg-surface); border-top: 1px solid var(--border-subtle); 
+            display: flex; justify-content: space-around; align-items: center; padding: 6px 0; flex-shrink: 0; height: 55px; z-index: 100;
+        }
+        .nav-btn { background: none; border: none; color: var(--text-muted); font-size: 0.65rem; font-weight: 500; display: flex; flex-direction: column; align-items: center; gap: 2px; cursor: pointer; padding: 4px 10px; }
+        .nav-btn.active { color: var(--accent); }
+
+        /* Gavetas Deslizantes Otimizadas */
+        .studio-drawer { 
+            position: absolute; bottom: 0; left: 0; width: 100%; max-height: 55%; 
+            background: var(--bg-surface); border-top: 1px solid var(--border-subtle); 
+            border-radius: var(--radius-lg) var(--radius-lg) 0 0; padding: 14px; display: none; flex-direction: column; gap: 8px; 
+            z-index: 200; overflow-y: auto; box-shadow: 0 -8px 24px rgba(0,0,0,0.7); 
+        }
+        .studio-drawer.open { display: flex; }
+
+        .tree-item { 
+            padding: 8px 10px; background: var(--bg-card); border-radius: 6px; 
+            display: flex; justify-content: space-between; align-items: center; font-size: 0.75rem; border: 1px solid var(--border-subtle); cursor: pointer; 
+        }
+        .tree-item.selected { border-color: var(--accent); background: rgba(99, 102, 241, 0.1); }
+
+        .prop-group { display: flex; flex-direction: column; gap: 4px; font-size: 0.75rem; }
+        .prop-input { 
+            background: var(--bg-base); border: 1px solid var(--border-subtle); color: var(--text-main); 
+            padding: 8px; border-radius: 6px; font-size: 0.8rem; width: 100%; outline: none; 
+        }
+        .prop-input:focus { border-color: var(--accent); }
+    </style>
 </head>
-<body class="bg-slate-950 text-slate-100 h-screen flex flex-col overflow-hidden select-none">
-    
-    <!-- Top Navbar -->
-    <header class="bg-slate-900/80 backdrop-blur border-b border-slate-800 px-4 py-3 flex justify-between items-center z-20">
-        <div class="flex items-center gap-2">
-            <button id="btn-back" class="hidden text-slate-400 hover:text-white p-1 rounded-lg transition">
-                <i data-lucide="arrow-left" class="w-5 h-5"></i>
-            </button>
-            <h1 class="font-bold text-base text-indigo-400 flex items-center gap-2">
-                <i data-lucide="cpu" class="w-5 h-5"></i> Flowiq Studio
-            </h1>
-        </div>
-        <div class="flex items-center gap-2">
-            <button id="btn-play" class="hidden bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition shadow-lg shadow-emerald-600/20">
-                <i data-lucide="play" class="w-4 h-4"></i> Testar
-            </button>
-            <button id="btn-save" class="hidden bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition shadow-lg shadow-indigo-600/20">
-                <i data-lucide="save" class="w-4 h-4"></i> Salvar
-            </button>
+<body>
+    <header>
+        <h1>⚡ Flowiq <span style="font-size: 0.6rem; color: var(--text-muted); background: var(--bg-card); padding: 1px 5px; border-radius: 8px;">v1.0 Fast</span></h1>
+        <div class="header-actions">
+            <button class="fs-btn" onclick="toggleFullScreen()">⛶ Tela Cheia</button>
         </div>
     </header>
 
-    <!-- Main Container -->
-    <main class="flex-1 flex flex-col relative overflow-hidden">
-        
-        <!-- View 1: Project Hub -->
-        <div id="view-hub" class="flex-1 flex flex-col p-4 overflow-y-auto space-y-4">
-            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl">
-                <h2 class="text-lg font-bold text-slate-100 mb-1 flex items-center gap-2">
-                    <i data-lucide="folder-kanban" class="text-indigo-400 w-5 h-5"></i> Meus Projetos OS
-                </h2>
-                <p class="text-xs text-slate-400 mb-4">Gerencie e crie seus sistemas operacionais e interfaces 2D.</p>
-                <button id="btn-new-project" class="w-full bg-indigo-600 hover:bg-indigo-500 active:scale-[0.98] transition py-3 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 shadow-lg shadow-indigo-600/25">
-                    <i data-lucide="plus-circle" class="w-5 h-5"></i> Novo Projeto OS
-                </button>
+    <div class="main-container">
+        <!-- HUB DE PROJETOS -->
+        <div id="hubScreen" class="screen active hub-screen">
+            <div class="card">
+                <h2 style="font-size: 0.9rem; margin-bottom: 2px;">Sistemas Operacionais</h2>
+                <p style="font-size: 0.7rem; color: var(--text-muted); margin-bottom: 10px;">Ambiente de engenharia 2D de alta performance.</p>
+                <button class="btn" onclick="createNewProject()">+ Novo Projeto OS</button>
             </div>
 
-            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 flex-1 flex flex-col shadow-xl">
-                <h3 class="text-sm font-bold text-slate-300 mb-3 flex items-center gap-2">
-                    <i data-lucide="archive" class="w-4 h-4 text-indigo-400"></i> Projetos Salvos no VFS
-                </h3>
-                <div id="hub-project-list" class="flex-1 overflow-y-auto space-y-2 pr-1">
-                    <div class="text-center py-10 text-slate-500 text-xs">Carregando projetos...</div>
+            <div class="card" style="flex: 1; display: flex; flex-direction: column;">
+                <h3 style="font-size: 0.8rem; margin-bottom: 6px;">Projetos Salvos</h3>
+                <div id="projectList" class="project-list" style="flex: 1; overflow-y: auto;">
+                    <p style="color: var(--text-muted); font-size: 0.75rem; text-align: center; padding: 20px;">Nenhum projeto criado ainda.</p>
                 </div>
             </div>
         </div>
 
-        <!-- View 2: Studio Workspace -->
-        <div id="view-workspace" class="flex-1 flex flex-col md:flex-row overflow-hidden hidden">
-            <!-- Explorer Sidebar -->
-            <aside class="w-full md:w-64 bg-slate-900/60 border-b md:border-b-0 md:border-r border-slate-800 flex flex-col h-1/3 md:h-full">
-                <div class="p-3 border-b border-slate-800 flex justify-between items-center bg-slate-900">
-                    <span class="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
-                        <i data-lucide="folder-tree" class="w-4 h-4 text-indigo-400"></i> Explorer
-                    </span>
-                    <div class="flex gap-1">
-                        <button id="btn-add-frame" title="Adicionar Frame" class="p-1.5 hover:bg-slate-800 text-blue-400 rounded-lg transition">
-                            <i data-lucide="square" class="w-4 h-4"></i>
-                        </button>
-                        <button id="btn-add-button" title="Adicionar Botão" class="p-1.5 hover:bg-slate-800 text-emerald-400 rounded-lg transition">
-                            <i data-lucide="mouse-pointer-click" class="w-4 h-4"></i>
-                        </button>
+        <!-- WORKSPACE DO ESTÚDIO -->
+        <div id="workspaceScreen" class="screen">
+            <div class="workspace-header">
+                <button class="btn btn-secondary" style="width: auto; padding: 4px 8px; font-size: 0.7rem;" onclick="returnToHub()">← Voltar</button>
+                <span id="currentProjectTitle" style="font-weight: 600;">Projeto</span>
+                <button class="btn" style="width: auto; padding: 4px 10px; font-size: 0.7rem; background: var(--success);" onclick="alert('Modo Play: Interface executada com sucesso!')">▶ Play</button>
+            </div>
+
+            <div class="workspace-body">
+                <!-- Palco -->
+                <div class="phone-viewport" id="viewportCanvas" onclick="clearSelection(event)"></div>
+
+                <!-- Gaveta Explorer -->
+                <div id="explorerDrawer" class="studio-drawer">
+                    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-subtle); padding-bottom: 4px;">
+                        <strong style="font-size: 0.8rem;">Explorer (Hierarquia)</strong>
+                        <button onclick="toggleDrawer(null)" style="background:none; border:none; color:var(--text-muted); font-size:1rem; padding:2px;">✕</button>
+                    </div>
+                    <div style="display: flex; gap: 6px;">
+                        <button class="btn" style="font-size: 0.75rem; padding: 8px;" onclick="addInstance('Frame')">+ Frame</button>
+                        <button class="btn" style="font-size: 0.75rem; padding: 8px; background: var(--bg-card); border: 1px solid var(--border-subtle);" onclick="addInstance('TextButton')">+ Botão</button>
+                    </div>
+                    <div id="instanceTree" style="display: flex; flex-direction: column; gap: 4px; max-height: 160px; overflow-y: auto; margin-top: 4px;"></div>
+                </div>
+
+                <!-- Gaveta Propriedades -->
+                <div id="propertiesDrawer" class="studio-drawer">
+                    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-subtle); padding-bottom: 4px;">
+                        <strong style="font-size: 0.8rem;">Inspetor de Propriedades</strong>
+                        <button onclick="toggleDrawer(null)" style="background:none; border:none; color:var(--text-muted); font-size:1rem; padding:2px;">✕</button>
+                    </div>
+                    <div id="propDetails" style="display: flex; flex-direction: column; gap: 8px; padding-top: 4px;">
+                        <p style="color: var(--text-muted); font-size: 0.75rem; text-align: center; padding: 15px;">Selecione um elemento para editar.</p>
                     </div>
                 </div>
-                <div id="explorer-tree" class="flex-1 overflow-y-auto p-2 text-sm space-y-0.5"></div>
-            </aside>
+            </div>
 
-            <!-- Viewport Canvas -->
-            <section class="flex-1 bg-slate-950 relative flex items-center justify-center overflow-hidden p-4">
-                <div id="viewport-canvas" class="w-full max-w-[380px] h-[640px] bg-slate-900/40 border border-slate-800 rounded-3xl relative overflow-hidden shadow-2xl flex items-center justify-center">
-                    <span class="text-slate-600 text-xs flex items-center gap-1.5">
-                        <i data-lucide="layout" class="w-4 h-4"></i> Palco 2D Vazio
-                    </span>
-                </div>
-            </section>
-
-            <!-- Properties Panel -->
-            <aside class="w-full md:w-72 bg-slate-900/60 border-t md:border-t-0 md:border-l border-slate-800 flex flex-col h-1/3 md:h-full">
-                <div class="p-3 border-b border-slate-800 bg-slate-900">
-                    <span class="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
-                        <i data-lucide="sliders" class="w-4 h-4 text-indigo-400"></i> Inspetor
-                    </span>
-                </div>
-                <div id="properties-content" class="flex-1 overflow-y-auto p-4 text-sm space-y-4">
-                    <div class="text-slate-500 text-xs text-center py-10">Selecione um objeto para editar.</div>
-                </div>
-            </aside>
+            <!-- Navegação Inferior -->
+            <div class="studio-nav">
+                <button class="nav-btn" onclick="toggleDrawer('explorerDrawer')">
+                    <span style="font-size: 1rem;">📂</span>
+                    <span>Explorer</span>
+                </button>
+                <button class="nav-btn" onclick="toggleDrawer('propertiesDrawer')">
+                    <span style="font-size: 1rem;">⚙️</span>
+                    <span>Propriedades</span>
+                </button>
+                <button class="nav-btn" onclick="alert('Editor de scripts em desenvolvimento.')">
+                    <span style="font-size: 1rem;">💻</span>
+                    <span>Scripts</span>
+                </button>
+            </div>
         </div>
+    </div>
 
-    </main>
+    <script>
+        let currentProject = null;
+        let selectedInstanceId = null;
 
-    <script type="module" src="./js/studio.js"></script>
-</body>
-</html>
+        function toggleFullScreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(() => {});
+            } else if (document.exitFullscreen) {
+                document.exitFullscreen();
+            }
+        }
+
+        function createNewProject() {
+            const projectName = prompt("Nome do seu Sistema Operacional:", "NeoOS");
+            if (!projectName) return;
+            
+            const projects = JSON.parse(localStorage.getItem('flowiq_projects') || '[]');
+            const newProj = { 
+                id: Date.now(), 
+                name: projectName, 
+                created: new Date().toLocaleDateString(), 
+                instances: [
+                    { id: Date.now(), name: "WindowMain", type: "Frame", bg: "#1e293b", width: "200px", height: "120px", top: "40px", left: "40px" }
+                ] 
+            };
+            projects.push(newProj);
+            localStorage.setItem('flowiq_projects', JSON.stringify(projects));
+            loadProjects();
+        }
+
+        function loadProjects() {
+            const list = document.getElementById('projectList');
+            const projects = JSON.parse(localStorage.getItem('flowiq_projects') || '[]');
+            
+            if (projects.length === 0) {
+                list.innerHTML = `<p style="color: var(--text-muted); font-size: 0.75rem; text-align: center; padding: 15px;">Nenhum projeto criado ainda.</p>`;
+                return;
+            }
+
+            list.innerHTML = projects.map(p => `
+                <div class="project-item">
+                    <div>
+                        <strong style="font-size: 0.8rem; color: var(--text-main);">${p.name}</strong>
+                        <div style="font-size: 0.6rem; color: var(--text-muted);">Criado em: ${p.created}</div>
+                    </div>
+                    <button style="background: rgba(99, 102, 241, 0.2); border: 1px solid rgba(99, 102, 241, 0.4); color: #818cf8; padding: 5px 10px; border-radius: 6px; font-size: 0.7rem; cursor:pointer;" onclick="openProject(${p.id})">Abrir</button>
+                </div>
+            `).join('');
+        }
+
+        function openProject(id) {
+            const projects = JSON.parse(localStorage.getItem('flowiq_projects') || '[]');
+            currentProject = projects.find(p => p.id === id);
+            if (!currentProject) return;
+
+            localStorage.setItem('flowiq_active_id', currentProject.id);
+            document.getElementById('currentProjectTitle').innerText = currentProject.name;
+            document.getElementById('hubScreen').classList.remove('active');
+            document.getElementById('workspaceScreen').classList.add('active');
+            selectedInstanceId = null;
+            renderWorkspace();
+        }
+
+        function returnToHub() {
+            saveCurrentProject();
+            localStorage.removeItem('flowiq_active_id');
+            currentProject = null;
+            document.getElementById('workspaceScreen').classList.remove('active');
+            document.getElementById('hubScreen').classList.active = true;
+            document.getElementById('hubScreen').classList.add('active');
+            loadProjects();
+            toggleDrawer(null);
+        }
+
+        function saveCurrentProject() {
+            if (!currentProject) return;
+            const projects = JSON.parse(localStorage.getItem('flowiq_projects') || '[]');
+            const index = projects.findIndex(p => p.id === currentProject.id);
+            if (index !== -1) {
+                projects[index] = currentProject;
+                localStorage.setItem('flowiq_projects', JSON.stringify(projects));
+            }
+        }
+
+        function addInstance(type) {
+            if (!currentProject) return;
+            const newObj = {
+                id: Date.now(),
+                name: type + "_" + (currentProject.instances.length + 1),
+                type: type,
+                bg: type === 'Frame' ? '#3b82f6' : '#10b981',
+                width: "160px",
+                height: "50px",
+                top: (60 + (currentProject.instances.length * 20)) + "px",
+                left: "20px"
+            };
+            currentProject.instances.push(newObj);
+            saveCurrentProject();
+            selectedInstanceId = newObj.id;
+            renderWorkspace();
+            toggleDrawer(null);
+        }
+
+        function selectInstance(id, event) {
+            if (event) event.stopPropagation();
+            selectedInstanceId = id;
+            renderWorkspace();
+            toggleDrawer('propertiesDrawer');
+        }
+
+        function clearSelection(event) {
+            event.stopPropagation();
+            selectedInstanceId = null;
+            renderWorkspace();
+            toggleDrawer(null);
+        }
+
+        function renderWorkspace() {
+            renderViewport();
+            renderExplorerTree();
+            renderProperties();
+        }
+
+        function renderViewport() {
+            const viewport = document.getElementById('viewportCanvas');
+            viewport.innerHTML = '';
+            
+            if (!currentProject.instances || currentProject.instances.length === 0) {
+                viewport.innerHTML = `<div style="color: var(--text-muted); font-size: 0.65rem; text-align: center; margin-top: 180px;">Palco Vazio</div>`;
+                return;
+            }
+
+            currentProject.instances.forEach(obj => {
+                const el = document.createElement('div');
+                el.className = `ui-element ${selectedInstanceId === obj.id ? 'selected' : ''}`;
+                el.style.backgroundColor = obj.bg;
+                el.style.width = obj.width;
+                el.style.height = obj.height;
+                el.style.top = obj.top;
+                el.style.left = obj.left;
+                el.innerText = obj.name;
+                el.onclick = (e) => selectInstance(obj.id, e);
+                viewport.appendChild(el);
+            });
+        }
+
+        function renderExplorerTree() {
+            const tree = document.getElementById('instanceTree');
+            if (!currentProject.instances) return;
+
+            let html = `<div class="tree-item" style="opacity: 0.7;">📁 ScreenRoot (Workspace)</div>`;
+            currentProject.instances.forEach(obj => {
+                const isSel = selectedInstanceId === obj.id;
+                html += `
+                    <div class="tree-item ${isSel ? 'selected' : ''}" onclick="selectInstance(${obj.id}, event)">
+                        <span>📄 ${obj.name}</span>
+                        <span style="font-size: 0.65rem; color: var(--text-muted);">${obj.type}</span>
+                    </div>
+                `;
+            });
+            tree.innerHTML = html;
+        }
+
+        function renderProperties() {
+            const container = document.getElementById('propertiesDrawer');
+            const details = document.getElementById('propDetails');
+            
+            if (!selectedInstanceId) {
+                details.innerHTML = `<p style="color: var(--text-muted); font-size: 0.75rem; text-align: center; padding: 15px;">Selecione um elemento para editar.</p>`;
+                return;
+            }
+
+            const obj = currentProject.instances.find(i => i.id === selectedInstanceId);
+            if (!obj) return;
+
+            details.innerHTML = `
+                <div class="prop-group">
+                    <label>Nome do Objeto</label>
+                    <input type="text" class="prop-input" value="${obj.name}" oninput="updateProp('${obj.id}', 'name', this.value)">
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                    <div class="prop-group">
+                        <label>Largura</label>
+                        <input type="text" class="prop-input" value="${obj.width}" oninput="updateProp('${obj.id}', 'width', this.value)">
+                    </div>
+                    <div class="prop-group">
+                        <label>Altura</label>
+                        <input type="text" class="prop-input" value="${obj.height}" oninput="updateProp('${obj.id}', 'height', this.value)">
+                    </div>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                    <div class="prop-group">
+                        <label>Pos X (Left)</label>
+                        <input type="text" class="prop-input" value="${obj.left}" oninput="updateProp('${obj.id}', 'left', this.value)">
+                    </div>
+                    <div class="prop-group">
+                        <label>Pos Y (Top)</label>
+                        <input type="text" class="prop-input" value="${obj.top}" oninput="updateProp('${obj.id}', 'top', this.value)">
+                    </div>
+                
