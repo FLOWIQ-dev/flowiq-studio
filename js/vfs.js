@@ -145,8 +145,17 @@ export class VirtualFS {
     const record = {
       id: project.id,
       name: project.name.trim().slice(0, 64),
+      schemaVersion: Number(project.schemaVersion) || 1,
+      createdAt: project.createdAt || project.updatedAt || new Date().toISOString(),
       updatedAt: project.updatedAt || new Date().toISOString(),
-      data: project.data
+      data: project.data,
+      components: Array.isArray(project.components) ? project.components : [],
+      events: Array.isArray(project.events) ? project.events : [],
+      scripts: Array.isArray(project.scripts) ? project.scripts : [],
+      animations: Array.isArray(project.animations) ? project.animations : [],
+      settings: project.settings && typeof project.settings === 'object' && !Array.isArray(project.settings)
+        ? project.settings
+        : {}
     };
 
     const db = await this.openDB();
