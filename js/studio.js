@@ -61,7 +61,7 @@ class StudioApp {
     $('zoom-out').onclick = () => this.setZoom(this.zoom - 0.1);
     $('zoom-fit').onclick = () => this.fitCanvas();
     $('btn-grid').onclick = () => { this.gridVisible=!this.gridVisible; $('stage-scroll').classList.toggle('grid-hidden',!this.gridVisible); $('btn-grid').setAttribute('aria-pressed',String(this.gridVisible)); $('btn-grid').title=this.gridVisible?'Grade visível':'Grade oculta'; };
-    const setPositionMode=enabled=>{this.smartAlign=enabled;$('btn-align').setAttribute('aria-pressed',String(enabled));$('btn-free').setAttribute('aria-pressed',String(!enabled));$('btn-align').classList.toggle('primary',enabled);$('btn-free').classList.toggle('primary',!enabled);$('btn-align').title=enabled?'Alinhamento inteligente ativo':'Ativar alinhamento inteligente';$('btn-free').title=enabled?'Ativar posicionamento totalmente livre':'Posicionamento totalmente livre ativo';if(!enabled)this.clearAlignmentGuides();};$('btn-align').onclick=()=>setPositionMode(true);$('btn-free').onclick=()=>setPositionMode(false);
+    const setPositionMode=enabled=>{this.smartAlign=enabled;$('btn-align').setAttribute('aria-pressed',String(enabled));$('btn-free').setAttribute('aria-pressed',String(!enabled));$('btn-align').classList.toggle('is-active',enabled);$('btn-free').classList.toggle('is-active',!enabled);$('btn-align').title=enabled?'Alinhamento inteligente ativo':'Ativar alinhamento inteligente';$('btn-free').title=enabled?'Ativar posicionamento totalmente livre':'Posicionamento totalmente livre ativo';if(!enabled)this.clearAlignmentGuides();};$('btn-align').onclick=()=>setPositionMode(true);$('btn-free').onclick=()=>setPositionMode(false);
 
     $('undo-action').onclick = () => this.undo();
     $('redo-action').onclick = () => this.redo();
@@ -398,7 +398,7 @@ class StudioApp {
       el.style.position = 'absolute';
       el.style.transform = 'rotate('+(Number(p.rotation)||0)+'deg)';
       el.style.transformOrigin = 'center center';
-      if (node.className === 'Frame') { el.style.display='block'; el.style.overflow='hidden'; el.style.outlineOffset='2px'; }
+      if (node.className === 'Frame') { el.style.display='block'; el.style.overflow='visible'; el.style.outlineOffset='2px'; }
       el.textContent = p.text || (node.className === 'Frame' || (node.className==='ImageLabel'&&p.imageUrl) ? '' : node.name);
       if (node.className === 'TextButton' && this.playMode) {
         el.type = 'button'; el.onclick = () => this.log('Ação executada: '+node.name,'ok');
@@ -464,7 +464,6 @@ class StudioApp {
     if(!d.historyRecorded){this.pushHistory();d.historyRecorded=true;}
     let screenDX=event.clientX-d.startX,screenDY=event.clientY-d.startY;
     if(d.mode==='move'){
-      const bounded=this.constrainMoveToHierarchy(d,screenDX,screenDY);screenDX=bounded.dx;screenDY=bounded.dy;
       if(this.smartAlign&&!event.altKey){const aligned=this.getSmartAlignment(d,screenDX,screenDY);screenDX=aligned.dx;screenDY=aligned.dy;this.renderAlignmentGuides(aligned.guides);}else this.clearAlignmentGuides();
     }
     let dx=screenDX/(d.scaleX||1),dy=screenDY/(d.scaleY||1);
@@ -525,12 +524,6 @@ class StudioApp {
     return targets;
   }
 
-  constrainMoveToHierarchy(d,dx,dy){
-    const parent=d.node.parent;if(!parent||parent===this.model.root)return {dx,dy};
-    const el=[...$('canvas').querySelectorAll('[data-node-id]')].find(item=>item.dataset.nodeId===parent.id);if(!el)return {dx,dy};
-    const r=el.getBoundingClientRect(),m=d.startRect;
-    return {dx:Math.max(r.left-m.left,Math.min(r.right-m.right,dx)),dy:Math.max(r.top-m.top,Math.min(r.bottom-m.bottom,dy))};
-  }
 
   getSmartAlignment(d,screenDX,screenDY){
     const tolerance=8,m=d.startRect,targets=this.getAlignmentTargets(d);
@@ -552,8 +545,6 @@ class StudioApp {
     if(dir.includes('n')||dir.includes('s')){const edge=dir.includes('s')?m.bottom+(h-d.baseH)*zoom:m.top-(h-d.baseH)*zoom;let best=null;
       for(const r of targets)for(const target of [r.top,r.top+r.height/2,r.bottom]){const delta=target-edge;if(Math.abs(delta)<=tolerance&&(!best||Math.abs(delta)<Math.abs(best.delta)))best={delta,target};}
       if(best){h=Math.max(24,h+(dir.includes('s')?best.delta:-best.delta)/zoom);guideY=best.target;}}
-    const parent=d.node.parent;if(parent&&parent!==this.model.root){const el=[...$('canvas').querySelectorAll('[data-node-id]')].find(item=>item.dataset.nodeId===parent.id);
-      if(el){const r=el.getBoundingClientRect();if(dir.includes('e'))w=Math.min(w,Math.max(24,d.baseW+(r.right-m.left)/zoom-d.baseW));if(dir.includes('w'))w=Math.min(w,Math.max(24,d.baseW+(m.right-r.left)/zoom-d.baseW));if(dir.includes('s'))h=Math.min(h,Math.max(24,d.baseH+(r.bottom-m.top)/zoom-d.baseH));if(dir.includes('n'))h=Math.min(h,Math.max(24,d.baseH+(m.bottom-r.top)/zoom-d.baseH));}}
     return {w,h,guides:{x:guideX,y:guideY}};
   }
   renderAlignmentGuides(guides){
