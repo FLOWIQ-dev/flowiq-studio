@@ -1,5 +1,5 @@
-import { DataModel, Instance } from './datamodel.js?v=2026.11.16.42';
-import { VirtualFS } from './vfs.js?v=2026.11.16.42';
+import { DataModel, Instance } from './datamodel.js?v=2026.11.16.43';
+import { VirtualFS } from './vfs.js?v=2026.11.16.43';
 
 const $ = (id) => document.getElementById(id);
 const esc = (value) => String(value ?? '').replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -663,13 +663,25 @@ class StudioApp {
   }
 
   updateRotateHandlePlacement(){
-    const overlay=$('canvas')?.querySelector('.selection-box');
+    const canvas=$('canvas'),stage=$('stage-scroll');
+    const overlay=canvas?.querySelector('.selection-box');
     const rotate=overlay?.querySelector('[data-rotate]');
-    if(!rotate||!this.selected)return;
+    if(!rotate||!this.selected||!stage)return;
     const handleScale=Number.parseFloat(overlay.style.getPropertyValue('--handle-scale'))||1;
     const rotation=Number(overlay.dataset.rotation)||0;
-    rotate.style.left=(overlay.offsetWidth/2)+'px';
-    rotate.style.top=(-22*handleScale)+'px';
+    const canvasRect=canvas.getBoundingClientRect(),overlayRect=overlay.getBoundingClientRect(),stageRect=stage.getBoundingClientRect();
+    const scaleX=canvas.offsetWidth?canvasRect.width/canvas.offsetWidth:(this.zoom||1);
+    const scaleY=canvas.offsetHeight?canvasRect.height/canvas.offsetHeight:(this.zoom||1);
+    const half=17*handleScale;
+    const topSpace=overlayRect.top-stageRect.top;
+    const bottomSpace=stageRect.bottom-overlayRect.bottom;
+    const placeAbove=topSpace>=38*handleScale||topSpace>=bottomSpace;
+    const centerX=overlayRect.left+overlayRect.width/2;
+    const safeLeft=stageRect.left+half+8, safeRight=stageRect.right-half-8;
+    const visibleX=Math.max(safeLeft,Math.min(safeRight,centerX));
+    const canvasX=(visibleX-canvasRect.left-canvas.clientLeft)/Math.max(.01,scaleX);
+    rotate.style.left=(canvasX-overlay.offsetLeft)+'px';
+    rotate.style.top=placeAbove?(-22*handleScale)+'px':(overlay.offsetHeight+22*handleScale)+'px';
     rotate.style.transform='translate(-50%,-50%) rotate('+(-rotation)+'deg)';
   }
 
@@ -680,7 +692,7 @@ class StudioApp {
     const overlay=document.createElement('div');overlay.className='selection-box';
     this.positionSelectionOverlay(overlay,el);
     ['nw','n','ne','e','se','s','sw','w'].forEach(dir=>{const h=document.createElement('button');h.type='button';h.className='resize-handle';h.dataset.resize=dir;h.dataset.nodeId=this.selected.id;h.setAttribute('aria-label','Redimensionar '+dir);overlay.append(h);});
-    const rotate=document.createElement('button');rotate.type='button';rotate.className='rotate-handle';rotate.dataset.rotate='true';rotate.dataset.nodeId=this.selected.id;rotate.setAttribute('aria-label','Rotacionar objeto');rotate.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 1 0 1 4M20 4v7h-7"/></svg>';overlay.append(rotate);
+    const rotate=document.createElement('button');rotate.type='button';rotate.className='rotate-handle';rotate.dataset.rotate='true';rotate.dataset.nodeId=this.selected.id;rotate.setAttribute('aria-label','Rotacionar objeto');rotate.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 8A8 8 0 1 1 4 14"/><path d="M4 3v5h5"/></svg>';overlay.append(rotate);
     canvas.append(overlay);
     this.updateRotateHandlePlacement();
   }
