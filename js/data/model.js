@@ -23,7 +23,7 @@ export class SceneNode {
     this.id = id;
     this.type = type;
     this.name = cleanName(name, type);
-    this.props = { ...DEFAULTS[type], ...cleanProps(props) };
+    this.props = { rotation: 0, ...DEFAULTS[type], ...cleanProps(props) };
     this.parentId = null;
     this.children = [];
   }
@@ -55,6 +55,20 @@ export class Scene {
   }
 
   get(id) { return this.nodes.get(id) || null; }
+
+  duplicate(id) {
+    const source = this.get(id);
+    if (!source) throw new Error('Objeto não encontrado.');
+    const siblings = source.parentId ? this.get(source.parentId)?.children : this.roots;
+    const index = (siblings?.indexOf(id) ?? -1) + 1;
+    const copyBranch = (original, parentId, at = null, isRoot = false) => {
+      const copy = new SceneNode(original.type, original.name + ' cópia', original.props);
+      this.insert(copy, parentId, at);
+      original.children.forEach(childId => copyBranch(this.get(childId), copy.id));
+      return copy;
+    };
+    return copyBranch(source, source.parentId, index, true);
+  }
 
   descendants(id) {
     const result = [];
