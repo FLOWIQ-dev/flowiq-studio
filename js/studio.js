@@ -183,7 +183,11 @@ class StudioApp {
     this.log(type+' adicionado.','ok'); this.scheduleSave();
   }
 
-  select(node) { this.selected = node; this.refresh(); }
+  select(node) {
+    this.selected = node;
+    for (let parent=node?.parent; parent && parent!==this.model.root; parent=parent.parent) this.expandedNodes.add(parent.id);
+    this.refresh();
+  }
 
   isMobile() { return window.matchMedia('(max-width: 760px)').matches; }
 
@@ -485,7 +489,7 @@ class StudioApp {
       <div class="field"><label>Nome</label><input id="p-name" maxlength="64" value="${esc(node.name)}"></div>
       <div class="field"><label>Classe</label><input disabled value="${esc(node.className)}"></div><hr class="divider">
       <details class="property-group" open><summary>Layout e tamanho</summary>
-        <div class="field-grid"><div class="field"><label>Posição X</label><input type="number" id="p-x" value="${p.positionX??0}"></div><div class="field"><label>Posição Y</label><input type="number" id="p-y" value="${p.positionY??0}"></div><div class="field"><label>Largura</label><input type="number" min="1" id="p-w" value="${p.width??100}"></div><div class="field"><label>Altura</label><input type="number" min="1" id="p-h" value="${p.height??40}"></div></div>
+        <div class="field-grid"><div class="field"><label>Posição X</label><input type="number" id="p-x" value="${p.positionX??0}"></div><div class="field"><label>Posição Y</label><input type="number" id="p-y" value="${p.positionY??0}"></div><div class="field"><label>Largura</label><input type="number" min="1" id="p-w" value="${p.width??100}"></div><div class="field"><label>Altura</label><input type="number" min="1" id="p-h" value="${p.height??40}"></div><div class="field"><label>Rotação</label><input type="number" id="p-rotation" value="${p.rotation??0}"></div></div>
       </details>
       <details class="property-group" open><summary>Aparência</summary>
         <div class="field"><label>Texto / Conteúdo</label><textarea id="p-text" rows="2">${esc(p.text||'')}</textarea></div>
@@ -497,7 +501,7 @@ class StudioApp {
     const fields={
       'p-name':v=>{node.name=v;this.renderTree();},
       'p-x':v=>p.positionX=Number(v)||0,'p-y':v=>p.positionY=Number(v)||0,
-      'p-w':v=>p.width=Math.max(1,Number(v)||1),'p-h':v=>p.height=Math.max(1,Number(v)||1),
+      'p-w':v=>p.width=Math.max(1,Number(v)||1),'p-h':v=>p.height=Math.max(1,Number(v)||1),'p-rotation':v=>p.rotation=Number(v)||0,
       'p-text':v=>p.text=v,'p-bg':v=>p.backgroundColor=v,'p-fg':v=>p.textColor=v,
       'p-radius':v=>p.borderRadius=Math.max(0,Number(v)||0),'p-font':v=>p.fontSize=Math.max(8,Number(v)||8)
     };
