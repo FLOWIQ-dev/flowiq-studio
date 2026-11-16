@@ -79,10 +79,8 @@ class StudioApp {
       document.querySelectorAll('[data-studio-menu]').forEach(item=>item.hidden=true);document.querySelectorAll('[data-studio-menu-toggle]').forEach(item=>item.setAttribute('aria-expanded','false'));
       if(action.dataset.studioAction==='settings')await this.openSettingsFromEditor();
       if(action.dataset.studioAction==='library')await this.openLibrary();
-      if(action.dataset.studioAction==='fullscreen')document.documentElement.requestFullscreen?.({navigationUI:'hide'}).catch(()=>{});
     });
     $('btn-focus-stage').onclick=()=>this.toggleFocusMode();
-    $('hub-return-project').onclick = () => this.returnToEditor();
     $('preview-exit').onclick = () => this.play(false);
     document.addEventListener('pointerdown',event=>{if(event.target.closest('[data-color-id]')||event.target.closest('[data-color-popover]'))return;document.querySelectorAll('[data-color-popover]').forEach(pop=>{pop.hidden=true;pop.remove();});document.querySelectorAll('[data-color-toggle]').forEach(btn=>btn.setAttribute('aria-expanded','false'));});
     document.addEventListener('scroll',event=>{if(event.target?.closest?.('[data-color-popover]')||document.activeElement?.closest?.('[data-color-popover]'))return;document.querySelectorAll('[data-color-popover]').forEach(pop=>{pop.hidden=true;pop.remove();});document.querySelectorAll('[data-color-toggle]').forEach(btn=>btn.setAttribute('aria-expanded','false'));},true);
@@ -263,7 +261,6 @@ class StudioApp {
 
   showHubView(view) {
     const active=['home','projects','settings'].includes(view)?view:'home';
-    $('hub-return-project').hidden=!this.project;
     for(const key of ['home','projects','settings'])$('hub-'+key+'-view').classList.toggle('active',key===active);
     $('btn-new').hidden=active==='settings';
     if(active==='settings')this.renderSettings();
@@ -325,6 +322,7 @@ class StudioApp {
     document.body.classList.add('asset-viewer-open');pane.classList.add('asset-preview-open');pane.setAttribute('role','dialog');pane.setAttribute('aria-label','Visualizador de arquivos');pane.innerHTML='<div class="preview-pane-heading"><div><strong>'+esc(name)+'</strong><small>'+esc(mime||'Arquivo')+' · '+this.formatBytes(asset.size||0)+'</small></div><button class="icon-action preview-close" id="preview-clear" aria-label="Fechar pré-visualização"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button></div><div class="preview-pane-content">'+content+'</div><div class="preview-pane-actions"><button class="btn" id="preview-rename">Renomear</button><button class="btn danger" id="preview-delete">Excluir</button><button class="btn primary" id="preview-download"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m-4-4 4 4 4-4"/><path d="M5 17v3h14v-3"/></svg>Baixar</button></div>';
     $('preview-clear').onclick=()=>{pane.classList.remove('asset-preview-open');document.body.classList.remove('asset-viewer-open');pane.removeAttribute('role');this.selectedAssetId=null;this.renderLibrary();};
     $('preview-rename').onclick=()=>this.renameAsset(asset.id);
+    $('preview-move').onclick=()=>this.moveAsset(asset.id);
     $('preview-delete').onclick=()=>this.deleteAsset(asset.id);
     $('preview-download').onclick=()=>this.downloadAsset(asset.id);
     const image=$('asset-preview-image');if(image)image.onerror=()=>{const target=$('asset-preview-pane')?.querySelector('.preview-pane-content');if(target)target.innerHTML='<div class="preview-unsupported"><strong>Não foi possível exibir a imagem.</strong><span>O arquivo pode estar corrompido ou em um formato não suportado.</span></div>';};
@@ -389,7 +387,7 @@ class StudioApp {
     const asset=this.assets.find(a=>a.id===id);if(!asset)return;
     const name=(await this.askText('Renomear arquivo','Nome do arquivo',asset.name)).trim();
     if(!name||name===asset.name)return;
-    try{await this.vfs.saveAsset({...asset,name:name.slice(0,180)});await this.refreshLibrary();}
+    try{await this.vfs.saveAsset({...asset,name:name.slice(0,180)});await this.refreshLibrary();if(this.selectedAssetId===id)this.renderLibrary();}
     catch(error){this.notify('Não foi possível renomear o arquivo: '+error.message);}
   }
 
@@ -449,6 +447,14 @@ class StudioApp {
     finally{button.disabled=false;$('asset-file-input').value='';}
   }
 
+
+  async moveAsset(id) {
+    const asset=this.assets.find(a=>a.id===id);if(!asset)return;
+    const folder=(await this.askText('Organizar arquivo','Nome da pasta (deixe vazio para remover)',asset.folder||'')).trim().slice(0,48);
+    if(folder===(asset.folder||''))return;
+    try{await this.vfs.saveAsset({...asset,folder});await this.refreshLibrary();if(this.selectedAssetId===id)this.renderLibrary();this.notify('Arquivo movido para '+(folder||'Sem pasta')+'.','success');}
+    catch(error){this.notify('Não foi possível mover o arquivo: '+error.message,'error');}
+  }
 
   async deleteAsset(id) {
     const asset=this.assets.find(a=>a.id===id);if(!asset)return;
