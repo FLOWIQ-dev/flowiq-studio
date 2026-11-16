@@ -1,0 +1,19 @@
+{
+  "name": "Flowiq Studio",
+  "short_name": "Flowiq",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#090d18",
+  "theme_color": "#090d18",
+  "description": "Editor 2D mobile-first para criação de interfaces e sistemas operacionais.",
+  "icons": [
+    {
+      "src": "./assets/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
