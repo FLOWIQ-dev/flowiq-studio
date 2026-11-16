@@ -1,7 +1,7 @@
-import { DataModel, Instance } from './datamodel.js?v=2026.11.16.61';
-import { VirtualFS } from './vfs.js?v=2026.11.16.61';
-import { createProjectRecord, normalizeProject, FlowiqRuntime } from './engine.js?v=2026.11.16.61';
-import { createBackupFile, inspectBackupFile, restoreBackup } from './backup.js?v=2026.11.16.61';
+import { DataModel, Instance } from './datamodel.js?v=2026.11.16.64';
+import { VirtualFS } from './vfs.js?v=2026.11.16.64';
+import { createProjectRecord, normalizeProject, FlowiqRuntime } from './engine.js?v=2026.11.16.64';
+import { createBackupFile, inspectBackupFile, restoreBackup } from './backup.js?v=2026.11.16.64';
 
 const $ = (id) => document.getElementById(id);
 const esc = (value) => String(value ?? '').replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
