@@ -1,3 +1,4 @@
+import { DataModel } from './datamodel.js?v=2026.11.16.44';
 export const PROJECT_SCHEMA_VERSION = 2;
 
 const isRecord = value => value !== null && typeof value === 'object' && !Array.isArray(value);
@@ -123,13 +124,18 @@ export class FlowiqRuntime {
     this.events = new EventBus();
     this.components = new ComponentRegistry();
     this.project = null;
+    this.editorModel = null;
     this.running = false;
     this.maxActionsPerEvent = 64;
   }
 
   start(project) {
     this.stop();
+    this.editorModel = this.model;
     this.project = normalizeProject(project);
+    const runtimeModel = new DataModel();
+    runtimeModel.loadFromJSON(this.project.data);
+    this.model = runtimeModel;
     this.running = true;
     this.events.emit('runtime:start', { project: this.project });
     return this;
@@ -139,6 +145,10 @@ export class FlowiqRuntime {
     if (this.running) this.events.emit('runtime:stop', { project: this.project });
     this.running = false;
     this.project = null;
+    if (this.editorModel) {
+      this.model = this.editorModel;
+      this.editorModel = null;
+    }
     return this;
   }
 
