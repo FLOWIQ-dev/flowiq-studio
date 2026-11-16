@@ -351,6 +351,9 @@ class StudioApp {
       if(dir.includes('s'))h=Math.max(8,d.baseH+dy);
       if(dir.includes('w')){w=Math.max(8,d.baseW-dx);x=d.baseX+d.baseW-w;}
       if(dir.includes('n')){h=Math.max(8,d.baseH-dy);y=d.baseY+d.baseH-h;}
+      const angle=(d.baseRotation||0)*Math.PI/180,cos=Math.cos(angle),sin=Math.sin(angle);
+      const shiftX=x-d.baseX,shiftY=y-d.baseY;
+      x=d.baseX+shiftX*cos-shiftY*sin;y=d.baseY+shiftX*sin+shiftY*cos;
       p.positionX=Math.round(x);p.positionY=Math.round(y);p.width=Math.round(w);p.height=Math.round(h);
       d.el.style.left=p.positionX+'px';d.el.style.top=p.positionY+'px';d.el.style.width=p.width+'px';d.el.style.height=p.height+'px';
       const width=$('p-w'),height=$('p-h'),px=$('p-x'),py=$('p-y');
