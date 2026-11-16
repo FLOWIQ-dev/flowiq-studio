@@ -193,7 +193,6 @@ class StudioApp {
       if (node.className === 'TextButton' && this.playMode) {
         el.type = 'button'; el.onclick = () => this.log('Ação executada: '+node.name,'ok');
       } else if (!this.playMode) {
-        el.onpointerdown = (e) => { e.stopPropagation(); };
         el.onclick = (e) => { e.stopPropagation(); this.select(node); };
       }
       parentEl.append(el);
