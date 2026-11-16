@@ -1,19 +1,27 @@
+
 {
+  "id": "./",
   "name": "Flowiq Studio",
   "short_name": "Flowiq",
-  "start_url": "./index.html",
+  "description": "Estúdio mobile-first para criação de interfaces e sistemas 2D.",
+  "lang": "pt-BR",
+  "start_url": "./",
   "scope": "./",
   "display": "standalone",
-  "orientation": "any",
-  "background_color": "#090d18",
-  "theme_color": "#090d18",
-  "description": "Editor 2D mobile-first para criação de interfaces e sistemas operacionais.",
+  "orientation": "portrait",
+  "background_color": "#090e18",
+  "theme_color": "#090e18",
+  "categories": [
+    "development",
+    "design",
+    "productivity"
+  ],
   "icons": [
     {
       "src": "./assets/icon.svg",
       "sizes": "any",
       "type": "image/svg+xml",
-      "purpose": "any maskable"
+      "purpose": "any"
     }
   ]
 }
