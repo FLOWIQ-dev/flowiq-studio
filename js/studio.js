@@ -1,7 +1,7 @@
-import { DataModel, Instance } from './datamodel.js?v=2026.11.16.68';
-import { VirtualFS } from './vfs.js?v=2026.11.16.68';
-import { createProjectRecord, normalizeProject, FlowiqRuntime } from './engine.js?v=2026.11.16.68';
-import { createBackupFile, inspectBackupFile, restoreBackup } from './backup.js?v=2026.11.16.68';
+import { DataModel, Instance } from './datamodel.js?v=2026.11.16.69';
+import { VirtualFS } from './vfs.js?v=2026.11.16.69';
+import { createProjectRecord, normalizeProject, FlowiqRuntime } from './engine.js?v=2026.11.16.69';
+import { createBackupFile, inspectBackupFile, restoreBackup } from './backup.js?v=2026.11.16.69';
 
 const $ = (id) => document.getElementById(id);
 const esc = (value) => String(value ?? '').replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -70,7 +70,9 @@ class StudioApp {
   bind() {
     $('btn-new').onclick = () => this.createProject();
     const hubButton=$('btn-hub');
-    if(hubButton)hubButton.onclick=async()=>{await this.save();await this.toHub();};
+    if(hubButton)hubButton.onclick=async()=>this.leaveProject();
+    const homeButton=$('btn-home');
+    if(homeButton)homeButton.onclick=async()=>this.leaveProject();
     $('library-back').onclick=()=>this.closeLibrary();
     document.addEventListener('click',async event=>{
       const toggle=event.target.closest('[data-studio-menu-toggle]');
@@ -183,7 +185,7 @@ class StudioApp {
     $('settings-export-project').disabled=!this.project;
     $('settings-export-project').classList.toggle('is-disabled',!this.project);
     $('settings-export-project').querySelector('small').textContent=this.project?'Salvar '+this.project.name+' e os arquivos que ele utiliza.':'Abra um projeto para habilitar esta opção.';
-    $('settings-version').textContent='Versão 2026.11.16.68';
+    $('settings-version').textContent='Versão 2026.11.16.69';
     this.applyPreferences();
   }
 
@@ -557,6 +559,9 @@ class StudioApp {
   }
 
   async openProject(id) {
+    const loading=$('project-loading');
+    const loadingStarted=Date.now();
+    loading?.classList.add('show');
     try {
       const p = await this.vfs.getProject(id);
       if (!p) throw new Error('Projeto não encontrado.');
@@ -574,8 +579,28 @@ class StudioApp {
       $('project-title').textContent = p.name;
       document.querySelectorAll('[data-workspace-nav]').forEach(item=>item.classList.toggle('active',item.dataset.workspaceNav==='editor'));
       this.closePanels(); this.refresh(); this.applyPreferences();
-
+      const remaining=Math.max(0,3000-(Date.now()-loadingStarted));
+      if(remaining)await new Promise(resolve=>setTimeout(resolve,remaining));
     } catch (e) { this.log('Não foi possível abrir o projeto: '+e.message,'error'); }
+    finally { loading?.classList.remove('show'); }
+  }
+
+  async leaveProject() {
+    if(!this.project)return this.toHub();
+    const choice=await new Promise(resolve=>{
+      this.modalResolve=resolve;
+      $('modal-content').innerHTML='<h2>Voltar à tela inicial?</h2><p class="dialog-message">Deseja salvar as alterações deste projeto antes de sair?</p><div class="modal-actions" style="flex-wrap:wrap"><button class="btn" id="leave-cancel">Continuar editando</button><button class="btn danger" id="leave-discard">Sair sem salvar</button><button class="btn primary" id="leave-save">Salvar e voltar</button></div>';
+      $('modal').classList.add('open');
+      const finish=value=>{if(this.modalResolve!==resolve)return;this.modalResolve=null;$('modal').classList.remove('open');resolve(value);};
+      $('leave-cancel').onclick=()=>finish('cancel');
+      $('leave-discard').onclick=()=>finish('discard');
+      $('leave-save').onclick=()=>finish('save');
+    });
+    if(choice==='cancel')return;
+    clearTimeout(this.saveTimer);
+    if(choice==='save')await this.save();
+    else if(this.savePromise)await this.savePromise;
+    await this.toHub();
   }
 
   async toHub() {
@@ -1514,4 +1539,4 @@ class StudioApp {
   }
 }
 
-window.addEventListener('DOMContentLoaded',()=>new StudioApp());
+window.addEventListener('DOMContentLoaded',()=>{new StudioApp();const intro=$('studio-intro');if(intro)setTimeout(()=>intro.classList.add('is-hidden'),1450);});
