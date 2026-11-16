@@ -166,12 +166,8 @@ class StudioApp {
 
   setZoom(value) {
     this.zoom = Math.min(1.8, Math.max(0.4, Math.round(value * 10) / 10));
-    const canvas = $('canvas'), wrap = $('stage-wrap');
-    canvas.style.transform = 'scale(' + this.zoom + ')';
-    canvas.style.transformOrigin = 'top left';
-    wrap.style.width = (canvas.offsetWidth * this.zoom) + 'px';
-    wrap.style.minHeight = (canvas.offsetHeight * this.zoom) + 'px';
-    wrap.style.justifyContent = 'flex-start';
+    const canvas = $('canvas');
+    canvas.style.zoom = String(this.zoom);
     $('zoom-level').textContent = Math.round(this.zoom * 100) + '%';
   }
 
@@ -185,16 +181,18 @@ class StudioApp {
   duplicateSelected() {
     const source = this.selected;
     if (!source || !source.parent || this.playMode) return;
-    const cloneTree = (original, parent) => {
+    const cloneTree = (original, parent, isRoot = false) => {
       const copy = new Instance(original.className, original.name + '_copia');
       Object.assign(copy.properties, JSON.parse(JSON.stringify(original.properties)));
-      copy.properties.positionX = (Number(copy.properties.positionX) || 0) + 16;
-      copy.properties.positionY = (Number(copy.properties.positionY) || 0) + 16;
+      if (isRoot) {
+        copy.properties.positionX = (Number(copy.properties.positionX) || 0) + 16;
+        copy.properties.positionY = (Number(copy.properties.positionY) || 0) + 16;
+      }
       copy.setParent(parent);
       original.children.forEach(child => cloneTree(child, copy));
       return copy;
     };
-    const copy = cloneTree(source, source.parent);
+    const copy = cloneTree(source, source.parent, true);
     this.select(copy);
     this.scheduleSave();
     this.log(source.name + ' duplicado.', 'ok');
