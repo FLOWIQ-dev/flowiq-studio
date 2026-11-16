@@ -310,8 +310,18 @@ class FlowiqStudio {
   duplicateSelected() {
     const id = this.store.state.selectedId;
     if (!id) return;
-    this.history.checkpoint(this.scene.snapshot());
+    this.history.checkpoint(this.historySnapshot());
+    const originals = this.scene.descendants(id);
     const copy = this.scene.duplicate(id);
+    const duplicates = this.scene.descendants(copy.id);
+    const remap = new Map(originals.map((node, index) => [node.id, duplicates[index]?.id]).filter(([, value]) => value));
+    const clonedEvents = (this.project.events || []).filter(rule => remap.has(rule.nodeId)).map(rule => ({
+      ...JSON.parse(JSON.stringify(rule)),
+      id: makeId(),
+      nodeId: remap.get(rule.nodeId),
+      actions: (rule.actions || []).map(action => ({ ...action, targetId: remap.get(action.targetId) || action.targetId }))
+    }));
+    this.project.events = [...(this.project.events || []), ...clonedEvents];
     this.select(copy.id);
     this.scheduleSave();
   }
@@ -319,8 +329,12 @@ class FlowiqStudio {
   deleteSelected() {
     const id = this.store.state.selectedId;
     if (!id) return;
-    this.history.checkpoint(this.scene.snapshot());
+    this.history.checkpoint(this.historySnapshot());
+    const removedIds = new Set(this.scene.descendants(id).map(node => node.id));
     this.scene.remove(id);
+    this.project.events = (this.project.events || []).filter(rule => !removedIds.has(rule.nodeId) && !(rule.actions || []).some(action => removedIds.has(action.targetId)));
+    this.project.scripts = (this.project.scripts || []).filter(item => !removedIds.has(item.nodeId));
+    this.project.animations = (this.project.animations || []).filter(item => !removedIds.has(item.nodeId));
     this.store.set({ selectedId: null });
     this.scheduleSave();
     this.renderEditor();
@@ -414,7 +428,7 @@ class FlowiqStudio {
       const dy = (moveEvent.clientY - drag.startY) / this.zoom;
       if (Math.abs(dx) + Math.abs(dy) > 2) drag.moved = true;
       if (!drag.moved) return;
-      if (!drag.historyRecorded) { this.history.checkpoint(this.scene.snapshot()); drag.historyRecorded = true; }
+      if (!drag.historyRecorded) { this.history.checkpoint(this.historySnapshot()); drag.historyRecorded = true; }
       const current = this.scene.get(drag.id);
       if (!current) return;
       if (drag.mode === 'move') {
