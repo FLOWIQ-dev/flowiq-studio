@@ -1149,7 +1149,7 @@ class StudioApp {
       const target=action.targetId||'';
       let config='';
       if(type==='setText')config='<div class="field"><label>Texto novo</label><textarea data-action-value="'+index+'" rows="2">'+esc(action.value??'Texto atualizado')+'</textarea></div>';
-      else if(type==='setProperty')config='<div class="field"><label>Propriedade</label><select data-action-property="'+index+'"><option value="visible">Visibilidade</option><option value="opacity">Opacidade</option><option value="backgroundColor">Cor de fundo</option><option value="textColor">Cor do texto</option></select></div><div class="field"><label>Valor</label><input data-action-value="'+index+'" value="'+esc(action.value??'')+'" placeholder="Ex.: #2563eb, 0.5, true"></div>';
+      else if(type==='setProperty'){const property=action.property||'backgroundColor',colorProperty=property==='backgroundColor'||property==='textColor';config='<div class="field"><label>Propriedade</label><select data-action-property="'+index+'"><option value="visible">Visibilidade</option><option value="opacity">Opacidade</option><option value="backgroundColor">Cor de fundo</option><option value="textColor">Cor do texto</option></select></div>'+(colorProperty?'<div class="field"><label>Valor da cor</label>'+this.colorControlMarkup('event-color-'+index,color(action.value,property==='backgroundColor'?'#2563eb':'#ffffff'))+'</div>':'<div class="field"><label>Valor</label><input data-action-value="'+index+'" value="'+esc(action.value??'')+'" placeholder="Ex.: 0.5, true"></div>');}
       else if(type==='log')config='<div class="field"><label>Mensagem</label><input data-action-value="'+index+'" value="'+esc(action.message??'Ação executada')+'"></div>';
       return '<article class="event-action-card"><div class="event-action-heading"><strong>Ação '+(index+1)+'</strong><button type="button" class="event-remove-action" data-remove-action="'+index+'" aria-label="Remover ação">Remover</button></div><div class="field"><label>O que fazer?</label><select data-action-type="'+index+'">'+actionOptions.replace('value="'+type+'"','value="'+type+'" selected')+'</select></div><div class="field"><label>Em qual objeto?</label><select data-action-target="'+index+'">'+targetOptions.replace('value="'+target+'"','value="'+target+'" selected')+'</select></div>'+config+'</article>';
     };
@@ -1203,6 +1203,8 @@ class StudioApp {
         this.renderEventEditor(node,box);this.scheduleSave();
       };
     });
+    const eventColorSetters={};event.actions.forEach((action,index)=>{if(action.type==='setProperty'&&['backgroundColor','textColor'].includes(action.property))eventColorSetters['event-color-'+index]=value=>{action.value=value;this.scheduleSave();};});
+    this.bindColorControls(host,eventColorSetters);
     this.enhanceSelects(host);
   }
 
