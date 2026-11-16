@@ -614,7 +614,7 @@ class StudioApp {
     this.playMode=typeof force==='boolean'?force:!this.playMode;
     this.closePanels();
     $('workspace').classList.toggle('preview-mode',this.playMode);
-    $('btn-play').textContent=this.playMode?'↩ Voltar ao editor':'▶ Pré-visualizar';
+    $('btn-play').textContent=this.playMode?'↩ Editor':'▶ Prévia';
     const modeLabel=$('stage-mode-label');
     if(modeLabel)modeLabel.textContent=this.playMode?'PRÉ-VISUALIZAÇÃO':'PALCO 2D';
     this.renderCanvas();
