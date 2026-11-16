@@ -68,6 +68,7 @@ class StudioApp {
       if (e.target === $('canvas') && !this.playMode) this.select(null);
     });
     $('canvas').addEventListener('pointerdown', (e) => this.startDrag(e));
+    $('stage-scroll').addEventListener('scroll', () => this.updateRotateHandlePlacement(), {passive:true});
     document.addEventListener('pointermove', (e) => this.moveDrag(e));
     document.addEventListener('pointerup', (e) => this.endDrag(e));
     document.addEventListener('pointercancel', (e) => this.endDrag(e));
@@ -467,8 +468,9 @@ class StudioApp {
     }
     if(d.mode==='rotate'){
       const angle=Math.atan2(event.clientY-d.centerY,event.clientX-d.centerX)*180/Math.PI;
-      p.rotation=((d.baseRotation+angle-d.startAngle)%360+360)%360;
-      p.rotation=Math.round(p.rotation);
+      const rawRotation=((d.baseRotation+angle-d.startAngle)%360+360)%360;
+      p.rotation=event.shiftKey?Math.round(rawRotation/15)*15:Math.round(rawRotation);
+      p.rotation=((p.rotation%360)+360)%360;
       d.el.style.transform='rotate('+p.rotation+'deg)';
     }else if(d.mode==='resize'){
       const dir=d.direction;
@@ -501,11 +503,11 @@ class StudioApp {
     const d=this.drag;
     if(!d||(event?.pointerId!==undefined&&event.pointerId!==d.pointerId))return;
     this.drag=null;
-    if(event?.type!=='pointerup')return;
     if(d.moved){
-      if(d.mode!=='select'){this.updateSelectionHandles();this.scheduleSave();}
+      if(d.mode!=='select'){this.renderSelectionHandles();this.scheduleSave();}
       return;
     }
+    if(event?.type!=='pointerup')return;
     if(d.mode==='select')this.select(d.node);
     if(d.tapEligible===false)return;
     const now=Date.now(),last=this.lastTap;
@@ -535,6 +537,34 @@ class StudioApp {
     overlay.style.setProperty('--handle-scale',String(1/Math.max(.25,this.zoom)));
   }
 
+  updateRotateHandlePlacement(){
+    const overlay=$('canvas')?.querySelector('.selection-box');
+    const rotate=overlay?.querySelector('[data-rotate]');
+    if(!rotate||!this.selected)return;
+    const el=[...$('canvas').querySelectorAll('[data-node-id]')].find(item=>item.dataset.nodeId===this.selected.id);
+    const area=$('stage-scroll');
+    if(!el||!area)return;
+    const objectRect=el.getBoundingClientRect();
+    const areaRect=area.getBoundingClientRect();
+    const topRoom=objectRect.top-areaRect.top;
+    const bottomRoom=areaRect.bottom-objectRect.bottom;
+    const placement=topRoom>=124?'above':bottomRoom>=64?'below':'inside';
+    rotate.dataset.placement=placement;
+    if(placement==='below'){
+      rotate.style.top='calc(100% + 12px * var(--handle-scale,1))';
+      rotate.style.left='50%';
+      rotate.style.transform='translateX(-50%)';
+    }else if(placement==='inside'){
+      rotate.style.top='50%';
+      rotate.style.left='50%';
+      rotate.style.transform='translate(-50%,-50%)';
+    }else{
+      rotate.style.top='';
+      rotate.style.left='50%';
+      rotate.style.transform='translateX(-50%)';
+    }
+  }
+
   renderSelectionHandles(){
     const canvas=$('canvas');canvas.querySelector('.selection-box')?.remove();
     if(!this.selected||this.playMode)return;
@@ -544,6 +574,7 @@ class StudioApp {
     ['nw','n','ne','e','se','s','sw','w'].forEach(dir=>{const h=document.createElement('button');h.type='button';h.className='resize-handle';h.dataset.resize=dir;h.dataset.nodeId=this.selected.id;h.setAttribute('aria-label','Redimensionar '+dir);overlay.append(h);});
     const rotate=document.createElement('button');rotate.type='button';rotate.className='rotate-handle';rotate.dataset.rotate='true';rotate.dataset.nodeId=this.selected.id;rotate.setAttribute('aria-label','Rotacionar objeto');rotate.textContent='↻';overlay.append(rotate);
     canvas.append(overlay);
+    this.updateRotateHandlePlacement();
   }
 
   updateSelectionHandles(){
