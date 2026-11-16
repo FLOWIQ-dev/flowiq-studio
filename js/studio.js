@@ -1,5 +1,5 @@
-import { DataModel, Instance } from './datamodel.js?v=2026.11.16.17';
-import { VirtualFS } from './vfs.js?v=2026.11.16.17';
+import { DataModel, Instance } from './datamodel.js?v=2026.11.16.18';
+import { VirtualFS } from './vfs.js?v=2026.11.16.18';
 
 const $ = (id) => document.getElementById(id);
 const esc = (value) => String(value ?? '').replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -12,6 +12,8 @@ class StudioApp {
     this.projects = [];
     this.project = null;
     this.selected = null;
+    this.expandedNodes = new Set();
+    this.treeQuery = '';
     this.drag = null;
     this.lastTap = null;
     this.lastTapTimer = null;
@@ -36,6 +38,7 @@ class StudioApp {
     $('add-button').onclick = () => this.add('TextButton');
     $('add-label').onclick = () => this.add('TextLabel');
     $('add-image').onclick = () => this.add('ImageLabel');
+    $('tree-search').oninput = (e) => { this.treeQuery = e.target.value.trim().toLocaleLowerCase('pt-BR'); this.renderTree(); };
     $('btn-play').onclick = () => this.play();
     $('mobile-play').onclick = () => this.play();
     $('zoom-in').onclick = () => this.setZoom(this.zoom + 0.1);
@@ -122,6 +125,9 @@ class StudioApp {
       this.project = p;
       this.model.loadFromJSON(p.data || []);
       this.selected = null;
+      this.expandedNodes = new Set(this.model.getAll().filter(n => n.children.length).map(n => n.id));
+      this.treeQuery = '';
+      $('tree-search').value = '';
       this.undoStack = []; this.redoStack = [];
       this.playMode = false;
       $('hub').classList.remove('active'); $('workspace').classList.add('active');
@@ -162,8 +168,11 @@ class StudioApp {
   add(type) {
     if (!this.project || this.playMode) return;
     this.pushHistory();
-    let parent = this.selected?.className === 'Frame' ? this.selected : this.model.root.children[0];
-    if (type === 'Frame' || !parent) parent = this.model.root;
+    let parent = this.model.root;
+    if (type !== 'Frame') {
+      if (this.selected?.className === 'Frame') parent = this.selected;
+      else if (this.selected?.parent?.className === 'Frame') parent = this.selected.parent;
+    }
     const count = this.model.getAll().filter(n => n.className === type).length;
     const node = new Instance(type, type + '_' + (count+1));
     node.properties.positionX = 18 + (count%5)*12;
@@ -239,16 +248,47 @@ class StudioApp {
 
   renderTree() {
     const root = $('tree'); root.replaceChildren();
-    const walk = (parent, depth) => parent.children.forEach(node => {
+    const query = this.treeQuery || '';
+    const all = this.model.getAll();
+    const matching = new Set();
+    if (query) {
+      all.forEach(node => {
+        if ((node.name+' '+node.className).toLocaleLowerCase('pt-BR').includes(query)) {
+          for (let current=node; current && current!==this.model.root; current=current.parent) matching.add(current.id);
+        }
+      });
+    }
+    const makeRow = (node, depth, isRoot=false) => {
+      const children = isRoot ? this.model.root.children : node.children;
+      const id = isRoot ? 'project-root' : node.id;
+      const expanded = isRoot || query || this.expandedNodes.has(id);
       const row = document.createElement('div');
-      row.className = 'tree-row'+(this.selected === node ? ' selected' : '');
-      row.style.paddingLeft = (7 + depth*14)+'px';
-      const glyph = node.className === 'Frame' ? 'F' : node.className === 'TextButton' ? 'B' : node.className === 'ImageLabel' ? 'I' : 'T';
-      row.innerHTML = '<span>'+glyph+'</span><span class="node-name">'+esc(node.name)+'</span><span class="muted">'+(node.children.length?'⌄':'')+'</span>';
-      row.onclick = () => { this.select(node); this.openPanel('inspector'); }; root.append(row); walk(node,depth+1);
-    });
-    walk(this.model.root,0);
-    if (!root.children.length) root.innerHTML = '<p class="muted" style="font-size:11px;padding:10px">Adicione um Frame para começar.</p>';
+      row.className = 'tree-row'+(!isRoot && this.selected===node ? ' selected':'');
+      row.style.paddingLeft = (5+depth*13)+'px';
+      row.setAttribute('role','treeitem');
+      row.setAttribute('aria-level',String(depth+1));
+      row.setAttribute('aria-expanded',String(children.length>0 && !!expanded));
+      if (!isRoot) row.setAttribute('aria-selected',String(this.selected===node));
+      const disclosure=document.createElement('button');
+      disclosure.type='button';disclosure.className='tree-disclosure'+(children.length?'':' spacer');
+      disclosure.textContent=children.length?(expanded?'▾':'▸'):'·';
+      disclosure.setAttribute('aria-label',(expanded?'Recolher ':'Expandir ')+(isRoot?'Projeto':node.name));
+      disclosure.onclick=(event)=>{event.stopPropagation();if(isRoot)return;if(this.expandedNodes.has(id))this.expandedNodes.delete(id);else this.expandedNodes.add(id);this.renderTree();};
+      row.append(disclosure);
+      const glyph=isRoot?'P':node.className==='Frame'?'F':node.className==='TextButton'?'B':node.className==='ImageLabel'?'I':'T';
+      const type=document.createElement('span');type.className='tree-type-icon';type.textContent=glyph;type.title=isRoot?'Projeto':node.className;row.append(type);
+      const name=document.createElement('span');name.className='node-name';name.textContent=isRoot?(this.project?.name||'Projeto'):node.name;row.append(name);
+      if(children.length){const count=document.createElement('span');count.className='tree-count';count.textContent=String(children.length);row.append(count);}
+      if(!isRoot)row.onclick=()=>{this.select(node);};
+      root.append(row);
+      if(expanded) children.forEach(child=>{if(!query||matching.has(child.id))makeRow(child,depth+1,false);});
+    };
+    makeRow(this.model.root,0,true);
+    if(query&&!matching.size)root.innerHTML='<p class="muted" style="font-size:11px;padding:10px">Nenhum objeto encontrado.</p>';
+    else if(!all.length)root.innerHTML='<p class="muted" style="font-size:11px;padding:10px">O projeto está vazio. Adicione um Frame para começar.</p>';
+    const target=this.selected?.className==='Frame'?this.selected:this.selected?.parent?.className==='Frame'?this.selected.parent:null;
+    const targetLabel=target?target.name:(this.project?.name||'Projeto');
+    $('insert-target').textContent=targetLabel;
   }
 
   renderCanvas() {
