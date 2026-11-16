@@ -70,20 +70,6 @@ class FlowiqStudio {
       const value = input.type === 'number' ? Number(input.value) : input.value;
       this.updateProperty(key, value);
     });
-    $('inspector').addEventListener('click', event => {
-      const asset = event.target.closest('[data-asset-picker]');
-      if (asset) $('image-picker').click();
-    });
-    $('image-picker').addEventListener('change', async event => {
-      const file = event.target.files?.[0];
-      if (!file) return;
-      try {
-        const record = await this.db.saveAsset({ id: makeId(), name: file.name, blob: file });
-        this.assets = await this.db.listAssets();
-        this.updateProperty('assetId', record.id);
-      } catch (error) { this.toast(error.message, 'error'); }
-      event.target.value = '';
-    });
     $('undo').addEventListener('click', () => this.undo());
     $('redo').addEventListener('click', () => this.redo());
     $('preview').addEventListener('click', () => this.play());
@@ -388,7 +374,6 @@ class FlowiqStudio {
       assets: this.assets,
       onChange: (key, value) => this.updateProperty(key, value),
       onDelete: () => this.deleteSelected(),
-      onAsset: id => this.updateProperty('assetId', id),
       events: this.project?.events || [],
       onEventSave: (nodeId, value) => this.saveButtonAction(nodeId, value)
     });
