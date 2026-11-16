@@ -178,17 +178,18 @@ class StudioApp {
   async uploadAssets(fileList) {
     const files=[...(fileList||[])]; if(!files.length)return;
     const folder=$('asset-folder-name').value.trim().slice(0,48),button=$('asset-upload-button');
-    button.disabled=true;let added=0,errors=[];
+    button.disabled=true;let accepted=[],errors=[];
     try {
       for(const file of files) {
         if(!file.size){errors.push(file.name+': arquivo vazio');continue;}
         if(file.size>12*1024*1024){errors.push(file.name+': limite de 12 MB por arquivo');continue;}
         if(!(/^(image|video|audio|font)\//i.test(file.type)||/\.(woff2?|ttf|otf|pdf|json|svg)$/i.test(file.name))){errors.push(file.name+': tipo não permitido');continue;}
-        await this.vfs.saveAsset({id:this.makeId(),name:file.name,mime:file.type||'application/octet-stream',blob:file,folder});added++;
+        accepted.push({id:this.makeId(),name:file.name,mime:file.type||'application/octet-stream',blob:file,folder});
       }
+      if(accepted.length)await this.vfs.saveAssets(accepted);
       await this.refreshLibrary();
-      alert(added+' arquivo(s) adicionado(s).'+(errors.length?'\n\nNão adicionados:\n'+errors.join('\n'):''));
-    }catch(error){alert('Falha ao adicionar arquivos: '+error.message);}
+      alert(accepted.length+' arquivo(s) adicionado(s).'+(errors.length?'\n\nNão adicionados:\n'+errors.join('\n'):''));
+    }catch(error){alert('Falha ao adicionar arquivos: '+error.message+'\n\nO envio em lote foi cancelado para evitar uma biblioteca incompleta.');}
     finally{button.disabled=false;$('asset-file-input').value='';}
   }
 
