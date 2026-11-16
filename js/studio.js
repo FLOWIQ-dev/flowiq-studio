@@ -710,12 +710,12 @@ class StudioApp {
 
   pushHistory(){
     if(!this.project)return;
-    this.undoStack.push({data:JSON.parse(JSON.stringify(this.model.toJSON())),selectedId:this.selected?.id||null});
+    this.undoStack.push({data:JSON.parse(JSON.stringify(this.model.toJSON())),events:JSON.parse(JSON.stringify(this.project.events||[])),selectedId:this.selected?.id||null});
     if(this.undoStack.length>80)this.undoStack.shift();this.redoStack.length=0;this.updateHistoryButtons();
   }
-  restoreHistory(snapshot){this.model.loadFromJSON(snapshot.data);this.selected=snapshot.selectedId?this.model.find(snapshot.selectedId):null;this.refresh();this.scheduleSave();}
-  undo(){if(!this.undoStack.length)return;this.redoStack.push({data:JSON.parse(JSON.stringify(this.model.toJSON())),selectedId:this.selected?.id||null});this.restoreHistory(this.undoStack.pop());}
-  redo(){if(!this.redoStack.length)return;this.undoStack.push({data:JSON.parse(JSON.stringify(this.model.toJSON())),selectedId:this.selected?.id||null});this.restoreHistory(this.redoStack.pop());}
+  restoreHistory(snapshot){this.model.loadFromJSON(snapshot.data);if(this.project&&Array.isArray(snapshot.events))this.project.events=JSON.parse(JSON.stringify(snapshot.events));this.selected=snapshot.selectedId?this.model.find(snapshot.selectedId):null;this.refresh();this.scheduleSave();}
+  undo(){if(!this.undoStack.length)return;this.redoStack.push({data:JSON.parse(JSON.stringify(this.model.toJSON())),events:JSON.parse(JSON.stringify(this.project?.events||[])),selectedId:this.selected?.id||null});this.restoreHistory(this.undoStack.pop());}
+  redo(){if(!this.redoStack.length)return;this.undoStack.push({data:JSON.parse(JSON.stringify(this.model.toJSON())),events:JSON.parse(JSON.stringify(this.project?.events||[])),selectedId:this.selected?.id||null});this.restoreHistory(this.redoStack.pop());}
   updateHistoryButtons(){const u=$('undo-action'),r=$('redo-action');if(u)u.disabled=!this.undoStack.length;if(r)r.disabled=!this.redoStack.length;}
 
   renderInspector(){
@@ -787,7 +787,7 @@ class StudioApp {
     if(!event){
       host.innerHTML='<p class="event-editor-note">Este botão ainda não tem ações. Adicione uma para definir o que acontece quando alguém tocar nele na prévia.</p><button type="button" class="btn primary event-add-trigger" id="event-create">＋ Criar evento Ao clicar</button>';
       host.querySelector('#event-create').onclick=()=>{
-        this.project.events.push({id:this.makeId(),nodeId:node.id,event:'click',actions:[]});
+        this.pushHistory();this.project.events.push({id:this.makeId(),nodeId:node.id,event:'click',actions:[]});
         this.renderEventEditor(node,box);this.scheduleSave();
       };
       return;
@@ -797,24 +797,24 @@ class StudioApp {
       (event.actions.length?event.actions.map(renderAction).join(''):'<p class="event-editor-note">O evento está criado, mas ainda não faz nada. Adicione sua primeira ação.</p>')+
       '<button type="button" class="btn event-add-action" id="event-add-action">＋ Adicionar ação</button>';
     host.querySelector('#event-delete').onclick=()=>{
-      this.project.events=this.project.events.filter(item=>item!==event);this.renderEventEditor(node,box);this.scheduleSave();
+      this.pushHistory();this.project.events=this.project.events.filter(item=>item!==event);this.renderEventEditor(node,box);this.scheduleSave();
     };
     host.querySelector('#event-add-action').onclick=()=>{
-      event.actions.push({type:'setText',targetId:'',value:'Texto atualizado'});this.renderEventEditor(node,box);this.scheduleSave();
+      this.pushHistory();event.actions.push({type:'setText',targetId:'',value:'Texto atualizado'});this.renderEventEditor(node,box);this.scheduleSave();
     };
     host.querySelectorAll('[data-remove-action]').forEach(button=>button.onclick=()=>{
-      event.actions.splice(Number(button.dataset.removeAction),1);this.renderEventEditor(node,box);this.scheduleSave();
+      this.pushHistory();event.actions.splice(Number(button.dataset.removeAction),1);this.renderEventEditor(node,box);this.scheduleSave();
     });
     host.querySelectorAll('[data-action-type]').forEach(select=>select.onchange=()=>{
-      const index=Number(select.dataset.actionType),type=select.value;
+      this.pushHistory();const index=Number(select.dataset.actionType),type=select.value;
       event.actions[index]=type==='setText'?{type,targetId:event.actions[index].targetId||'',value:'Texto atualizado'}:type==='toggleVisibility'?{type,targetId:event.actions[index].targetId||''}:type==='setProperty'?{type,targetId:event.actions[index].targetId||'',property:'backgroundColor',value:'#2563eb'}:{type,targetId:event.actions[index].targetId||'',message:'Ação executada'};
       this.renderEventEditor(node,box);this.scheduleSave();
     });
     host.querySelectorAll('[data-action-target]').forEach(select=>select.onchange=()=>{
-      event.actions[Number(select.dataset.actionTarget)].targetId=select.value;this.scheduleSave();
+      this.pushHistory();event.actions[Number(select.dataset.actionTarget)].targetId=select.value;this.scheduleSave();
     });
     host.querySelectorAll('[data-action-value]').forEach(input=>input.onchange=()=>{
-      const action=event.actions[Number(input.dataset.actionValue)];
+      this.pushHistory();const action=event.actions[Number(input.dataset.actionValue)];
       if(action.type==='log')action.message=input.value;
       else if(action.type==='setProperty'){
         const property=host.querySelector('[data-action-property="'+input.dataset.actionValue+'"]')?.value||'backgroundColor';
@@ -828,7 +828,7 @@ class StudioApp {
     host.querySelectorAll('[data-action-property]').forEach(select=>{
       select.value=event.actions[Number(select.dataset.actionProperty)].property||'backgroundColor';
       select.onchange=()=>{
-        const action=event.actions[Number(select.dataset.actionProperty)];action.property=select.value;
+        this.pushHistory();const action=event.actions[Number(select.dataset.actionProperty)];action.property=select.value;
         action.value=select.value==='visible'?true:select.value==='opacity'?1:select.value==='backgroundColor'?'#2563eb':'#ffffff';
         this.renderEventEditor(node,box);this.scheduleSave();
       };
