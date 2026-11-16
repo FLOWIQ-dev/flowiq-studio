@@ -69,6 +69,7 @@ class StudioApp {
     $('btn-library-nav').onclick = async () => { await this.save(); $('workspace').classList.remove('active'); $('hub').classList.add('active'); await this.loadHub(); this.showHubView('library'); };
     $('hub-return-project').onclick = () => this.returnToEditor();
     $('preview-exit').onclick = () => this.play(false);
+    document.addEventListener('pointerdown',event=>{if(event.target.closest('[data-color-id]')||event.target.closest('[data-color-popover]'))return;document.querySelectorAll('[data-color-popover]').forEach(pop=>pop.hidden=true);document.querySelectorAll('[data-color-toggle]').forEach(btn=>btn.setAttribute('aria-expanded','false'));});
     document.querySelectorAll('[data-workspace-nav]').forEach(button=>button.addEventListener('click',()=>{document.querySelectorAll('[data-workspace-nav]').forEach(item=>item.classList.toggle('active',item===button));}));
     $('settings-return-project').onclick = () => this.returnToEditor();
     $('btn-save').onclick = () => this.save();
@@ -1107,16 +1108,65 @@ class StudioApp {
   }
 
   bindColorControls(root,setters={}){
-    root.querySelectorAll('[data-color-id]').forEach(control=>{if(control.dataset.bound==='true')return;control.dataset.bound='true';
+    root.querySelectorAll('[data-color-id]').forEach(control=>{
+      if(control.dataset.bound==='true')return;
+      control.dataset.bound='true';
       const id=control.dataset.colorId,pop=control.querySelector('[data-color-popover]'),square=control.querySelector('[data-color-square]'),hue=control.querySelector('[data-color-hue]'),hex=control.querySelector('[data-color-hex]'),preview=control.querySelector('[data-color-preview]'),rgbInputs=[...control.querySelectorAll('[data-color-rgb]')],trigger=control.querySelector('[data-color-toggle]');
-      let current=control.dataset.colorValue||'#FFFFFF',rgb=hexToRgb(current),hsv=rgbToHsv(rgb.r,rgb.g,rgb.b),historyStarted=false;
-      const update=value=>{value=color(value,'#FFFFFF').toUpperCase();if(value!==current&&!historyStarted){this.pushHistory();historyStarted=true;}current=value;rgb=hexToRgb(value);hsv=rgbToHsv(rgb.r,rgb.g,rgb.b);control.dataset.colorValue=value;control.querySelector('.studio-color-swatch').style.setProperty('--swatch',value);control.querySelector('.studio-color-value').textContent=value;hex.value=value;preview.value=value;rgbInputs.forEach(input=>input.value=rgb[input.dataset.colorRgb]);hue.value=Math.round(hsv.h);square.style.setProperty('--hue-color',hsvToHex(hsv.h,1,1));square.style.setProperty('--sat',(hsv.s*100)+'%');square.style.setProperty('--val',((1-hsv.v)*100)+'%');if(setters[id])setters[id](value);this.renderCanvas();this.scheduleSave();};
-      const place=()=>{const r=trigger.getBoundingClientRect(),w=Math.min(300,innerWidth-24),left=Math.max(12,Math.min(innerWidth-w-12,r.left)),height=pop.offsetHeight||360,top=r.bottom+8+height<innerHeight?r.bottom+8:Math.max(12,r.top-height-8);pop.style.left=left+'px';pop.style.top=top+'px';};
-      trigger.onclick=()=>{const open=pop.hidden;document.querySelectorAll('[data-color-popover]').forEach(p=>p.hidden=true);pop.hidden=!open;if(open){historyStarted=false;requestAnimationFrame(place);}};
-      control.querySelectorAll('[data-color-preset]').forEach(button=>button.onclick=()=>update(button.dataset.colorPreset));
-      hue.oninput=()=>{hsv.h=Number(hue.value);update(hsvToHex(hsv.h,hsv.s,hsv.v));};hex.onchange=()=>{if(/^#[0-9a-f]{6}$/i.test(hex.value))update(hex.value);else hex.value=current;};
-      rgbInputs.forEach(input=>input.onchange=()=>update(rgbToHex(...['r','g','b'].map(k=>Number(control.querySelector('[data-color-rgb="'+k+'"]').value)))));
-      const setSquare=e=>{const r=square.getBoundingClientRect();hsv.s=Math.max(0,Math.min(1,(e.clientX-r.left)/r.width));hsv.v=1-Math.max(0,Math.min(1,(e.clientY-r.top)/r.height));update(hsvToHex(hsv.h,hsv.s,hsv.v));};let dragging=false;square.onpointerdown=e=>{dragging=true;square.setPointerCapture(e.pointerId);setSquare(e);};square.onpointermove=e=>{if(dragging)setSquare(e);};square.onpointerup=()=>dragging=false;square.onpointercancel=()=>dragging=false;
+      let current=control.dataset.colorValue||'#FFFFFF',rgb=hexToRgb(current),hsv=rgbToHsv(rgb.r,rgb.g,rgb.b),historyStarted=false,dragging=false;
+      const place=()=>{
+        const r=trigger.getBoundingClientRect(),w=Math.min(284,window.innerWidth-24),h=Math.min(pop.scrollHeight||360,Math.floor(window.innerHeight*.7));
+        const left=Math.max(12,Math.min(window.innerWidth-w-12,r.left));
+        let top=r.bottom+8;
+        if(top+h>window.innerHeight-12)top=r.top-h-8;
+        top=Math.max(12,Math.min(window.innerHeight-h-12,top));
+        pop.style.width=w+'px';pop.style.left=left+'px';pop.style.top=top+'px';
+      };
+      const update=(value,commit=false)=>{
+        value=color(value,'#FFFFFF').toUpperCase();
+        if(value!==current&&!historyStarted){this.pushHistory();historyStarted=true;}
+        current=value;rgb=hexToRgb(value);hsv=rgbToHsv(rgb.r,rgb.g,rgb.b);
+        control.dataset.colorValue=value;
+        control.querySelector('.studio-color-swatch').style.setProperty('--swatch',value);
+        control.querySelector('.studio-color-value').textContent=value;
+        hex.value=value;preview.value=value;
+        rgbInputs.forEach(input=>input.value=rgb[input.dataset.colorRgb]);
+        hue.value=String(Math.round(hsv.h));
+        square.style.setProperty('--hue-color',hsvToHex(hsv.h,1,1));
+        square.style.setProperty('--sat',(hsv.s*100)+'%');
+        square.style.setProperty('--val',((1-hsv.v)*100)+'%');
+        if(setters[id])setters[id](value);
+        this.renderCanvas();
+        if(commit)this.scheduleSave();
+      };
+      const close=()=>{pop.hidden=true;trigger.setAttribute('aria-expanded','false');};
+      trigger.setAttribute('aria-expanded','false');
+      trigger.onclick=()=>{
+        const opening=pop.hidden;
+        document.querySelectorAll('[data-color-popover]').forEach(p=>{p.hidden=true;});
+        document.querySelectorAll('[data-color-toggle]').forEach(b=>b.setAttribute('aria-expanded','false'));
+        if(!opening)return;
+        historyStarted=false;pop.hidden=false;trigger.setAttribute('aria-expanded','true');
+        requestAnimationFrame(place);
+      };
+      control.querySelectorAll('[data-color-preset]').forEach(button=>button.onclick=()=>update(button.dataset.colorPreset,true));
+      hue.oninput=()=>{hsv.h=Number(hue.value);update(hsvToHex(hsv.h,hsv.s,hsv.v));};
+      hue.onchange=()=>this.scheduleSave();
+      hex.onchange=()=>{if(/^#[0-9a-f]{6}$/i.test(hex.value))update(hex.value,true);else hex.value=current;};
+      rgbInputs.forEach(input=>input.onchange=()=>{
+        const values=['r','g','b'].map(k=>Number(control.querySelector('[data-color-rgb="'+k+'"]').value));
+        update(rgbToHex(...values),true);
+      });
+      const setSquare=e=>{
+        const r=square.getBoundingClientRect();
+        hsv.s=Math.max(0,Math.min(1,(e.clientX-r.left)/Math.max(1,r.width)));
+        hsv.v=1-Math.max(0,Math.min(1,(e.clientY-r.top)/Math.max(1,r.height)));
+        update(hsvToHex(hsv.h,hsv.s,hsv.v));
+      };
+      square.onpointerdown=e=>{dragging=true;square.setPointerCapture(e.pointerId);setSquare(e);e.preventDefault();};
+      square.onpointermove=e=>{if(dragging)setSquare(e);};
+      const finishDrag=()=>{if(dragging){dragging=false;this.scheduleSave();}};
+      square.onpointerup=finishDrag;square.onpointercancel=finishDrag; square.onlostpointercapture=finishDrag;
+      pop.addEventListener('keydown',e=>{if(e.key==='Escape'){close();trigger.focus();}});
     });
   }
 
