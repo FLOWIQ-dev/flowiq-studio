@@ -2,62 +2,302 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Flowiq Studio - Mobile OS Engine</title>
     <link rel="manifest" href="manifest.json">
     <style>
         :root {
-            --bg-dark: #0f172a;
-            --bg-panel: #1e293b;
+            --bg-base: #07090e;
+            --bg-surface: rgba(20, 27, 45, 0.75);
+            --bg-surface-solid: #111827;
+            --border-glass: rgba(255, 255, 255, 0.08);
             --accent: #3b82f6;
-            --text: #f8fafc;
+            --accent-gradient: linear-gradient(135deg, #3b82f6 0%, #6366f1 100%);
+            --text-main: #f8fafc;
             --text-secondary: #94a3b8;
-            --border: #334155;
+            --danger: #ef4444;
+            --radius-lg: 20px;
+            --radius-md: 14px;
+            --radius-sm: 10px;
         }
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-        body { background-color: var(--bg-dark); color: var(--text); height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
-        header { background-color: var(--bg-panel); border-bottom: 1px solid var(--border); padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; }
-        h1 { font-size: 1.1rem; font-weight: 600; color: var(--accent); display: flex; align-items: center; gap: 8px; }
-        .main-container { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
-        .hub-screen { padding: 20px; display: flex; flex-direction: column; gap: 16px; overflow-y: auto; height: 100%; }
-        .card { background-color: var(--bg-panel); border: 1px solid var(--border); border-radius: 12px; padding: 16px; }
-        .btn { background-color: var(--accent); color: white; border: none; padding: 12px 20px; border-radius: 8px; font-weight: 600; font-size: 1rem; width: 100%; cursor: pointer; text-align: center; }
-        .btn:active { opacity: 0.8; }
-        .project-list { display: flex; flex-direction: column; gap: 10px; margin-top: 10px; }
-        .project-item { background-color: rgba(255,255,255,0.03); border: 1px solid var(--border); padding: 12px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif; -webkit-tap-highlight-color: transparent; }
+        
+        body { 
+            background-color: var(--bg-base); 
+            background-image: radial-gradient(circle at 50% 0%, #1e1b4b 0%, var(--bg-base) 70%);
+            color: var(--text-main); 
+            height: 100vh; 
+            display: flex; 
+            flex-direction: column; 
+            overflow: hidden; 
+        }
+
+        header { 
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-bottom: 1px solid var(--border-glass); 
+            padding: 14px 20px; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            z-index: 20;
+        }
+
+        h1 { 
+            font-size: 1.05rem; 
+            font-weight: 700; 
+            letter-spacing: -0.3px;
+            background: linear-gradient(135deg, #60a5fa 0%, #a78bfa 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            display: flex; 
+            align-items: center; 
+            gap: 8px; 
+        }
+
+        .main-container { flex: 1; display: flex; flex-direction: column; overflow: hidden; position: relative; }
+
+        /* Telas */
+        .screen { display: none; flex: 1; flex-direction: column; overflow: hidden; height: 100%; animation: fadeIn 0.25s ease-out; }
+        .screen.active { display: flex; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(4px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .hub-screen { padding: 20px; gap: 16px; overflow-y: auto; }
+
+        .card { 
+            background: var(--bg-surface); 
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--border-glass); 
+            border-radius: var(--radius-lg); 
+            padding: 20px; 
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .btn { 
+            background: var(--accent-gradient); 
+            color: white; 
+            border: none; 
+            padding: 14px 20px; 
+            border-radius: var(--radius-md); 
+            font-weight: 600; 
+            font-size: 0.95rem; 
+            width: 100%; 
+            cursor: pointer; 
+            text-align: center; 
+            box-shadow: 0 4px 14px rgba(59, 130, 246, 0.4);
+            transition: transform 0.1s ease, opacity 0.2s ease;
+        }
+        .btn:active { transform: scale(0.97); opacity: 0.9; }
+
+        .btn-secondary { 
+            background: rgba(255, 255, 255, 0.05); 
+            border: 1px solid var(--border-glass); 
+            color: var(--text-main); 
+            box-shadow: none;
+        }
+
+        .project-list { display: flex; flex-direction: column; gap: 12px; margin-top: 12px; }
+        
+        .project-item { 
+            background: rgba(255, 255, 255, 0.02); 
+            border: 1px solid var(--border-glass); 
+            padding: 16px; 
+            border-radius: var(--radius-md); 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            transition: background 0.2s ease;
+        }
+        .project-item:active { background: rgba(255, 255, 255, 0.05); }
+
+        /* Workspace do Studio */
+        .workspace-header { 
+            background: rgba(15, 23, 42, 0.9);
+            backdrop-filter: blur(12px);
+            padding: 10px 16px; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            border-bottom: 1px solid var(--border-glass); 
+            font-size: 0.85rem; 
+        }
+
+        .workspace-body { 
+            flex: 1; 
+            position: relative; 
+            background: radial-gradient(circle at center, #0f172a 0%, #05070a 100%); 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            overflow: hidden; 
+        }
+
+        /* Viewport do Celular Virtual */
+        .phone-viewport { 
+            width: 300px; 
+            height: 540px; 
+            background: #000; 
+            border: 3px solid #334155; 
+            border-radius: 36px; 
+            position: relative; 
+            overflow: hidden; 
+            box-shadow: 0 20px 50px rgba(0,0,0,0.7), inset 0 0 15px rgba(255,255,255,0.05); 
+        }
+
+        /* Barra de Navegação Inferior (Estilo Dock / iOS) */
+        .studio-nav { 
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-top: 1px solid var(--border-glass); 
+            display: flex; 
+            justify-content: space-around; 
+            padding: 10px 0 20px 0; 
+        }
+
+        .nav-btn { 
+            background: none; 
+            border: none; 
+            color: var(--text-secondary); 
+            font-size: 0.7rem; 
+            font-weight: 500;
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            gap: 4px; 
+            cursor: pointer; 
+            transition: color 0.2s ease;
+        }
+        .nav-btn span.icon { font-size: 1.2rem; }
+        .nav-btn.active { color: #60a5fa; }
+
+        /* Gavetas Deslizantes */
+        .studio-drawer { 
+            position: absolute; 
+            bottom: 60px; 
+            left: 0; 
+            width: 100%; 
+            max-height: 55%; 
+            background: rgba(17, 24, 39, 0.95);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border-top: 1px solid var(--border-glass); 
+            border-radius: var(--radius-lg) var(--radius-lg) 0 0; 
+            padding: 20px; 
+            display: none; 
+            flex-direction: column; 
+            gap: 14px; 
+            z-index: 30; 
+            overflow-y: auto; 
+            box-shadow: 0 -10px 40px rgba(0,0,0,0.5);
+            animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .studio-drawer.open { display: flex; }
+
+        @keyframes slideUp {
+            from { transform: translateY(100%); }
+            to { transform: translateY(0); }
+        }
     </style>
 </head>
 <body>
     <header>
-        <h1>⚡ Flowiq Studio <span style="font-size: 0.7rem; background: var(--border); padding: 2px 6px; border-radius: 4px;">v0.1</span></h1>
-        <span style="font-size: 0.8rem; color: var(--text-secondary);">Mobile Engine</span>
+        <h1>⚡ Flowiq Studio</h1>
+        <div id="headerActions">
+            <span style="font-size: 0.7rem; color: var(--text-secondary); background: rgba(255,255,255,0.05); padding: 4px 8px; border-radius: 20px; border: 1px solid var(--border-glass);">v0.3 Pro</span>
+        </div>
     </header>
 
     <div class="main-container">
-        <!-- Tela Inicial: Hub de Projetos -->
-        <div id="hubScreen" class="hub-screen">
+        
+        <!-- TELA 1: HUB DE PROJETOS -->
+        <div id="hubScreen" class="screen active hub-screen">
             <div class="card">
-                <h2 style="font-size: 1rem; margin-bottom: 8px;">Meus Projetos (OS)</h2>
-                <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 16px;">Crie e gerencie seus sistemas operacionais 2D.</p>
+                <h2 style="font-size: 1.1rem; margin-bottom: 6px; font-weight: 600;">Seus Sistemas Operacionais</h2>
+                <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 18px; line-height: 1.4;">Gerencie seus ambientes 2D isolados e crie novas experiências.</p>
                 <button class="btn" onclick="createNewProject()">+ Novo Projeto OS</button>
             </div>
 
-            <div class="card" style="flex: 1;">
-                <h3 style="font-size: 0.95rem; margin-bottom: 8px;">Projetos Salvos</h3>
-                <div id="projectList" class="project-list">
-                    <p style="color: var(--text-secondary); font-size: 0.85rem; text-align: center; padding: 20px;">Nenhum projeto criado ainda.</p>
+            <div class="card" style="flex: 1; display: flex; flex-direction: column;">
+                <h3 style="font-size: 0.95rem; margin-bottom: 12px; font-weight: 600;">Projetos Salvos</h3>
+                <div id="projectList" class="project-list" style="flex: 1; overflow-y: auto;">
+                    <p style="color: var(--text-secondary); font-size: 0.85rem; text-align: center; padding: 30px;">Nenhum projeto criado ainda.</p>
                 </div>
             </div>
         </div>
+
+        <!-- TELA 2: WORKSPACE DO ESTÚDIO (EDITOR) -->
+        <div id="workspaceScreen" class="screen">
+            <div class="workspace-header">
+                <button class="btn btn-secondary" style="width: auto; padding: 6px 12px; font-size: 0.75rem; border-radius: 8px;" onclick="returnToHub()">← Voltar</button>
+                <span id="currentProjectTitle" style="font-weight: 600; letter-spacing: -0.2px;">Projeto</span>
+                <button class="btn" style="width: auto; padding: 6px 14px; font-size: 0.75rem; border-radius: 8px; background: linear-gradient(135deg, #10b981 0%, #059669 100%); box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);" onclick="alert('Modo Play simulado com sucesso!')">▶ Play</button>
+            </div>
+
+            <div class="workspace-body">
+                <!-- Palco onde o OS é montado -->
+                <div class="phone-viewport" id="viewportCanvas">
+                    <div style="color: #64748b; font-size: 0.75rem; text-align: center; margin-top: 220px;">Palco 2D Vazio</div>
+                </div>
+
+                <!-- Gaveta do Explorer -->
+                <div id="explorerDrawer" class="studio-drawer">
+                    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-glass); padding-bottom: 10px;">
+                        <strong style="font-size: 0.95rem;">Explorer (Hierarquia)</strong>
+                        <button onclick="toggleDrawer(null)" style="background:none; border:none; color:var(--text-secondary); font-size:1.1rem; padding: 4px;">✕</button>
+                    </div>
+                    <button class="btn" style="font-size: 0.85rem; padding: 10px;" onclick="alert('Adicionar componente em breve!')">+ Adicionar Componente</button>
+                    <div id="instanceTree" style="font-size: 0.85rem; color: var(--text-secondary); background: rgba(0,0,0,0.2); padding: 12px; border-radius: var(--radius-sm); border: 1px solid var(--border-glass);">
+                        <div>📁 ScreenRoot (Raiz)</div>
+                    </div>
+                </div>
+
+                <!-- Gaveta de Propriedades -->
+                <div id="propertiesDrawer" class="studio-drawer">
+                    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-glass); padding-bottom: 10px;">
+                        <strong style="font-size: 0.95rem;">Propriedades</strong>
+                        <button onclick="toggleDrawer(null)" style="background:none; border:none; color:var(--text-secondary); font-size:1.1rem; padding: 4px;">✕</button>
+                    </div>
+                    <p style="font-size: 0.85rem; color: var(--text-secondary);">Selecione um elemento na hierarquia para editar suas propriedades visuais.</p>
+                </div>
+            </div>
+
+            <!-- Barra de Ferramentas Inferior -->
+            <div class="studio-nav">
+                <button class="nav-btn" id="navExp" onclick="toggleDrawer('explorerDrawer')">
+                    <span class="icon">📂</span>
+                    <span>Explorer</span>
+                </button>
+                <button class="nav-btn" id="navProp" onclick="toggleDrawer('propertiesDrawer')">
+                    <span class="icon">⚙️</span>
+                    <span>Propriedades</span>
+                </button>
+                <button class="nav-btn" onclick="alert('Editor de scripts em breve!')">
+                    <span class="icon">💻</span>
+                    <span>Scripts</span>
+                </button>
+            </div>
+        </div>
+
     </div>
 
     <script>
+        let currentProject = null;
+
         function createNewProject() {
-            const projectName = prompt("Nome do seu Sistema Operacional (ex: NeoOS):", "MeuOS");
+            const projectName = prompt("Nome do seu Sistema Operacional (ex: NeoOS):", "NeoOS");
             if (!projectName) return;
             
             const projects = JSON.parse(localStorage.getItem('flowiq_projects') || '[]');
-            projects.push({ id: Date.now(), name: projectName, created: new Date().toLocaleDateString() });
+            const newProj = { id: Date.now(), name: projectName, created: new Date().toLocaleDateString(), instances: [] };
+            projects.push(newProj);
             localStorage.setItem('flowiq_projects', JSON.stringify(projects));
             
             loadProjects();
@@ -68,30 +308,50 @@
             const projects = JSON.parse(localStorage.getItem('flowiq_projects') || '[]');
             
             if (projects.length === 0) {
-                list.innerHTML = `<p style="color: var(--text-secondary); font-size: 0.85rem; text-align: center; padding: 20px;">Nenhum projeto criado ainda.</p>`;
+                list.innerHTML = `<p style="color: var(--text-secondary); font-size: 0.85rem; text-align: center; padding: 30px;">Nenhum projeto criado ainda.</p>`;
                 return;
             }
 
             list.innerHTML = projects.map(p => `
                 <div class="project-item">
                     <div>
-                        <strong>${p.name}</strong>
-                        <div style="font-size: 0.75rem; color: var(--text-secondary);">Criado em: ${p.created}</div>
+                        <strong style="font-size: 0.95rem; color: var(--text-main);">${p.name}</strong>
+                        <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 2px;">Criado em: ${p.created}</div>
                     </div>
-                    <button style="background:transparent; border:1px solid var(--accent); color:var(--accent); padding:6px 12px; border-radius:6px;" onclick="alert('Abrindo projeto ${p.name}...')">Abrir</button>
+                    <button style="background: rgba(59, 130, 246, 0.15); border: 1px solid rgba(59, 130, 246, 0.3); color: #60a5fa; padding: 8px 16px; border-radius: 8px; font-weight: 600; font-size: 0.8rem;" onclick="openProject(${p.id})">Abrir</button>
                 </div>
             `).join('');
         }
 
+        function openProject(id) {
+            const projects = JSON.parse(localStorage.getItem('flowiq_projects') || '[]');
+            currentProject = projects.find(p => p.id === id);
+            if (!currentProject) return;
+
+            document.getElementById('currentProjectTitle').innerText = currentProject.name;
+            document.getElementById('hubScreen').classList.remove('active');
+            document.getElementById('workspaceScreen').classList.add('active');
+        }
+
+        function returnToHub() {
+            document.getElementById('workspaceScreen').classList.remove('active');
+            document.getElementById('hubScreen').classList.add('active');
+            loadProjects();
+            toggleDrawer(null);
+        }
+
+        function toggleDrawer(drawerId) {
+            document.querySelectorAll('.studio-drawer').forEach(d => {
+                if (d.id === drawerId) {
+                    d.classList.toggle('open');
+                } else {
+                    d.classList.remove('open');
+                }
+            });
+        }
+
         loadProjects();
     </script>
-        <script>
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('./sw.js')
-                .then(() => console.log('Service Worker registrado com sucesso!'))
-                .catch((err) => console.log('Erro ao registrar Service Worker:', err));
-        }
-        </script>
-    
 </body>
-</html>
+                    </html>
+                    
