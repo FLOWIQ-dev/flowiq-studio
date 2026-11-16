@@ -485,8 +485,8 @@ class StudioApp {
     }else if(d.mode==='resize'){
       const dir=d.direction;
       const oldW=d.baseW,oldH=d.baseH;
-      const w=dir.includes('e')?Math.max(24,oldW+dx):dir.includes('w')?Math.max(24,oldW-dx):oldW;
-      const h=dir.includes('s')?Math.max(24,oldH+dy):dir.includes('n')?Math.max(24,oldH-dy):oldH;
+      let w=dir.includes('e')?Math.max(24,oldW+dx):dir.includes('w')?Math.max(24,oldW-dx):oldW;
+      let h=dir.includes('s')?Math.max(24,oldH+dy):dir.includes('n')?Math.max(24,oldH-dy):oldH;
       if(this.smartAlign&&!event.altKey){const aligned=this.getSmartResize(d,w,h);w=aligned.w;h=aligned.h;this.renderAlignmentGuides(aligned.guides);}else this.clearAlignmentGuides();
       // Keep the opposite edge/corner fixed. The center moves by half the
       // size delta in the element's local axes, then is rotated into its parent.
