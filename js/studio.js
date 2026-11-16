@@ -1,5 +1,5 @@
-import { DataModel, Instance } from './datamodel.js?v=2026.11.16.13';
-import { VirtualFS } from './vfs.js?v=2026.11.16.13';
+import { DataModel, Instance } from './datamodel.js?v=2026.11.16.17';
+import { VirtualFS } from './vfs.js?v=2026.11.16.17';
 
 const $ = (id) => document.getElementById(id);
 const esc = (value) => String(value ?? '').replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -283,6 +283,18 @@ class StudioApp {
     this.renderSelectionHandles();
   }
 
+  getParentRotation(node) {
+    let rotation = 0;
+    for (let parent = node?.parent; parent && parent !== this.model.root; parent = parent.parent) {
+      rotation += Number(parent.properties.rotation) || 0;
+    }
+    return rotation;
+  }
+
+  getWorldRotation(node) {
+    return this.getParentRotation(node) + (Number(node?.properties.rotation) || 0);
+  }
+
   startDrag(event) {
     if (!this.project || this.playMode || event.button !== 0 || this.drag) return;
     const handle=event.target.closest('[data-resize]');
@@ -306,7 +318,7 @@ class StudioApp {
       startX:event.clientX,startY:event.clientY,
       baseX:Number(node.properties.positionX)||0,baseY:Number(node.properties.positionY)||0,
       baseW:Math.max(1,Number(node.properties.width)||1),baseH:Math.max(1,Number(node.properties.height)||1),
-      baseRotation:Number(node.properties.rotation)||0,startAngle,centerX,centerY,
+      baseRotation:Number(node.properties.rotation)||0,parentRotation:this.getParentRotation(node),startAngle,centerX,centerY,
       moved:false,historyRecorded:false,scaleX:this.zoom||1,scaleY:this.zoom||1
     };
     try{$('canvas').setPointerCapture(event.pointerId);}catch(_){}
@@ -323,7 +335,10 @@ class StudioApp {
     let dx=(event.clientX-d.startX)/(d.scaleX||1),dy=(event.clientY-d.startY)/(d.scaleY||1);
     const p=d.node.properties;
     if(d.mode==='resize'){
-      const a=-(d.baseRotation||0)*Math.PI/180,c=Math.cos(a),s=Math.sin(a);
+      const a=-(d.parentRotation+d.baseRotation)*Math.PI/180,c=Math.cos(a),s=Math.sin(a);
+      const localX=dx*c-dy*s,localY=dx*s+dy*c;dx=localX;dy=localY;
+    }else if(d.mode==='move'){
+      const a=-d.parentRotation*Math.PI/180,c=Math.cos(a),s=Math.sin(a);
       const localX=dx*c-dy*s,localY=dx*s+dy*c;dx=localX;dy=localY;
     }
     if(d.mode==='rotate'){
@@ -336,9 +351,9 @@ class StudioApp {
       const oldW=d.baseW,oldH=d.baseH;
       const w=dir.includes('e')?Math.max(24,oldW+dx):dir.includes('w')?Math.max(24,oldW-dx):oldW;
       const h=dir.includes('s')?Math.max(24,oldH+dy):dir.includes('n')?Math.max(24,oldH-dy):oldH;
-      // Keep the opposite edge/corner fixed in world space. CSS rotates
-      // around the element center, so the layout origin needs a half-delta
-      // correction before applying the object's rotation.
+      // Keep the opposite edge/corner fixed. The center moves by half the
+      // size delta in the element's local axes, then is rotated into its parent.
+      // The CSS layout origin also shifts by +delta/2 (old size minus new size).
       const deltaW=oldW-w,deltaH=oldH-h;
       const anchorLocalX=dir.includes('w')?deltaW/2:dir.includes('e')?-deltaW/2:0;
       const anchorLocalY=dir.includes('n')?deltaH/2:dir.includes('s')?-deltaH/2:0;
@@ -388,7 +403,7 @@ class StudioApp {
     const width=Math.max(1,el.offsetWidth),height=Math.max(1,el.offsetHeight);
     const centerX=(r.left+r.width/2-cr.left)/this.zoom;
     const centerY=(r.top+r.height/2-cr.top)/this.zoom;
-    const rotation=Number(this.model.find(el.dataset.nodeId)?.properties.rotation)||0;
+    const rotation=this.getWorldRotation(this.model.find(el.dataset.nodeId));
     overlay.style.left=(centerX-width/2)+'px';
     overlay.style.top=(centerY-height/2)+'px';
     overlay.style.width=width+'px';overlay.style.height=height+'px';
