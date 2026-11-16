@@ -68,6 +68,7 @@ class StudioApp {
     $('undo-action').onclick = () => this.undo();
     $('redo-action').onclick = () => this.redo();
     $('clear-console').onclick = () => $('console-log').replaceChildren();
+    $('toggle-console').onclick = () => this.toggleConsole();
     $('drawer-backdrop').onclick = () => this.closePanels();
     document.querySelectorAll('[data-panel]').forEach((b) => { b.setAttribute('aria-expanded', 'false'); b.onclick = () => this.togglePanel(b.dataset.panel); });
     document.querySelectorAll('[data-close-panel]').forEach((b) => b.onclick = () => this.closePanels());
@@ -227,6 +228,13 @@ class StudioApp {
   }
 
   isMobile() { return window.matchMedia('(max-width: 820px)').matches; }
+
+  toggleConsole() {
+    const consolePanel=$('workspace').querySelector('.console');
+    const expanded=consolePanel.classList.toggle('expanded');
+    $('toggle-console').textContent=expanded?'Fechar':'Abrir';
+    $('toggle-console').setAttribute('aria-expanded',String(expanded));
+  }
 
   toggleDesktopPanel(which) {
     if(this.isMobile()) return;
