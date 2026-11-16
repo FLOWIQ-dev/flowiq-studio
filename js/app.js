@@ -16,7 +16,6 @@ class FlowiqStudio {
     this.history = new History({ onChange: status => this.updateHistory(status) });
     this.runtime = new Runtime({ onLog: (message, type) => this.log(message, type) });
     this.assets = [];
-    this.objectUrls = new Map();
     this.saveTimer = 0;
     this.savePromise = null;
     this.savePending = false;
