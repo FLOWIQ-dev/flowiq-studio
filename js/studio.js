@@ -1,5 +1,6 @@
-import { DataModel, Instance } from './datamodel.js?v=2026.11.16.43';
-import { VirtualFS } from './vfs.js?v=2026.11.16.43';
+import { DataModel, Instance } from './datamodel.js?v=2026.11.16.44';
+import { VirtualFS } from './vfs.js?v=2026.11.16.44';
+import { createProjectRecord, normalizeProject, FlowiqRuntime } from './engine.js?v=2026.11.16.44';
 
 const $ = (id) => document.getElementById(id);
 const esc = (value) => String(value ?? '').replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -21,6 +22,7 @@ class StudioApp {
   constructor() {
     this.vfs = new VirtualFS();
     this.model = new DataModel();
+    this.runtime = new FlowiqRuntime({ model:this.model, onChange:()=>this.renderCanvas(), onLog:message=>this.log(message,'warn') });
     this.projects = [];
     this.project = null;
     this.selected = null;
@@ -125,7 +127,7 @@ class StudioApp {
       const button = new Instance('TextButton', 'BotaoAcao');
       Object.assign(button.properties, {text:'Começar',positionX:85,positionY:90,width:150});
       button.setParent(frame);
-      const p = {id:this.makeId(),name,updatedAt:new Date().toISOString(),data:[frame.toJSON()]};
+      const p = createProjectRecord({id:this.makeId(),name,data:[frame.toJSON()]});
       try { await this.vfs.saveProject(p); this.hideModal(); await this.openProject(p.id); }
       catch (e) { this.log('Erro ao criar projeto: '+e.message,'error'); }
     };
@@ -188,8 +190,8 @@ class StudioApp {
     try {
       const p = await this.vfs.getProject(id);
       if (!p) throw new Error('Projeto não encontrado.');
-      this.project = p;
-      this.model.loadFromJSON(p.data || []);
+      this.project = normalizeProject(p);
+      this.model.loadFromJSON(this.project.data || []);
       this.selected = null;
       this.expandedNodes = new Set(this.model.getAll().filter(n => n.children.length).map(n => n.id));
       this.treeQuery = '';
@@ -224,6 +226,7 @@ class StudioApp {
       do {
         this.savePending = false;
         this.project.data = this.model.toJSON();
+        this.project.schemaVersion = 2;
         this.project.updatedAt = new Date().toISOString();
         await this.vfs.saveProject(this.project);
       } while (this.savePending);
@@ -461,7 +464,7 @@ class StudioApp {
       if (node.className === 'Frame') { el.style.display='block'; el.style.overflow='visible'; el.style.outlineOffset='2px'; }
       el.textContent = p.text || (node.className === 'Frame' || (node.className==='ImageLabel'&&p.imageUrl) ? '' : node.name);
       if (node.className === 'TextButton' && this.playMode) {
-        el.type = 'button'; el.onclick = () => this.log('Ação executada: '+node.name,'ok');
+        el.type = 'button'; el.onclick = () => this.runtime.dispatch(node,'click',{ source:'pointer' });
       } else if (!this.playMode) {
         el.onclick = (e) => { e.stopPropagation(); };
       }
@@ -759,7 +762,7 @@ class StudioApp {
 
   exportProject() {
     if(!this.project)return;
-    const payload={format:'flowiq-studio',version:1,project:{...this.project,data:this.model.toJSON()}};
+    const payload={format:'flowiq-studio',version:2,project:normalizeProject({...this.project,data:this.model.toJSON()})};
     const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
     const url=URL.createObjectURL(blob); const a=document.createElement('a');
     a.href=url;a.download=(this.project.name.replace(/[^a-z0-9-_]+/gi,'_')||'projeto')+'.flowiq';a.click();URL.revokeObjectURL(url);
@@ -772,7 +775,7 @@ class StudioApp {
       const raw=JSON.parse(await file.text());
       const p=raw.project || raw;
       if(!p || !Array.isArray(p.data))throw new Error('Arquivo não contém um projeto Flowiq válido.');
-      const imported={id:this.makeId(),name:String(p.name||file.name.replace(/\.(flowiq|json)$/i,'')).slice(0,64)||'Projeto importado',updatedAt:new Date().toISOString(),data:p.data};
+      const imported=createProjectRecord({...p,id:this.makeId(),name:String(p.name||file.name.replace(/\.(flowiq|json)$/i,'')).slice(0,64)||'Projeto importado',updatedAt:new Date().toISOString()});
       this.model.loadFromJSON(imported.data);
       imported.data=this.model.toJSON();
       await this.vfs.saveProject(imported);
@@ -784,6 +787,8 @@ class StudioApp {
   play(force) {
     if(!this.project)return;
     this.playMode=typeof force==='boolean'?force:!this.playMode;
+    if(this.playMode)this.runtime.start(this.project);
+    else this.runtime.stop();
     this.closePanels();
     $('workspace').classList.toggle('preview-mode',this.playMode);
     $('btn-play').innerHTML=this.playMode?'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5 3 12l6 7M4 12h10a6 6 0 0 1 0 12h-2"/></svg><span>Editor</span>':'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8 5 11 7-11 7z"/></svg><span>Prévia</span>';
