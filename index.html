@@ -702,6 +702,46 @@ button:focus-visible{outline:2px solid #75baff;outline-offset:2px}
  .stage-zoom output{min-width:23px}
 }
 @media(prefers-reduced-motion:reduce){.side-panel,.console,.drawer-backdrop{transition:none!important}}
+
+/* Hub surfaces share the same visual language as the editor */
+.hub-header{height:64px;min-height:64px;padding:0 clamp(14px,3vw,32px);background:#151e28;border-bottom:1px solid var(--line)}
+.hub-header .brand{gap:10px;font-size:15px;letter-spacing:-.2px}
+.hub-header .brand img{width:29px;height:29px}
+.hub-header-actions{gap:9px}
+.hub-main{width:min(100%,1180px);margin:0 auto;padding:28px clamp(14px,3vw,28px) 60px}
+.hub-nav{width:max-content;max-width:100%;gap:5px;margin:0 0 28px;padding:5px;border:1px solid #2c3b4b;border-radius:11px;background:#172330}
+.hub-nav button{min-height:42px;padding:0 16px;border-radius:8px}
+.hub-nav button[aria-selected=true]{background:#2a4158;color:#e3f1ff}
+.hub-welcome{min-height:150px;margin:0 0 32px;padding:24px 26px;border:1px solid #30465b;border-radius:15px;background:linear-gradient(115deg,#1b2a39,#1b2530 68%,#202b37)}
+.hub-welcome h1{font-size:clamp(27px,4vw,38px);letter-spacing:-1.1px}
+.hub-welcome p{max-width:520px;font-size:13px;color:#aab8c7}
+.home-section-heading,.hub-section-heading{margin-bottom:15px}
+#project-list{gap:12px}
+.project-card,.asset-card,.settings-section{border:1px solid #2f4051;border-radius:11px;background:#1a2632;overflow:hidden}
+.project-card-open{min-height:78px;padding:12px 14px}
+.project-card-tools{padding:8px 12px;border-top:1px solid #2b3a49}
+.project-card-tools button{min-height:34px;border-radius:7px}
+.library-summary{border-radius:11px;background:#1a2632;border-color:#304151}
+.library-workspace{gap:16px}
+.asset-list,.asset-preview-pane{border-color:#304151;border-radius:11px;background:#172330}
+.asset-entry{border-radius:8px}
+.asset-entry.selected{background:#263d52}
+.asset-preview-pane{overflow:hidden}
+.settings-section{padding:18px}
+.settings-action{border-radius:9px}
+@media(max-width:820px){
+ .hub-header{height:58px;min-height:58px;padding:0 12px}
+ .hub-header .brand{font-size:14px}.hub-header .brand img{width:26px;height:26px}
+ .hub-main{padding:14px 12px 32px}
+ .hub-nav{position:sticky;top:0;z-index:15;width:100%;margin:0 0 18px;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:3px;padding:4px}
+ .hub-nav button{min-width:0;min-height:52px;flex-direction:column;gap:4px;padding:4px 2px;font-size:10px}
+ .hub-nav button svg{width:18px;height:18px}
+ .hub-welcome{min-height:120px;padding:18px;margin-bottom:22px}
+ .hub-welcome h1{font-size:26px}
+ .hub-welcome p{font-size:11px}
+ .library-workspace{grid-template-columns:minmax(0,1fr);gap:12px}
+ .asset-list{max-height:36vh}
+}
 </style></head><body>
 <main id="hub" class="screen active">
 <header class="hub-header">
