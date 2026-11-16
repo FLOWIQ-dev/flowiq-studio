@@ -3,20 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Flowiq Studio - Mobile OS Engine</title>
+    <title>Flowiq Studio - Professional 2D UI Engine</title>
+    <link rel="manifest" href="manifest.json">
     <style>
         :root {
-            --bg-base: #12141c;
-            --bg-surface: #1a1e29;
-            --bg-card: #222736;
+            --bg-base: #0f1117;
+            --bg-surface: #161922;
+            --bg-card: #1e222e;
             --border-subtle: rgba(255, 255, 255, 0.08);
             --accent: #6366f1;
             --accent-hover: #4f46e5;
             --text-main: #f1f5f9;
             --text-muted: #94a3b8;
             --success: #10b981;
-            --radius-lg: 16px;
-            --radius-md: 10px;
+            --radius-lg: 14px;
+            --radius-md: 8px;
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; -webkit-tap-highlight-color: transparent; }
@@ -25,13 +26,9 @@
             background-color: var(--bg-base); 
             color: var(--text-main); 
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100dvh;
-            height: 100vh;
-            display: flex; 
-            flex-direction: column; 
+            top: 0; left: 0;
+            width: 100vw; height: 100dvh;
+            display: flex; flex-direction: column; 
             overflow: hidden; 
         }
 
@@ -39,112 +36,51 @@
             background: var(--bg-surface); 
             border-bottom: 1px solid var(--border-subtle); 
             padding: 10px 16px; 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center; 
-            flex-shrink: 0;
-            height: 50px;
-            z-index: 10;
+            display: flex; justify-content: space-between; align-items: center; 
+            height: 50px; flex-shrink: 0; z-index: 10;
         }
 
-        h1 { 
-            font-size: 0.95rem; 
-            font-weight: 600; 
-            color: var(--text-main);
-            display: flex; 
-            align-items: center; 
-            gap: 6px; 
-        }
+        h1 { font-size: 0.95rem; font-weight: 600; display: flex; align-items: center; gap: 6px; }
 
-        .header-actions { display: flex; align-items: center; gap: 8px; }
-        
-        .fs-btn {
-            background: var(--bg-card);
-            border: 1px solid var(--border-subtle);
-            color: var(--text-main);
-            padding: 6px 12px;
-            border-radius: 8px;
-            font-size: 0.75rem;
-            cursor: pointer;
-        }
+        .btn { background: var(--accent); color: white; border: none; padding: 10px 16px; border-radius: var(--radius-md); font-weight: 500; font-size: 0.85rem; cursor: pointer; text-align: center; }
+        .btn:active { background: var(--accent-hover); }
+        .btn-secondary { background: var(--bg-card); border: 1px solid var(--border-subtle); color: var(--text-main); }
 
         .main-container { flex: 1; display: flex; flex-direction: column; overflow: hidden; position: relative; }
-
         .screen { display: none; flex: 1; flex-direction: column; overflow: hidden; height: 100%; }
         .screen.active { display: flex; }
 
         .hub-screen { padding: 16px; gap: 16px; overflow-y: auto; }
-
-        .card { background: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); padding: 16px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2); }
-
-        .btn { background: var(--accent); color: white; border: none; padding: 12px 18px; border-radius: var(--radius-md); font-weight: 500; font-size: 0.9rem; width: 100%; cursor: pointer; text-align: center; z-index: 5; }
-        .btn:active { background: var(--accent-hover); }
-
-        .btn-secondary { background: var(--bg-card); border: 1px solid var(--border-subtle); color: var(--text-main); }
-
-        .project-list { display: flex; flex-direction: column; gap: 10px; margin-top: 10px; }
-        .project-item { background: var(--bg-card); border: 1px solid var(--border-subtle); padding: 12px 16px; border-radius: var(--radius-md); display: flex; justify-content: space-between; align-items: center; }
+        .card { background: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); padding: 16px; }
 
         /* Workspace do Studio */
-        .workspace-header { background: var(--bg-surface); padding: 8px 16px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-subtle); font-size: 0.8rem; flex-shrink: 0; height: 45px; }
+        .workspace-header { background: var(--bg-surface); padding: 8px 16px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-subtle); height: 45px; flex-shrink: 0; }
         
-        .workspace-body { 
-            flex: 1; 
-            position: relative; 
-            background: #0d0f14; 
-            display: flex; 
-            justify-content: center; 
-            align-items: center; 
-            overflow: hidden; 
-            padding: 10px;
-        }
+        .workspace-body { flex: 1; position: relative; background: #0a0c10; display: flex; justify-content: center; align-items: center; overflow: hidden; padding: 10px; }
 
         .phone-viewport { 
-            width: 100%; 
-            max-width: 260px; 
-            height: 100%; 
-            max-height: 400px; 
-            background: #000; 
-            border: 2px solid #2a3142; 
-            border-radius: 24px; 
-            position: relative; 
-            overflow: hidden; 
-            box-shadow: 0 10px 30px rgba(0,0,0,0.6); 
+            width: 100%; max-width: 280px; height: 100%; max-height: 440px; 
+            background: #000; border: 2px solid #2a3142; border-radius: 24px; 
+            position: relative; overflow: hidden; box-shadow: 0 15px 35px rgba(0,0,0,0.6); 
         }
 
         .ui-element { position: absolute; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; color: white; box-sizing: border-box; }
 
-        /* Barra de Navegação Inferior Fixa */
+        /* Barra Inferior Fixa */
         .studio-nav { 
-            background: var(--bg-surface);
-            border-top: 1px solid var(--border-subtle); 
-            display: flex; 
-            justify-content: space-around; 
-            align-items: center;
-            padding: 8px 0; 
-            flex-shrink: 0;
-            height: 60px;
-            z-index: 100;
+            background: var(--bg-surface); border-top: 1px solid var(--border-subtle); 
+            display: flex; justify-content: space-around; align-items: center; 
+            height: 60px; flex-shrink: 0; z-index: 100; 
         }
-        .nav-btn { background: none; border: none; color: var(--text-muted); font-size: 0.7rem; font-weight: 500; display: flex; flex-direction: column; align-items: center; gap: 2px; cursor: pointer; padding: 6px 12px; }
+        .nav-btn { background: none; border: none; color: var(--text-muted); font-size: 0.7rem; font-weight: 500; display: flex; flex-direction: column; align-items: center; gap: 2px; cursor: pointer; padding: 6px 16px; }
         .nav-btn.active { color: var(--accent); }
 
-        /* Gavetas Deslizantes com z-index alto garantido */
+        /* Gavetas Deslizantes */
         .studio-drawer { 
-            position: absolute; 
-            bottom: 0; 
-            left: 0; 
-            width: 100%; 
-            max-height: 60%; 
-            background: var(--bg-surface); 
-            border-top: 1px solid var(--border-subtle); 
-            border-radius: var(--radius-lg) var(--radius-lg) 0 0; 
-            padding: 16px; 
-            display: none; 
-            flex-direction: column; 
-            gap: 10px; 
-            z-index: 200; 
-            overflow-y: auto; 
+            position: absolute; bottom: 0; left: 0; width: 100%; max-height: 60%; 
+            background: var(--bg-surface); border-top: 1px solid var(--border-subtle); 
+            border-radius: var(--radius-lg) var(--radius-lg) 0 0; padding: 16px; 
+            display: none; flex-direction: column; gap: 10px; z-index: 200; overflow-y: auto; 
             box-shadow: 0 -10px 30px rgba(0,0,0,0.8); 
         }
         .studio-drawer.open { display: flex; }
@@ -154,26 +90,22 @@
 </head>
 <body>
     <header>
-        <h1>⚡ Flowiq <span style="font-size: 0.65rem; color: var(--text-muted); background: var(--bg-card); padding: 2px 6px; border-radius: 10px;">v0.8</span></h1>
-        <div class="header-actions">
-            <button class="fs-btn" onclick="toggleFullScreen()">⛶ Tela Cheia</button>
-        </div>
+        <h1>⚡ Flowiq <span style="font-size: 0.65rem; color: var(--text-muted); background: var(--bg-card); padding: 2px 6px; border-radius: 10px;">Studio v1.0</span></h1>
+        <button class="btn btn-secondary" style="padding: 4px 10px; font-size: 0.75rem;" onclick="if(!document.fullscreenElement)document.documentElement.requestFullscreen();else document.exitFullscreen();">⛶ Tela Cheia</button>
     </header>
 
     <div class="main-container">
-        
         <!-- HUB DE PROJETOS -->
         <div id="hubScreen" class="screen active hub-screen">
             <div class="card">
-                <h2 style="font-size: 0.95rem; margin-bottom: 4px;">Sistemas Operacionais</h2>
-                <p style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 12px;">Crie e gerencie seus projetos 2D isolados.</p>
-                <button class="btn" onclick="createNewProject()">+ Novo Projeto OS</button>
+                <h2 style="font-size: 0.95rem; margin-bottom: 4px;">Gerenciador de Experiências 2D</h2>
+                <p style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 12px;">Crie sistemas operacionais e UIs avançadas isoladas.</p>
+                <button class="btn" id="newProjectBtn" style="width: 100%;">+ Novo Projeto OS</button>
             </div>
-
             <div class="card" style="flex: 1; display: flex; flex-direction: column;">
                 <h3 style="font-size: 0.85rem; margin-bottom: 8px;">Projetos Salvos</h3>
-                <div id="projectList" class="project-list" style="flex: 1; overflow-y: auto;">
-                    <p style="color: var(--text-muted); font-size: 0.8rem; text-align: center; padding: 20px;">Nenhum projeto criado ainda.</p>
+                <div id="projectList" style="flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 8px;">
+                    <p style="color: var(--text-muted); font-size: 0.8rem; text-align: center; padding: 20px;">Nenhum projeto criado.</p>
                 </div>
             </div>
         </div>
@@ -181,255 +113,51 @@
         <!-- WORKSPACE DO ESTÚDIO -->
         <div id="workspaceScreen" class="screen">
             <div class="workspace-header">
-                <button class="btn btn-secondary" style="width: auto; padding: 4px 10px; font-size: 0.75rem;" onclick="returnToHub()">← Voltar</button>
-                <span id="currentProjectTitle" style="font-weight: 600;">Projeto</span>
-                <button class="btn" style="width: auto; padding: 4px 12px; font-size: 0.75rem; background: var(--success);" onclick="alert('Modo Play: Executando interface com sucesso!')">▶ Play</button>
+                <button class="btn btn-secondary" style="padding: 4px 8px; font-size: 0.75rem;" id="backHubBtn">← Voltar</button>
+                <span id="currentProjectTitle" style="font-weight: 600; font-size: 0.85rem;">Projeto</span>
+                <button class="btn" style="padding: 4px 10px; font-size: 0.75rem; background: var(--success);" onclick="alert('Modo Play: Experiência compilada e rodando no Sandbox!')">▶ Play</button>
             </div>
 
             <div class="workspace-body">
-                <!-- Palco -->
                 <div class="phone-viewport" id="viewportCanvas"></div>
 
-                <!-- Gaveta Explorer -->
+                <!-- GAVETA EXPLORER -->
                 <div id="explorerDrawer" class="studio-drawer">
                     <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-subtle); padding-bottom: 6px;">
-                        <strong style="font-size: 0.85rem;">Explorer (Hierarquia)</strong>
-                        <button onclick="toggleDrawer(null)" style="background:none; border:none; color:var(--text-muted); font-size:1.1rem; padding:4px;">✕</button>
+                        <strong style="font-size: 0.85rem;">Explorer (DataModel)</strong>
+                        <button onclick="window.FlowiqStudio.closeDrawers()" style="background:none; border:none; color:var(--text-muted); font-size:1.1rem; cursor:pointer;">✕</button>
                     </div>
-                    <button class="btn" style="font-size: 0.85rem; padding: 10px;" onclick="addInstance('Frame')">+ Adicionar Frame</button>
-                    <button class="btn" style="font-size: 0.85rem; padding: 10px; background: var(--bg-card); border: 1px solid var(--border-subtle);" onclick="addInstance('TextButton')">+ Adicionar Botão</button>
-                    <div id="instanceTree" style="font-size: 0.8rem; color: var(--text-muted); background: var(--bg-card); padding: 8px; border-radius: var(--radius-md); max-height: 140px; overflow-y: auto;">
-                        <div>📁 ScreenRoot (Raiz)</div>
-                    </div>
+                    <button class="btn" style="font-size: 0.8rem; padding: 8px;" id="addFrameBtn">+ Adicionar Frame</button>
+                    <button class="btn" style="font-size: 0.8rem; padding: 8px; background: var(--bg-card); border: 1px solid var(--border-subtle);" id="addButtonBtn">+ Adicionar Botão</button>
+                    <div id="instanceTree" style="background: var(--bg-card); padding: 8px; border-radius: var(--radius-md); max-height: 140px; overflow-y: auto; border: 1px solid var(--border-subtle);"></div>
                 </div>
 
-                <!-- Gaveta Propriedades -->
+                <!-- GAVETA PROPRIEDADES -->
                 <div id="propertiesDrawer" class="studio-drawer">
                     <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-subtle); padding-bottom: 6px;">
-                        <strong style="font-size: 0.85rem;">Propriedades</strong>
-                        <button onclick="toggleDrawer(null)" style="background:none; border:none; color:var(--text-muted); font-size:1.1rem; padding:4px;">✕</button>
+                        <strong style="font-size: 0.85rem;">Propriedades (Inspector)</strong>
+                        <button onclick="window.FlowiqStudio.closeDrawers()" style="background:none; border:none; color:var(--text-muted); font-size:1.1rem; cursor:pointer;">✕</button>
                     </div>
-                    <div style="font-size: 0.8rem; color: var(--text-muted);" id="propDetails">Selecione um elemento para editar.</div>
+                    <div id="propDetails" style="font-size: 0.8rem; color: var(--text-muted);">Selecione um nó na árvore.</div>
                 </div>
             </div>
 
-            <!-- Barra de Navegação Inferior -->
+            <!-- BARRA INFERIOR -->
             <div class="studio-nav">
-                <button class="nav-btn" onclick="toggleDrawer('explorerDrawer')">
-                    <span style="font-size: 1.1rem;">📂</span>
-                    <span>Explorer</span>
+                <button class="nav-btn" onclick="window.FlowiqStudio.toggleDrawer('explorerDrawer')">
+                    <span style="font-size: 1.1rem;">📂</span><span>Explorer</span>
                 </button>
-                <button class="nav-btn" onclick="toggleDrawer('propertiesDrawer')">
-                    <span style="font-size: 1.1rem;">⚙️</span>
-                    <span>Propriedades</span>
+                <button class="nav-btn" onclick="window.FlowiqStudio.toggleDrawer('propertiesDrawer')">
+                    <span style="font-size: 1.1rem;">⚙️</span><span>Propriedades</span>
                 </button>
-                <button class="nav-btn" onclick="alert('Editor de scripts em desenvolvimento.')">
-                    <span style="font-size: 1.1rem;">💻</span>
-                    <span>Scripts</span>
+                <button class="nav-btn" onclick="alert('Editor de Scripts em breve.')">
+                    <span style="font-size: 1.1rem;">💻</span><span>Scripts</span>
                 </button>
             </div>
         </div>
-
     </div>
 
-    <script>
-        let currentProject = null;
-
-        function toggleFullScreen() {
-            if (!document.fullscreenElement) {
-                document.documentElement.requestFullscreen().catch(err => {
-                    alert("Para tela cheia, toque em 'Adicionar à tela inicial' no menu do navegador.");
-                });
-            } else {
-                if (document.exitFullscreen) {
-                    document.exitFullscreen();
-                }
-            }
-        }
-
-        function createNewProject() {
-            const projectName = prompt("Nome do seu Sistema Operacional (ex: NeoOS):", "NeoOS");
-            if (!projectName) return;
-            
-            const projects = JSON.parse(localStorage.getItem('flowiq_projects') || '[]');
-            const newProj = { 
-                id: Date.now(), 
-                name: projectName, 
-                created: new Date().toLocaleDateString(), 
-                instances: [
-                    { id: 1, name: "Background", type: "Frame", bg: "#1e293b", width: "100%", height: "100%", top: "0px", left: "0px" }
-                ] 
-            };
-            projects.push(newProj);
-            localStorage.setItem('flowiq_projects', JSON.stringify(projects));
-            loadProjects();
-        }
-
-        function loadProjects() {
-            const list = document.getElementById('projectList');
-            const projects = JSON.parse(localStorage.getItem('flowiq_projects') || '[]');
-            
-            if (projects.length === 0) {
-                list.innerHTML = `<p style="color: var(--text-muted); font-size: 0.8rem; text-align: center; padding: 20px;">Nenhum projeto criado ainda.</p>`;
-                return;
-            }
-
-            list.innerHTML = projects.map(p => `
-                <div class="project-item">
-                    <div>
-                        <strong style="font-size: 0.85rem; color: var(--text-main);">${p.name}</strong>
-                        <div style="font-size: 0.65rem; color: var(--text-muted);">Criado em: ${p.created}</div>
-                    </div>
-                    <button style="background: rgba(99, 102, 241, 0.15); border: 1px solid rgba(99, 102, 241, 0.3); color: #818cf8; padding: 6px 12px; border-radius: 8px; font-size: 0.75rem; cursor:pointer;" onclick="openProject(${p.id})">Abrir</button>
-                </div>
-            `).join('');
-        }
-
-        function openProject(id) {
-            const projects = JSON.parse(localStorage.getItem('flowiq_projects') || '[]');
-            currentProject = projects.find(p => p.id === id);
-            if (!currentProject) {
-                alert("Erro ao abrir projeto.");
-                return;
-            }
-
-            localStorage.setItem('flowiq_active_id', currentProject.id);
-            document.getElementById('currentProjectTitle').innerText = currentProject.name;
-            document.getElementById('hubScreen').classList.remove('active');
-            document.getElementById('workspaceScreen').classList.add('active');
-            renderViewport();
-            renderExplorerTree();
-        }
-
-        function returnToHub() {
-            saveCurrentProject();
-            localStorage.removeItem('flowiq_active_id');
-            currentProject = null;
-            document.getElementById('workspaceScreen').classList.remove('active');
-            document.getElementById('hubScreen').classList.add('active');
-            loadProjects();
-            toggleDrawer(null);
-        }
-
-        function saveCurrentProject() {
-            if (!currentProject) return;
-            const projects = JSON.parse(localStorage.getItem('flowiq_projects') || '[]');
-            const index = projects.findIndex(p => p.id === currentProject.id);
-            if (index !== -1) {
-                projects[index] = currentProject;
-                localStorage.setItem('flowiq_projects', JSON.stringify(projects));
-            }
-        }
-
-        function addInstance(type) {
-            if (!currentProject) {
-                alert("Nenhum projeto ativo.");
-                return;
-            }
-            const newId = Date.now();
-            const newObj = {
-                id: newId,
-                name: type + "_" + currentProject.instances.length,
-                type: type,
-                bg: type === 'Frame' ? '#3b82f6' : '#10b981',
-                width: "80%",
-                height: "45px",
-                top: (30 + (currentProject.instances.length * 50)) + "px",
-                left: "10%"
-            };
-            currentProject.instances.push(newObj);
-            saveCurrentProject();
-            renderViewport();
-            renderExplorerTree();
-            toggleDrawer(null); // Fecha a gaveta após adicionar para ver o resultado
-        }
-
-        function renderViewport() {
-            const viewport = document.getElementById('viewportCanvas');
-            viewport.innerHTML = '';
-            
-            if (!currentProject.instances || currentProject.instances.length === 0) {
-                viewport.innerHTML = `<div style="color: var(--text-muted); font-size: 0.7rem; text-align: center; margin-top: 150px;">Palco Vazio</div>`;
-                return;
-            }
-
-            currentProject.instances.forEach(obj => {
-                const el = document.createElement('div');
-                el.className = 'ui-element';
-                el.style.backgroundColor = obj.bg;
-                el.style.width = obj.width;
-                el.style.height = obj.height;
-                el.style.top = obj.top;
-                el.style.left = obj.left;
-                el.style.borderRadius = '6px';
-                el.style.border = '1px solid rgba(255,255,255,0.2)';
-                el.innerText = obj.name;
-                viewport.appendChild(el);
-            });
-        }
-
-        function renderExplorerTree() {
-            const tree = document.getElementById('instanceTree');
-            if (!currentProject.instances) return;
-
-            let html = `<div>📁 ScreenRoot (Raiz)</div>`;
-            currentProject.instances.forEach(obj => {
-                html += `
-                    <div class="tree-item" onclick="selectInstance(${obj.id})">
-                        <span>📄 ${obj.name}</span>
-                        <span style="color: var(--text-muted); font-size: 0.7rem;">✏️ Editar</span>
-                    </div>
-                `;
-            });
-            tree.innerHTML = html;
-        }
-
-        function selectInstance(id) {
-            const obj = currentProject.instances.find(i => i.id === id);
-            if (!obj) return;
-            document.getElementById('propDetails').innerHTML = `
-                <div style="margin-bottom: 8px;"><b>Selecionado:</b> ${obj.name}</div>
-                <div style="margin-bottom: 8px;"><b>Tipo:</b> ${obj.type}</div>
-                <div style="display:flex; align-items:center; gap:8px;">
-                    <b>Cor:</b> 
-                    <input type="color" value="${obj.bg}" onchange="updateObjProp(${obj.id}, 'bg', this.value)" style="background:none; border:none; width:30px; height:30px; cursor:pointer;">
-                </div>
-            `;
-            toggleDrawer('propertiesDrawer');
-        }
-
-        function updateObjProp(id, prop, val) {
-            const obj = currentProject.instances.find(i => i.id === id);
-            if (obj) {
-                obj[prop] = val;
-                saveCurrentProject();
-                renderViewport();
-            }
-        }
-
-        function toggleDrawer(drawerId) {
-            document.querySelectorAll('.studio-drawer').forEach(d => {
-                if (d.id === drawerId) {
-                    d.classList.toggle('open');
-                } else {
-                    d.classList.remove('open');
-                }
-            });
-        }
-
-        // Restaura projeto ativo se houver ao recarregar
-        window.onload = function() {
-            loadProjects();
-            const activeId = localStorage.getItem('flowiq_active_id');
-            if (activeId) {
-                const projects = JSON.parse(localStorage.getItem('flowiq_projects') || '[]');
-                const found = projects.find(p => p.id == activeId);
-                if (found) {
-                    openProject(found.id);
-                }
-            }
-        };
-    </script>
+    <script type="module" src="./js/studio.js"></script>
 </body>
     </html>
     
