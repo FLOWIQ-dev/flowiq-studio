@@ -1,5 +1,5 @@
-import { DataModel, Instance } from './datamodel.js?v=2026.11.16.11';
-import { VirtualFS } from './vfs.js?v=2026.11.16.11';
+import { DataModel, Instance } from './datamodel.js?v=2026.11.16.12';
+import { VirtualFS } from './vfs.js?v=2026.11.16.12';
 
 const $ = (id) => document.getElementById(id);
 const esc = (value) => String(value ?? '').replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -13,6 +13,8 @@ class StudioApp {
     this.project = null;
     this.selected = null;
     this.drag = null;
+    this.lastTap = null;
+    this.lastTapTimer = null;
     this.saveTimer = null;
     this.saving = false;
     this.playMode = false;
@@ -53,7 +55,7 @@ class StudioApp {
     document.addEventListener('pointermove', (e) => this.moveDrag(e));
     document.addEventListener('pointerup', (e) => this.endDrag(e));
     document.addEventListener('pointercancel', (e) => this.endDrag(e));
-    window.addEventListener('resize', () => { this.closePanels(); this.renderSelectionHandles(); });
+    window.addEventListener('resize', () => { this.renderSelectionHandles(); });
     document.addEventListener('keydown', (e) => {
       const editingText = ['INPUT','TEXTAREA'].includes(document.activeElement?.tagName);
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z' && !editingText) { e.preventDefault(); e.shiftKey ? this.redo() : this.undo(); }
@@ -169,10 +171,34 @@ class StudioApp {
     node.properties.positionY = 18 + (count%5)*12;
     node.setParent(parent);
     this.select(node);
+    this.focusNode(node);
     this.log(type+' adicionado.','ok'); this.scheduleSave();
   }
 
   select(node) { this.selected = node; this.refresh(); }
+
+  isMobile() { return window.matchMedia('(max-width: 760px)').matches; }
+
+  openPanel(which) {
+    if (!this.isMobile()) return;
+    const panel=$(which); if(!panel)return;
+    this.closePanels();
+    panel.classList.add('mobile-open');
+    $('drawer-backdrop').classList.add('show');
+    const tab=document.querySelector('[data-panel="'+which+'"]');
+    if(tab){tab.classList.add('active');tab.setAttribute('aria-expanded','true');}
+  }
+
+  focusNode(node) {
+    this.closePanels();
+    requestAnimationFrame(() => {
+      const area=$('stage-scroll');
+      const el=[...$('canvas').querySelectorAll('[data-node-id]')].find(item=>item.dataset.nodeId===node?.id);
+      if(!area||!el)return;
+      const a=area.getBoundingClientRect(),r=el.getBoundingClientRect();
+      area.scrollBy({left:(r.left+r.width/2)-(a.left+a.width/2),top:(r.top+r.height/2)-(a.top+a.height/2),behavior:'smooth'});
+    });
+  }
 
   setZoom(value) {
     this.zoom = Math.min(1.8, Math.max(0.4, Math.round(value * 10) / 10));
@@ -206,6 +232,7 @@ class StudioApp {
     };
     const copy = cloneTree(source, source.parent, true);
     this.select(copy);
+    this.focusNode(copy);
     this.scheduleSave();
     this.log(source.name + ' duplicado.', 'ok');
   }
@@ -219,7 +246,7 @@ class StudioApp {
       row.style.paddingLeft = (7 + depth*14)+'px';
       const glyph = node.className === 'Frame' ? '▧' : node.className === 'TextButton' ? '▣' : node.className === 'ImageLabel' ? '▨' : 'T';
       row.innerHTML = '<span>'+glyph+'</span><span class="node-name">'+esc(node.name)+'</span><span class="muted">'+(node.children.length?'⌄':'')+'</span>';
-      row.onclick = () => this.select(node); root.append(row); walk(node,depth+1);
+      row.onclick = () => { this.select(node); this.openPanel('inspector'); }; root.append(row); walk(node,depth+1);
     });
     walk(this.model.root,0);
     if (!root.children.length) root.innerHTML = '<p class="muted" style="font-size:11px;padding:10px">Adicione um Frame para começar.</p>';
@@ -267,7 +294,7 @@ class StudioApp {
     const wasSelected=this.selected===node;
     if(!wasSelected){
       this.drag={
-        node,el,pointerId:event.pointerId,mode:'select',
+        node,el,pointerId:event.pointerId,mode:'select',tapEligible:!handle&&!rotate,
         startX:event.clientX,startY:event.clientY,moved:false
       };
       try{$('canvas').setPointerCapture(event.pointerId);}catch(_){}
@@ -281,7 +308,7 @@ class StudioApp {
     const centerX=rect.left+rect.width/2,centerY=rect.top+rect.height/2;
     const startAngle=Math.atan2(event.clientY-centerY,event.clientX-centerX)*180/Math.PI;
     this.drag={
-      node,el:activeEl,pointerId:event.pointerId,
+      node,el:activeEl,pointerId:event.pointerId,tapEligible:!handle&&!rotate,
       mode:rotate?'rotate':handle?'resize':'move',
       direction:handle?.dataset.resize||'',
       startX:event.clientX,startY:event.clientY,
@@ -333,7 +360,8 @@ class StudioApp {
   }
 
   endDrag(event) {
-    const d=this.drag;if(!d||(event?.pointerId!==undefined&&event.pointerId!==d.pointerId))return;
+    const d=this.drag;
+    if(!d||(event?.pointerId!==undefined&&event.pointerId!==d.pointerId))return;
     this.drag=null;
     if(event?.type!=='pointerup')return;
     if(d.moved){
@@ -341,14 +369,18 @@ class StudioApp {
       return;
     }
     if(d.mode==='select')this.select(d.node);
+    if(d.tapEligible===false)return;
     const now=Date.now(),last=this.lastTap;
-    if(last&&last.id===d.node.id&&now-last.time<360){
-      clearTimeout(this.lastTapTimer);this.lastTap=null;
-      this.selected=d.node;this.renderInspector();this.togglePanel('inspector');
+    if(last&&last.id===d.node.id&&now-last.time<650){
+      clearTimeout(this.lastTapTimer);
+      this.lastTap=null;
+      this.selected=d.node;
+      this.refresh();
+      this.openPanel('inspector');
     }else{
       this.lastTap={id:d.node.id,time:now};
       clearTimeout(this.lastTapTimer);
-      this.lastTapTimer=setTimeout(()=>{this.lastTap=null;},380);
+      this.lastTapTimer=setTimeout(()=>{this.lastTap=null;},700);
     }
   }
 
@@ -415,7 +447,7 @@ class StudioApp {
   deleteSelected() {
     if(!this.selected)return;
     const old=this.selected; const parent=old.parent; this.pushHistory(); old.destroy(); this.selected=parent === this.model.root ? null : parent;
-    this.refresh(); this.scheduleSave(); this.log(old.name+' excluído.');
+    this.refresh(); if(this.selected)this.focusNode(this.selected);else this.closePanels(); this.scheduleSave(); this.log(old.name+' excluído.');
   }
 
   exportProject() {
@@ -456,16 +488,9 @@ class StudioApp {
   }
 
   togglePanel(which) {
-    const panel=$(which); if(!panel)return;
-    if (window.matchMedia('(max-width: 760px)').matches) { const nav=document.querySelector('[data-panel="'+which+'"]'); if(panel.classList.contains('mobile-open')) { this.closePanels(); return; } }
-    const opening=!panel.classList.contains('mobile-open');
-    this.closePanels();
-    if(opening){
-      panel.classList.add('mobile-open');
-      $('drawer-backdrop').classList.add('show');
-      const tab=document.querySelector('[data-panel="'+which+'"]');
-      if(tab){tab.classList.add('active');tab.setAttribute('aria-expanded','true');}
-    }
+    const panel=$(which); if(!panel||!this.isMobile())return;
+    if(panel.classList.contains('mobile-open')){this.closePanels();return;}
+    this.openPanel(which);
   }
   closePanels() {
     $('explorer').classList.remove('mobile-open');$('inspector').classList.remove('mobile-open');
