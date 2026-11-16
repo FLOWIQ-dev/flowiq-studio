@@ -224,7 +224,7 @@ class StudioApp {
     $('btn-focus-stage').setAttribute('aria-label',this.focusMode?'Sair do foco no palco':'Focar no palco');
     $('btn-focus-stage').title=this.focusMode?'Mostrar painéis':'Focar no palco';
     if(this.focusMode)this.closePanels();
-    requestAnimationFrame(()=>{this.renderSelectionHandles();this.updateRotateHandlePlacement();this.fitCanvas();});
+    requestAnimationFrame(()=>{this.renderSelectionHandles();this.updateRotateHandlePlacement();});
   }
 
   async returnToEditor() {
