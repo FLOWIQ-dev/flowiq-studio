@@ -3,9 +3,9 @@ const APP_FILES = [
   './',
   './index.html',
   './manifest.json',
-  './js/studio.js?v=2026.11.16.29',
-  './js/datamodel.js?v=2026.11.16.29',
-  './js/vfs.js?v=2026.11.16.29',
+  './js/studio.js?v=2026.11.16.30',
+  './js/datamodel.js?v=2026.11.16.30',
+  './js/vfs.js?v=2026.11.16.30',
   './assets/icon.svg'
 ];
 
