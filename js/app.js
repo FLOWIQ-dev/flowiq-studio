@@ -22,6 +22,7 @@ class FlowiqStudio {
     this.drag = null;
     this.dialogResolve = null;
     this.search = '';
+    this.returnScreen = 'home';
     this.bind();
     this.start();
   }
@@ -43,6 +44,7 @@ class FlowiqStudio {
     $('create-project').addEventListener('click', () => this.createProject());
     $('project-search').addEventListener('input', event => { this.search = event.target.value.trim().toLocaleLowerCase('pt-BR'); this.renderProjects(); });
     $('home-library').addEventListener('click', () => this.openLibrary());
+    $('editor-library').addEventListener('click', () => this.openLibrary());
     $('home-settings').addEventListener('click', () => this.openSettings());
     $('back-home').addEventListener('click', () => this.returnHome());
     $('add-object').addEventListener('click', () => this.toggleAddMenu());
@@ -214,6 +216,7 @@ class FlowiqStudio {
   }
 
   async returnHome() {
+    if (['library', 'settings'].includes(this.store.state.screen) && this.returnScreen === 'editor') { this.showScreen('editor'); this.renderEditor(); return; }
     if (this.store.state.screen === 'editor' && this.dirty) {
       const choice = await this.dialog({ title: 'Salvar alterações?', message: 'Existem mudanças neste projeto.', choices: [{ value: 'save', label: 'Salvar e sair' }, { value: 'discard', label: 'Sair sem salvar' }, { value: 'cancel', label: 'Continuar editando' }] });
       if (choice === 'cancel' || !choice) return;
@@ -321,7 +324,6 @@ class FlowiqStudio {
       onAsset: id => this.updateProperty('assetId', id)
     });
     $('project-name').textContent = this.project.name;
-    $('canvas-empty').hidden = this.scene.roots.length > 0;
     this.updateHistory(this.history.status);
   }
 
@@ -407,6 +409,7 @@ class FlowiqStudio {
   }
 
   async openLibrary() {
+    this.returnScreen = this.store.state.screen;
     this.assets = await this.db.listAssets();
     this.renderAssets();
     this.showScreen('library');
@@ -448,6 +451,7 @@ class FlowiqStudio {
   }
 
   async openSettings() {
+    this.returnScreen = this.store.state.screen;
     $('settings-count').textContent = String(this.projects?.length || 0);
     $('settings-assets').textContent = String(this.assets.length);
     this.showScreen('settings');
