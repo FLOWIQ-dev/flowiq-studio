@@ -25,6 +25,7 @@ export function renderScene(container, scene, { selectedId = null, preview = fal
     item.style.color = p.color || '#ffffff';
     item.style.borderRadius = Math.max(0, Number(p.radius) || 0) + 'px';
     item.style.opacity = String(Math.max(0, Math.min(1, Number(p.opacity ?? 1))));
+    item.style.transform = 'rotate(' + (Number(p.rotation) || 0) + 'deg)';
     item.style.border = Math.max(0, Number(p.borderWidth) || 0) + 'px solid ' + (p.border || 'transparent');
     item.style.fontSize = Math.max(8, Number(p.fontSize) || 16) + 'px';
     item.style.textAlign = p.textAlign || 'center';
@@ -46,6 +47,16 @@ export function renderScene(container, scene, { selectedId = null, preview = fal
     if (preview && node.type === 'TextButton') item.addEventListener('click', event => { event.stopPropagation(); onRun(node, 'click'); });
     parent.append(item);
     for (const childId of node.children) build(childId, item);
+    if (selectedId === node.id && !preview) {
+      for (const direction of ['nw','n','ne','e','se','s','sw','w']) {
+        const handle = el('button', 'resize-handle handle-' + direction);
+        handle.type = 'button'; handle.dataset.resize = direction; handle.setAttribute('aria-label', 'Redimensionar ' + direction);
+        item.append(handle);
+      }
+      const rotate = el('button', 'rotate-handle', '↻');
+      rotate.type = 'button'; rotate.dataset.rotate = 'true'; rotate.setAttribute('aria-label', 'Girar objeto');
+      item.append(rotate);
+    }
   };
   for (const id of scene.roots) build(id, container);
 }
@@ -72,7 +83,7 @@ export function renderTree(container, scene, selectedId, onSelect) {
   container.append(list);
 }
 
-export function renderInspector(container, node, { onChange, onDelete, assets = [], onAsset } = {}) {
+export function renderInspector(container, node, { onChange, onDelete, assets = [], onAsset, events = [], onEventSave } = {}) {
   container.replaceChildren();
   if (!node) {
     container.append(el('p', 'inspector-empty', 'Selecione um objeto no palco ou na hierarquia para editar suas propriedades.'));
@@ -142,6 +153,20 @@ export function renderInspector(container, node, { onChange, onDelete, assets = 
     media.append(assetLabel);
     container.append(media);
     section('Aparência', [field('Ajuste', 'fit', 'select', { values: [{ value: 'cover', label: 'Preencher' }, { value: 'contain', label: 'Conter' }, { value: 'fill', label: 'Esticar' }] }), field('Arredondamento', 'radius', 'number', { min: 0, max: 120 })]);
+  }
+  if (node.type === 'TextButton') {
+    const logic = el('section', 'property-group logic-group');
+    logic.append(el('h3', '', 'Lógica de clique'));
+    const rule = events.find(item => item.nodeId === node.id && item.event === 'click');
+    const action = rule?.actions?.find(item => item.type === 'setText');
+    const inputWrap = el('label', 'property-field');
+    inputWrap.append(el('span', '', 'Texto após clicar'));
+    const input = el('input'); input.type = 'text'; input.maxLength = 200; input.value = action?.value || '';
+    inputWrap.append(input);
+    const save = el('button', 'button subtle', 'Salvar ação');
+    save.type = 'button'; save.addEventListener('click', () => onEventSave?.(node.id, input.value));
+    logic.append(inputWrap, save);
+    container.append(logic);
   }
   const actions = el('div', 'inspector-actions');
   const remove = el('button', 'button danger', 'Excluir objeto');
