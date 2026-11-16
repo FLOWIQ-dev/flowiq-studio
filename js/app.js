@@ -42,12 +42,13 @@ class FlowiqStudio {
   }
 
   bind() {
-    $('create-project').addEventListener('click', () => this.createProject());
+    const guarded = task => (...args) => Promise.resolve(task(...args)).catch(error => this.toast(error.message || 'Ocorreu um erro inesperado.', 'error'));
+    $('create-project').addEventListener('click', guarded(() => this.createProject()));
     $('project-search').addEventListener('input', event => { this.search = event.target.value.trim().toLocaleLowerCase('pt-BR'); this.renderProjects(); });
-    $('home-library').addEventListener('click', () => this.openLibrary());
-    $('editor-library').addEventListener('click', () => this.openLibrary());
-    $('home-settings').addEventListener('click', () => this.openSettings());
-    $('back-home').addEventListener('click', () => this.returnHome());
+    $('home-library').addEventListener('click', guarded(() => this.openLibrary()));
+    $('editor-library').addEventListener('click', guarded(() => this.openLibrary()));
+    $('home-settings').addEventListener('click', guarded(() => this.openSettings()));
+    $('back-home').addEventListener('click', guarded(() => this.returnHome()));
     $('add-object').addEventListener('click', () => this.toggleAddMenu());
     $('add-menu').addEventListener('click', event => {
       const button = event.target.closest('[data-add-type]');
@@ -91,16 +92,16 @@ class FlowiqStudio {
     $('zoom-fit').addEventListener('click', () => this.fitStage());
     $('save-project').addEventListener('click', () => this.saveProject().catch(() => {}));
     $('add-assets').addEventListener('click', () => $('asset-upload').click());
-    $('asset-upload').addEventListener('change', event => this.uploadAssets(event.target.files));
+    $('asset-upload').addEventListener('change', guarded(event => this.uploadAssets(event.target.files)));
     $('asset-list').addEventListener('click', event => {
       const remove = event.target.closest('[data-remove-asset]');
-      if (remove) this.removeAsset(remove.dataset.removeAsset);
+      if (remove) guarded(() => this.removeAsset(remove.dataset.removeAsset))();
     });
     $('export-backup').addEventListener('click', () => this.exportBackup());
     $('import-backup').addEventListener('click', () => $('backup-input').click());
     $('backup-input').addEventListener('change', event => this.importBackup(event.target.files?.[0]));
-    $('settings-back').addEventListener('click', () => this.returnHome());
-    $('library-back').addEventListener('click', () => this.returnHome());
+    $('settings-back').addEventListener('click', guarded(() => this.returnHome()));
+    $('library-back').addEventListener('click', guarded(() => this.returnHome()));
     $('mobile-tabs').addEventListener('click', event => {
       const button = event.target.closest('[data-panel]');
       if (button) this.setPanel(button.dataset.panel);
@@ -156,9 +157,9 @@ class FlowiqStudio {
       const open = this.button('Abrir', 'button primary');
       open.addEventListener('click', () => this.openProject(project.id));
       const rename = this.button('Renomear', 'button subtle');
-      rename.addEventListener('click', () => this.renameProject(project));
+      rename.addEventListener('click', guarded(() => this.renameProject(project)));
       const remove = this.button('Excluir', 'button subtle danger-text');
-      remove.addEventListener('click', () => this.deleteProject(project));
+      remove.addEventListener('click', guarded(() => this.deleteProject(project)));
       actions.append(open, rename, remove);
       body.append(name, meta, actions);
       card.append(preview, body);
