@@ -1,6 +1,7 @@
-import { DataModel, Instance } from './datamodel.js?v=2026.11.16.48';
-import { VirtualFS } from './vfs.js?v=2026.11.16.48';
-import { createProjectRecord, normalizeProject, FlowiqRuntime } from './engine.js?v=2026.11.16.48';
+import { DataModel, Instance } from './datamodel.js?v=2026.11.16.49';
+import { VirtualFS } from './vfs.js?v=2026.11.16.49';
+import { createProjectRecord, normalizeProject, FlowiqRuntime } from './engine.js?v=2026.11.16.49';
+import { createBackupFile, inspectBackupFile, restoreBackup } from './backup.js?v=2026.11.16.49';
 
 const $ = (id) => document.getElementById(id);
 const esc = (value) => String(value ?? '').replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -53,6 +54,9 @@ class StudioApp {
     $('btn-save').onclick = () => this.save();
     $('btn-export').onclick = () => this.exportProject();
     $('btn-import').onclick = () => $('file-input').click();
+    $('btn-backup-export').onclick = () => this.exportFullBackup();
+    $('btn-backup-import').onclick = () => $('backup-file-input').click();
+    $('backup-file-input').onchange = (e) => this.importFullBackup(e.target.files?.[0]);
     $('file-input').onchange = (e) => this.importProject(e.target.files?.[0]);
     $('open-instances').onclick = () => this.toggleInstanceLibrary();
     $('close-instances').onclick = () => this.closeInstanceLibrary();
@@ -875,6 +879,40 @@ class StudioApp {
     this.scheduleSave();
     this.log(old.name+' excluído.');
   }
+
+  async exportFullBackup() {
+    const button=$('btn-backup-export'); if(button)button.disabled=true;
+    try {
+      const result=await createBackupFile(this.vfs);
+      const name='Flowiq-Backup-'+new Date().toISOString().slice(0,10)+'.flowiq-backup';
+      const file=new File([result.blob],name,{type:result.blob.type});
+      if(navigator.share&&navigator.canShare?.({files:[file]})){
+        try{await navigator.share({files:[file],title:'Backup do Flowiq Studio',text:'Backup dos projetos e da biblioteca.'});}
+        catch(e){if(e?.name!=='AbortError')throw e;}
+      }else{
+        const url=URL.createObjectURL(result.blob),a=document.createElement('a');
+        a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();
+        setTimeout(()=>URL.revokeObjectURL(url),30000);
+      }
+      alert('Backup preparado.\n\nProjetos: '+result.projectCount+'\nArquivos da biblioteca: '+result.assetCount+'\nTamanho: '+(result.size/1048576).toFixed(2)+' MB\n\nGuarde uma cópia fora do navegador.');
+    }catch(e){alert('Não foi possível criar o backup: '+e.message);}
+    finally{if(button)button.disabled=false;}
+  }
+
+  async importFullBackup(file) {
+    if(!file)return;
+    try{
+      const data=await inspectBackupFile(file);
+      const date=data.createdAt?new Date(data.createdAt).toLocaleString('pt-BR'):'não informada';
+      const ok=confirm('Backup validado com sucesso!\n\nData: '+date+'\nProjetos: '+data.projectCount+'\nArquivos da biblioteca: '+data.assetCount+'\nTamanho: '+(data.totalBytes/1048576).toFixed(2)+' MB\n\nOs dados serão adicionados aos atuais. Nada será sobrescrito. IDs repetidos serão recriados.\n\nDeseja restaurar?');
+      if(!ok)return;
+      const result=await restoreBackup(this.vfs,data);
+      await this.loadHub();
+      alert('Restauração concluída!\nProjetos adicionados: '+result.projects+'\nArquivos adicionados: '+result.assets+'\n\nOs dados anteriores foram preservados.');
+    }catch(e){alert('Backup não restaurado: '+e.message+'\n\nNenhum dado existente foi substituído.');}
+    finally{$('backup-file-input').value='';}
+  }
+
   exportProject() {
     if(!this.project)return;
     const sourceModel=this.playMode?this.runtime.editorModel:this.model;
