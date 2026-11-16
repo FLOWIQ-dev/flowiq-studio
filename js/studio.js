@@ -333,8 +333,12 @@ class StudioApp {
     if(!d.moved&&distance<8)return;
     if(!d.moved){d.moved=true;d.historyRecorded=false;}
     if(!d.historyRecorded){this.pushHistory();d.historyRecorded=true;}
-    const dx=(event.clientX-d.startX)/(d.scaleX||1),dy=(event.clientY-d.startY)/(d.scaleY||1);
+    let dx=(event.clientX-d.startX)/(d.scaleX||1),dy=(event.clientY-d.startY)/(d.scaleY||1);
     const p=d.node.properties;
+    if(d.mode==='resize'){
+      const a=-(d.baseRotation||0)*Math.PI/180,c=Math.cos(a),s=Math.sin(a);
+      const localX=dx*c-dy*s,localY=dx*s+dy*c;dx=localX;dy=localY;
+    }
     if(d.mode==='rotate'){
       const angle=Math.atan2(event.clientY-d.centerY,event.clientX-d.centerX)*180/Math.PI;
       let rotation=d.baseRotation+angle-d.startAngle;
@@ -343,10 +347,13 @@ class StudioApp {
       d.el.style.transform='rotate('+p.rotation+'deg)';
     }else if(d.mode==='resize'){
       const dir=d.direction;let x=d.baseX,y=d.baseY,w=d.baseW,h=d.baseH;
-      if(dir.includes('e'))w=Math.max(24,d.baseW+dx);
-      if(dir.includes('s'))h=Math.max(24,d.baseH+dy);
-      if(dir.includes('w')){w=Math.max(24,d.baseW-dx);x=d.baseX+d.baseW-w;}
-      if(dir.includes('n')){h=Math.max(24,d.baseH-dy);y=d.baseY+d.baseH-h;}
+      if(dir.includes('e'))w=Math.max(8,d.baseW+dx);
+      if(dir.includes('s'))h=Math.max(8,d.baseH+dy);
+      if(dir.includes('w')){w=Math.max(8,d.baseW-dx);x=d.baseX+d.baseW-w;}
+      if(dir.includes('n')){h=Math.max(8,d.baseH-dy);y=d.baseY+d.baseH-h;}
+      const angle=(d.baseRotation||0)*Math.PI/180,cos=Math.cos(angle),sin=Math.sin(angle);
+      const shiftX=x-d.baseX,shiftY=y-d.baseY;
+      x=d.baseX+shiftX*cos-shiftY*sin;y=d.baseY+shiftX*sin+shiftY*cos;
       p.positionX=Math.round(x);p.positionY=Math.round(y);p.width=Math.round(w);p.height=Math.round(h);
       d.el.style.left=p.positionX+'px';d.el.style.top=p.positionY+'px';d.el.style.width=p.width+'px';d.el.style.height=p.height+'px';
       const width=$('p-w'),height=$('p-h'),px=$('p-x'),py=$('p-y');
@@ -384,13 +391,25 @@ class StudioApp {
     }
   }
 
+  positionSelectionOverlay(overlay,el){
+    const canvas=$('canvas'),cr=canvas.getBoundingClientRect(),r=el.getBoundingClientRect();
+    const width=Math.max(1,el.offsetWidth),height=Math.max(1,el.offsetHeight);
+    const centerX=(r.left+r.width/2-cr.left)/this.zoom;
+    const centerY=(r.top+r.height/2-cr.top)/this.zoom;
+    const rotation=Number(this.model.find(el.dataset.nodeId)?.properties.rotation)||0;
+    overlay.style.left=(centerX-width/2)+'px';
+    overlay.style.top=(centerY-height/2)+'px';
+    overlay.style.width=width+'px';overlay.style.height=height+'px';
+    overlay.style.transform='rotate('+rotation+'deg)';
+    overlay.style.setProperty('--handle-scale',String(1/Math.max(.25,this.zoom)));
+  }
+
   renderSelectionHandles(){
     const canvas=$('canvas');canvas.querySelector('.selection-box')?.remove();
     if(!this.selected||this.playMode)return;
     const el=[...canvas.querySelectorAll('[data-node-id]')].find(item=>item.dataset.nodeId===this.selected.id);if(!el)return;
-    const overlay=document.createElement('div'),cr=canvas.getBoundingClientRect(),r=el.getBoundingClientRect();
-    overlay.className='selection-box';overlay.style.left=((r.left-cr.left)/this.zoom)+'px';overlay.style.top=((r.top-cr.top)/this.zoom)+'px';
-    overlay.style.width=(r.width/this.zoom)+'px';overlay.style.height=(r.height/this.zoom)+'px';
+    const overlay=document.createElement('div');overlay.className='selection-box';
+    this.positionSelectionOverlay(overlay,el);
     ['nw','n','ne','e','se','s','sw','w'].forEach(dir=>{const h=document.createElement('button');h.type='button';h.className='resize-handle';h.dataset.resize=dir;h.dataset.nodeId=this.selected.id;h.setAttribute('aria-label','Redimensionar '+dir);overlay.append(h);});
     const rotate=document.createElement('button');rotate.type='button';rotate.className='rotate-handle';rotate.dataset.rotate='true';rotate.dataset.nodeId=this.selected.id;rotate.setAttribute('aria-label','Rotacionar objeto');rotate.textContent='↻';overlay.append(rotate);
     canvas.append(overlay);
@@ -398,9 +417,7 @@ class StudioApp {
 
   updateSelectionHandles(){
     const overlay=$('canvas').querySelector('.selection-box');if(!overlay||!this.drag)return;
-    const r=this.drag.el.getBoundingClientRect(),cr=$('canvas').getBoundingClientRect();
-    overlay.style.left=((r.left-cr.left)/this.zoom)+'px';overlay.style.top=((r.top-cr.top)/this.zoom)+'px';
-    overlay.style.width=(r.width/this.zoom)+'px';overlay.style.height=(r.height/this.zoom)+'px';
+    this.positionSelectionOverlay(overlay,this.drag.el);
   }
 
   pushHistory(){
