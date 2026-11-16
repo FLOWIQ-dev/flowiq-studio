@@ -291,8 +291,10 @@ class StudioApp {
 
   notify(message,type='info') {
     const host=$('studio-toast');if(!host)return;
-    host.textContent=String(message||'');host.dataset.type=type;host.classList.add('show');
-    clearTimeout(this.toastTimer);this.toastTimer=setTimeout(()=>host.classList.remove('show'),4200);
+    const paths={success:'<path d="m5 12 4 4L19 6"/>',warning:'<path d="M12 3 2.8 20h18.4L12 3Z"/><path d="M12 9v4m0 3h.01"/>',error:'<circle cx="12" cy="12" r="9"/><path d="m9 9 6 6m0-6-6 6"/>',info:'<circle cx="12" cy="12" r="9"/><path d="M12 11v5m0-8h.01"/>'};
+    const icon=document.createElement('svg');icon.setAttribute('viewBox','0 0 24 24');icon.setAttribute('aria-hidden','true');icon.innerHTML=paths[type]||paths.info;
+    const content=document.createElement('span');content.textContent=String(message||'');host.replaceChildren(icon,content);host.dataset.type=type;host.classList.add('show');
+    clearTimeout(this.toastTimer);this.toastTimer=setTimeout(()=>host.classList.remove('show'),5200);
   }
 
   formatBytes(bytes) {
