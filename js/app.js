@@ -332,7 +332,11 @@ class FlowiqStudio {
     const node = this.scene.get(target.dataset.nodeId);
     if (!node) return;
     event.preventDefault();
-    this.select(node.id);
+    if (this.store.state.selectedId !== node.id) {
+      this.store.set({ selectedId: node.id });
+      renderTree($('tree'), this.scene, node.id, id => this.select(id));
+      renderInspector($('inspector'), node, { assets: this.assets, onChange: (key, value) => this.updateProperty(key, value), onDelete: () => this.deleteSelected(), onAsset: id => this.updateProperty('assetId', id) });
+    }
     this.history.checkpoint(this.scene.snapshot());
     this.drag = { id: node.id, pointerId: event.pointerId, startX: event.clientX, startY: event.clientY, x: Number(node.props.x) || 0, y: Number(node.props.y) || 0, moved: false };
     target.setPointerCapture?.(event.pointerId);
