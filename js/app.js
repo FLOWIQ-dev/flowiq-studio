@@ -302,7 +302,7 @@ class FlowiqStudio {
     const existing = events.find(rule => rule && rule.nodeId === nodeId && rule.event === 'click');
     if (existing) existing.actions = text ? [{ type: 'setText', targetId: nodeId, value: text }] : [];
     else if (text) events.push({ id: makeId(), nodeId, event: 'click', actions: [{ type: 'setText', targetId: nodeId, value: text }] });
-    this.project.events = events.filter(rule => rule.actions?.length);
+    this.project.events = events.filter(rule => rule && rule.actions?.length);
     this.scheduleSave();
     this.toast('Ação do botão salva.');
   }
@@ -319,9 +319,11 @@ class FlowiqStudio {
       ...JSON.parse(JSON.stringify(rule)),
       id: makeId(),
       nodeId: remap.get(rule.nodeId),
-      actions: (rule.actions || []).map(action => ({ ...action, targetId: remap.get(action.targetId) || action.targetId }))
+      actions: (Array.isArray(rule.actions) ? rule.actions : []).filter(Boolean).map(action => ({ ...action, targetId: remap.get(action.targetId) || action.targetId }))
     }));
     this.project.events = [...(this.project.events || []), ...clonedEvents];
+    this.project.scripts = [...(this.project.scripts || []), ...(this.project.scripts || []).filter(item => item && remap.has(item.nodeId)).map(item => ({ ...JSON.parse(JSON.stringify(item)), id: makeId(), nodeId: remap.get(item.nodeId) }))];
+    this.project.animations = [...(this.project.animations || []), ...(this.project.animations || []).filter(item => item && remap.has(item.nodeId)).map(item => ({ ...JSON.parse(JSON.stringify(item)), id: makeId(), nodeId: remap.get(item.nodeId) }))];
     this.select(copy.id);
     this.scheduleSave();
   }
@@ -334,7 +336,7 @@ class FlowiqStudio {
     this.scene.remove(id);
     this.project.events = (this.project.events || []).filter(rule => rule && !removedIds.has(rule.nodeId) && !(Array.isArray(rule.actions) ? rule.actions : []).some(action => action && removedIds.has(action.targetId)));
     this.project.scripts = (this.project.scripts || []).filter(item => item && !removedIds.has(item.nodeId));
-    this.project.animations = (this.project.animations || []).filter(item => !removedIds.has(item.nodeId));
+    this.project.animations = (this.project.animations || []).filter(item => item && !removedIds.has(item.nodeId));
     this.store.set({ selectedId: null });
     this.scheduleSave();
     this.renderEditor();
