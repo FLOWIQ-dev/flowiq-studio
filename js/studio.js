@@ -182,7 +182,7 @@ class StudioApp {
     list.innerHTML=filtered.map(a=>{
       const isImage=a.mime?.startsWith('image/'),isVideo=a.mime?.startsWith('video/'),isAudio=a.mime?.startsWith('audio/');
       let thumb='<span class="asset-kind-icon">'+(isVideo?'VID':isAudio?'AUD':a.mime?.includes('font')?'FNT':a.mime==='application/pdf'?'PDF':'FILE')+'</span>';
-      if(isImage)thumb='<img src="'+this.assetUrl(a)+'" alt="" loading="lazy">';
+      if(isImage){try{thumb='<img src="'+this.assetUrl(a)+'" alt="" loading="lazy">';}catch{thumb='<span class="asset-kind-icon">IMG</span>';}}
       const selected=this.selectedAssetId===a.id;
       let preview='';
       if(selected){
