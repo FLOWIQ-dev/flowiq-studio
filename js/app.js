@@ -11,6 +11,7 @@ const makeId = () => crypto.randomUUID?.() || 'flowiq_' + Date.now().toString(36
 class FlowiqStudio {
   constructor() {
     this.db = new Database();
+    this.screenTransition = 0;
     this.store = new Store({ screen: 'home', project: null, selectedId: null, panel: 'explorer', busy: false });
     this.scene = new Scene();
     this.history = new History({ onChange: status => this.updateHistory(status) });
@@ -119,9 +120,33 @@ class FlowiqStudio {
   set zoom(value) { this._zoom = Math.max(0.35, Math.min(2, value)); }
 
   showScreen(screen) {
+    const names = ['home', 'editor', 'library', 'settings'];
+    const next = $('screen-' + screen);
+    if (!next) return;
+    const token = ++this.screenTransition;
+    const current = names.map(name => $('screen-' + name)).find(element => element && !element.hidden && element !== next);
     this.store.set({ screen });
-    for (const name of ['home', 'editor', 'library', 'settings']) $('screen-' + name).hidden = name !== screen;
     document.body.dataset.screen = screen;
+    next.hidden = false;
+    next.classList.remove('screen-entering');
+    requestAnimationFrame(() => {
+      if (token !== this.screenTransition) return;
+      next.classList.add('screen-visible');
+      if (current) current.classList.remove('screen-visible');
+    });
+    const finish = () => {
+      if (token !== this.screenTransition) return;
+      for (const name of names) {
+        const element = $('screen-' + name);
+        if (element !== next) { element.hidden = true; element.classList.remove('screen-visible'); }
+      }
+    };
+    if (current) {
+      current.addEventListener('transitionend', event => { if (event.target === current && event.propertyName === 'opacity') finish(); }, { once: true });
+      setTimeout(finish, 280);
+    } else {
+      for (const name of names) if ($('screen-' + name) !== next) $('screen-' + name).hidden = true;
+    }
     if (screen === 'editor') requestAnimationFrame(() => this.fitStage());
   }
 
@@ -505,13 +530,19 @@ class FlowiqStudio {
     this.previewScene = new Scene(this.scene.toJSON());
     this.runtime.start({ ...this.project, scene: this.previewScene.toJSON() }, this.previewScene);
     $('preview-screen').hidden = false;
+    $('preview-screen').classList.remove('preview-visible');
+    requestAnimationFrame(() => $('preview-screen').classList.add('preview-visible'));
     $('preview-name').textContent = this.project.name;
     const renderPreview = () => renderScene($('preview-scene'), this.previewScene, { preview: true, assets: this.assets, onRun: node => { this.runtime.dispatch(node, 'click'); renderPreview(); } });
     renderPreview();
   }
 
   stopPreview(announce = true) {
-    if (!$('preview-screen').hidden) $('preview-screen').hidden = true;
+    if (!$('preview-screen').hidden) {
+      const preview = $('preview-screen');
+      preview.classList.remove('preview-visible');
+      setTimeout(() => { if (!this.runtime.running) preview.hidden = true; }, 220);
+    }
     if (this.runtime.running) this.runtime.stop();
     this.previewScene = null;
     if (announce) this.renderEditor();
