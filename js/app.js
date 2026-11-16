@@ -339,45 +339,86 @@ class FlowiqStudio {
     if (!this.project) return;
     renderTree($('tree'), this.scene, this.store.state.selectedId, id => this.select(id));
     renderScene($('scene'), this.scene, { selectedId: this.store.state.selectedId, assets: this.assets });
-    renderInspector($('inspector'), this.scene.get(this.store.state.selectedId), {
-      assets: this.assets,
-      onChange: (key, value) => this.updateProperty(key, value),
-      onDelete: () => this.deleteSelected(),
-      onAsset: id => this.updateProperty('assetId', id),
-      events: this.project.events || [],
-      onEventSave: (nodeId, value) => this.saveButtonAction(nodeId, value)
-    });
+    this.renderInspectorPanel(this.scene.get(this.store.state.selectedId));
     $('project-name').textContent = this.project.name;
     this.updateHistory(this.history.status);
   }
 
+  renderInspectorPanel(node) {
+    renderInspector($('inspector'), node, {
+      assets: this.assets,
+      onChange: (key, value) => this.updateProperty(key, value),
+      onDelete: () => this.deleteSelected(),
+      onAsset: id => this.updateProperty('assetId', id),
+      events: this.project?.events || [],
+      onEventSave: (nodeId, value) => this.saveButtonAction(nodeId, value)
+    });
+  }
+
   pointerDown(event) {
-    if (this.runtime.running) return;
+    if (this.runtime.running || event.button > 0) return;
     const target = event.target.closest('.scene-node');
     if (!target) return;
     const node = this.scene.get(target.dataset.nodeId);
     if (!node) return;
     event.preventDefault();
-    if (this.store.state.selectedId !== node.id) {
-      this.store.set({ selectedId: node.id });
-      renderTree($('tree'), this.scene, node.id, id => this.select(id));
-      renderInspector($('inspector'), node, { assets: this.assets, onChange: (key, value) => this.updateProperty(key, value), onDelete: () => this.deleteSelected(), onAsset: id => this.updateProperty('assetId', id) });
-    }
+    const previous = this.scene.get(this.store.state.selectedId);
+    if (previous && previous.id !== node.id) document.querySelector('[data-node-id="' + previous.id + '"]')?.classList.remove('is-selected');
+    this.store.set({ selectedId: node.id });
+    target.classList.add('is-selected');
+    renderTree($('tree'), this.scene, node.id, id => this.select(id));
+    this.renderInspectorPanel(node);
+
+    const resize = event.target.closest('[data-resize]')?.dataset.resize || null;
+    const rotate = Boolean(event.target.closest('[data-rotate]'));
+    const mode = rotate ? 'rotate' : resize ? 'resize' : 'move';
+    const rect = target.getBoundingClientRect();
+    const startAngle = Math.atan2(event.clientY - (rect.top + rect.height / 2), event.clientX - (rect.left + rect.width / 2));
     this.history.checkpoint(this.scene.snapshot());
-    this.drag = { id: node.id, pointerId: event.pointerId, startX: event.clientX, startY: event.clientY, x: Number(node.props.x) || 0, y: Number(node.props.y) || 0, moved: false };
+    this.drag = {
+      id: node.id, pointerId: event.pointerId, mode, direction: resize,
+      startX: event.clientX, startY: event.clientY,
+      x: Number(node.props.x) || 0, y: Number(node.props.y) || 0,
+      width: Number(node.props.width) || 1, height: Number(node.props.height) || 1,
+      rotation: Number(node.props.rotation) || 0,
+      centerX: rect.left + rect.width / 2, centerY: rect.top + rect.height / 2,
+      startAngle, moved: false
+    };
     target.setPointerCapture?.(event.pointerId);
     const move = moveEvent => {
-      if (!this.drag || moveEvent.pointerId !== this.drag.pointerId) return;
-      const dx = (moveEvent.clientX - this.drag.startX) / this.zoom;
-      const dy = (moveEvent.clientY - this.drag.startY) / this.zoom;
-      if (Math.abs(dx) + Math.abs(dy) > 2) this.drag.moved = true;
-      if (!this.drag.moved) return;
-      const current = this.scene.get(this.drag.id);
+      const drag = this.drag;
+      if (!drag || moveEvent.pointerId !== drag.pointerId) return;
+      const dx = (moveEvent.clientX - drag.startX) / this.zoom;
+      const dy = (moveEvent.clientY - drag.startY) / this.zoom;
+      if (Math.abs(dx) + Math.abs(dy) > 2) drag.moved = true;
+      if (!drag.moved) return;
+      const current = this.scene.get(drag.id);
       if (!current) return;
-      current.props.x = Math.round(this.drag.x + dx);
-      current.props.y = Math.round(this.drag.y + dy);
+      if (drag.mode === 'move') {
+        current.props.x = Math.round(drag.x + dx);
+        current.props.y = Math.round(drag.y + dy);
+      } else if (drag.mode === 'resize') {
+        let x = drag.x, y = drag.y, width = drag.width, height = drag.height;
+        const dir = drag.direction;
+        if (dir.includes('e')) width += dx;
+        if (dir.includes('s')) height += dy;
+        if (dir.includes('w')) { width -= dx; x += dx; }
+        if (dir.includes('n')) { height -= dy; y += dy; }
+        width = Math.max(24, Math.min(2000, width));
+        height = Math.max(24, Math.min(2000, height));
+        current.props.x = Math.round(x);
+        current.props.y = Math.round(y);
+        current.props.width = Math.round(width);
+        current.props.height = Math.round(height);
+      } else {
+        const angle = Math.atan2(moveEvent.clientY - drag.centerY, moveEvent.clientX - drag.centerX);
+        current.props.rotation = Math.round((drag.rotation + (angle - drag.startAngle) * 180 / Math.PI + 360) % 360);
+      }
       target.style.left = current.props.x + 'px';
       target.style.top = current.props.y + 'px';
+      target.style.width = current.props.width + 'px';
+      target.style.height = current.props.height + 'px';
+      target.style.transform = 'rotate(' + (Number(current.props.rotation) || 0) + 'deg)';
     };
     const end = endEvent => {
       if (!this.drag || endEvent.pointerId !== this.drag.pointerId) return;
