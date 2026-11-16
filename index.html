@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#0b1220"><meta name="flowiq-build" content="2026.11.16.62"><title>Flowiq Studio</title><link rel="manifest" href="./manifest.json"><link rel="icon" href="./assets/icon.svg" type="image/svg+xml">
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#0b1220"><meta name="flowiq-build" content="2026.11.16.63"><title>Flowiq Studio</title><link rel="manifest" href="./manifest.json"><link rel="icon" href="./assets/icon.svg" type="image/svg+xml">
 <style>
 :root{color-scheme:dark;--bg:#15181d;--panel:#1b1f25;--panel-raised:#22272e;--panel-hover:#292f37;--line:#30363f;--line-soft:#272d35;--text:#e7eaf0;--muted:#929ba8;--faint:#69727f;--accent:#579cff;--accent-dim:#203b59;--danger:#e17878;--radius:6px;--space-1:4px;--space-2:8px;--space-3:12px;--space-4:16px;--space-5:20px;--control-height:36px;--icon-target:40px;--icon-size:20px;--panel-gutter:12px;--panel-width:clamp(180px,17vw,230px)}
 *{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--text);font:13px Inter,"Segoe UI",system-ui,-apple-system,sans-serif;-webkit-font-smoothing:antialiased}
@@ -876,22 +876,92 @@ html,body{background:#111820}
  .topbar{padding-inline:7px}.topbar-actions .icon-action{width:37px;height:37px;min-width:37px;min-height:37px;flex-basis:37px}
 }
 
+
+/* BUILD 63 · Studio navigation, independent asset library and focus stage */
+.hub-header,.topbar{position:relative;z-index:90}
+.studio-menu-wrap{position:relative;display:flex;align-items:center;flex:none}
+.studio-menu-trigger{width:42px;height:42px;min-width:42px;min-height:42px;border:1px solid #344556;border-radius:8px;background:#1b2835;color:#d4e3f1}
+.studio-menu-trigger svg{width:21px;height:21px;stroke-width:2}
+.studio-menu-trigger[aria-expanded=true]{background:#29435b;border-color:#52789c;color:#fff}
+.studio-menu-popover{position:absolute;right:0;top:calc(100% + 9px);z-index:250;width:224px;padding:8px;border:1px solid #394c5e;border-radius:11px;background:#1b2733;box-shadow:0 18px 45px #0009}
+.studio-menu-popover[hidden]{display:none}
+.studio-menu-title{padding:8px 10px 10px;color:#7f9bb4;font-size:9px;font-weight:800;letter-spacing:1.2px}
+.studio-menu-popover button{display:flex;align-items:center;gap:11px;width:100%;min-height:46px;padding:0 10px;border:0;border-radius:7px;background:transparent;color:#dbe6f0;text-align:left;font-size:12px;font-weight:600}
+.studio-menu-popover button:hover{background:#293b4d}
+.studio-menu-popover button svg{width:19px;height:19px;flex:none;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;color:#91bce4}
+.studio-menu-divider{height:1px;margin:6px 4px;background:#344555}
+.hub-nav{display:none!important}
+.library-screen{flex-direction:column;overflow:hidden;background:#111820}
+.library-header .brand-separator{margin-left:4px;color:#63788c}.library-header .brand strong{font-size:12px;color:#9fb5ca}
+.library-main{width:min(100%,1280px);flex:1;min-height:0;margin:0 auto;padding:24px 26px 30px;overflow:auto}
+.library-main #hub-library-view{display:block!important;width:100%}
+.library-main .hub-section-heading{align-items:center;margin:0 0 20px}
+.library-main .hub-section-heading h2{font-size:24px;letter-spacing:-.7px}
+.library-main .library-workspace{min-height:360px}
+.library-main .asset-list{min-width:0}
+.library-main .asset-preview-pane{position:fixed}
+#workspace.focus-mode .editor-layout{grid-template-columns:minmax(0,1fr)!important}
+#workspace.focus-mode .side-panel,#workspace.focus-mode #console-panel,#workspace.focus-mode #editor-bottom-nav{display:none!important}
+#workspace.focus-mode .stage-area{grid-column:1/-1}
+#workspace.focus-mode .stage-toolbar .panel-toggle{display:none!important}
+#workspace.focus-mode .stage-scroll{padding:clamp(10px,2vw,28px)}
+#workspace.focus-mode .stage-toolbar{background:#192633}
+.focus-stage-toggle[aria-pressed=true]{color:#9fd0ff;background:#243c53;box-shadow:inset 0 0 0 1px #456b8d}
+.topbar{gap:10px}
+.topbar-brand{gap:7px;font-size:13px}
+.topbar-brand img{width:27px;height:27px}
+.topbar-brand span{white-space:nowrap}
+.topbar .build-tag{margin-left:-4px}
+.topbar .studio-menu-wrap{margin-left:4px}
+.topbar #btn-save,.topbar #btn-export{display:none!important}
+@media(max-width:820px){
+ .hub-header{padding:0 13px}
+ .hub-header-actions{gap:8px}
+ .library-header{height:58px;min-height:58px;padding:0 12px}
+ .library-header .brand{gap:6px;font-size:12px}
+ .library-header .brand img{width:27px;height:27px}
+ .library-header .btn{min-height:38px;padding:0 10px}
+ .library-main{padding:16px 12px calc(20px + env(safe-area-inset-bottom))}
+ .library-main .hub-section-heading{align-items:flex-start;gap:10px}
+ .library-main .hub-section-heading h2{font-size:21px}
+ .topbar{height:54px;min-height:54px;padding:0 9px;gap:6px}
+ .topbar-brand{font-size:12px}
+ .topbar-brand img{width:25px;height:25px}
+ .topbar .build-tag{display:none}
+ .topbar .breadcrumb{flex:1;border:0;padding:0 0 0 5px;font-size:11px}
+ .topbar .studio-menu-trigger{width:40px;height:40px;min-width:40px;min-height:40px}
+ .stage-toolbar{gap:3px;padding-inline:7px}
+ .stage-toolbar>strong,.stage-toolbar>span,.stage-toolbar #show-explorer,.stage-toolbar #show-inspector{display:none!important}
+ .stage-toolbar .history-buttons{gap:1px}
+ .stage-toolbar .icon-action{width:34px;height:34px;min-width:34px;min-height:34px;flex-basis:34px}
+ .stage-toolbar .focus-stage-toggle{margin-left:2px}
+ .stage-toolbar .stage-arrange-tools{gap:3px}
+ .stage-toolbar .stage-mode-switch .mode-option{padding:0 7px;font-size:10px}
+ .stage-toolbar .stage-zoom{gap:0}
+ .stage-toolbar .stage-zoom output{min-width:34px}
+ .stage-toolbar .preview-trigger{min-height:34px;padding:0 8px;font-size:10px}
+ #workspace.focus-mode .stage-toolbar{height:54px;min-height:54px}
+ #workspace.focus-mode .stage-toolbar .stage-arrange-tools{display:none}
+}
+@media(max-width:390px){
+ .topbar-brand span{display:none}
+ .stage-toolbar .fit-action{display:none}
+ .stage-toolbar .stage-mode-switch .mode-option{padding:0 5px}
+ .stage-toolbar .preview-trigger span{display:none}
+ .library-header .btn span{display:none}
+}
+
 </style></head><body>
 <main id="hub" class="screen active">
 <header class="hub-header">
   <div class="brand"><img src="./assets/icon.svg" alt=""><span>Flowiq <b>Studio</b></span></div>
-  <div class="hub-header-actions"><button class="btn" id="hub-return-project" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 5 7 12l7 7M7 12h13"/></svg><span>Voltar ao editor</span></button><span class="local-status"><i></i> Armazenamento local</span><button class="btn primary" id="btn-new"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span>Novo projeto</span></button></div>
+  <div class="hub-header-actions"><span class="local-status"><i></i> Armazenamento local</span><button class="btn primary" id="btn-new"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span>Novo projeto</span></button><div class="studio-menu-wrap"><button class="icon-action studio-menu-trigger" type="button" data-studio-menu-toggle aria-label="Abrir menu do Flowiq Studio" aria-expanded="false" title="Menu do Studio"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button><div class="studio-menu-popover" data-studio-menu hidden><div class="studio-menu-title">FLOWIQ STUDIO</div><button type="button" data-studio-action="settings"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7Z"/><path d="m19.4 15 .1.1 1.1.9-1.4 2.4-1.4-.5a7.8 7.8 0 0 1-1.5.9l-.3 1.5h-2.8l-.3-1.5a7.8 7.8 0 0 1-1.5-.9l-1.4.5-1.4-2.4 1.1-.9a7 7 0 0 1 0-1.8l-1.1-.9 1.4-2.4 1.4.5a7.8 7.8 0 0 1 1.5-.9l.3-1.5h2.8l.3 1.5a7.8 7.8 0 0 1 1.5.9l1.4-.5 1.4 2.4-1.1.9a7 7 0 0 1 0 1.8Z"/></svg><span>Configurações</span></button><button type="button" data-studio-action="library"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v17H6.5A2.5 2.5 0 0 1 4 17.5zM4 17.5A2.5 2.5 0 0 1 6.5 15H20"/></svg><span>Biblioteca</span></button><div class="studio-menu-divider"></div><button type="button" data-studio-action="fullscreen" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3H3v5M16 3h5v5M3 16v5h5M21 16v5h-5"/></svg><span>Tela cheia</span></button></div></div></div>
 </header>
 <section class="hub-main">
-  <nav class="hub-nav" aria-label="Navegação principal">
-    <button id="hub-tab-home" data-hub-view="home" aria-selected="true"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-6v-7h-4v7H4a1 1 0 0 1-1-1z"/></svg><span>Início</span></button>
-    <button id="hub-tab-projects" data-hub-view="projects" aria-selected="false"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="8" height="7" rx="1.5"/><rect x="13" y="4" width="8" height="7" rx="1.5"/><rect x="3" y="13" width="8" height="7" rx="1.5"/><rect x="13" y="13" width="8" height="7" rx="1.5"/></svg><span>Projetos</span></button>
-    <button id="hub-tab-library" data-hub-view="library" aria-selected="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v17H6.5A2.5 2.5 0 0 1 4 17.5z"/><path d="M4 17.5A2.5 2.5 0 0 1 6.5 15H20M8 7h8M8 10h6"/></svg><span>Biblioteca</span></button>
-    <button id="hub-tab-settings" data-hub-view="settings" aria-selected="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7Z"/><path d="m19.4 15 .1.1 1.1.9-1.4 2.4-1.4-.5a7.8 7.8 0 0 1-1.5.9l-.3 1.5h-2.8l-.3-1.5a7.8 7.8 0 0 1-1.5-.9l-1.4.5-1.4-2.4 1.1-.9a7 7 0 0 1 0-1.8l-1.1-.9 1.4-2.4 1.4.5a7.8 7.8 0 0 1 1.5-.9l.3-1.5h2.8l.3 1.5a7.8 7.8 0 0 1 1.5.9l1.4-.5 1.4 2.4-1.1.9a7 7 0 0 1 0 1.8Z" transform="translate(-1 -1)"/></svg><span>Configurações</span></button>
-  </nav>
+
   <section id="hub-home-view" class="hub-view active">
     <div class="hub-welcome"><div><span class="eyebrow">FLOWIQ STUDIO</span><h1>Seu espaço de criação.</h1><p>Crie interfaces, organize recursos e construa suas ideias.</p></div></div>
-    <div class="home-section-heading"><div><span class="eyebrow">SEU TRABALHO</span><h2>Projetos recentes</h2></div></div>
+    <div class="home-section-heading"><div><span class="eyebrow">SEU TRABALHO</span><h2>Projetos recentes</h2></div><button class="btn" type="button" data-hub-view="projects">Todos os projetos <span aria-hidden="true">→</span></button></div>
     <div id="home-recent-list" class="home-recent-list"><div class="empty">Carregando projetos…</div></div>
     <div class="home-footer-note"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 5 6v5c0 4.5 2.8 8 7 10 4.2-2 7-5.5 7-10V6z"/><path d="m9 12 2 2 4-4"/></svg><span><strong>Seus projetos ficam neste dispositivo.</strong><small>Use Configurações para exportar uma cópia ou restaurar seus dados.</small></span></div>
   </section>
@@ -900,14 +970,9 @@ html,body{background:#111820}
     <div class="project-tools"><label class="project-search"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 5 5"/></svg><input id="project-search" type="search" placeholder="Buscar projetos..." aria-label="Buscar projetos"></label><span>Mais recentes</span></div>
     <div id="project-list"><div class="empty">Carregando projetos…</div></div>
   </section>
-  <section id="hub-library-view" class="hub-view">
-    <div class="hub-section-heading"><div><span class="eyebrow">ASSETS</span><h2>Biblioteca</h2><small id="library-summary-text">Carregando arquivos…</small></div><button class="btn primary" id="asset-upload-button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4m-4 4 4-4 4 4"/><path d="M4 15v5h16v-5"/></svg><span>Adicionar arquivos</span></button><input type="file" id="asset-file-input" accept="image/*,video/*,audio/*,font/*,.woff,.woff2,.ttf,.otf,.pdf,.json,.svg,.txt" multiple hidden></div>
-    <div class="library-controls"><label class="library-search"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 5 5"/></svg><input type="search" id="asset-search" placeholder="Buscar arquivos..." aria-label="Buscar arquivos"></label><select id="asset-folder-filter" aria-label="Filtrar pasta"><option value="">Todas as pastas</option></select><input id="asset-folder-name" maxlength="48" placeholder="Pasta ao enviar" aria-label="Pasta para novos arquivos"></div>
-    <div class="library-workspace"><div id="asset-list" class="asset-list"><div class="empty">Sua biblioteca está vazia.</div></div><aside id="asset-preview-pane" class="asset-preview-pane"><div class="preview-empty"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m4 17 5-5 4 4 3-3 4 4"/></svg><strong>Pré-visualização</strong><span>Selecione um arquivo para ver os detalhes e o conteúdo.</span></div></aside></div>
-    <p class="library-note">Os arquivos são armazenados localmente e incluídos nos backups completos.</p>
-  </section>
+
   <section id="hub-settings-view" class="hub-view">
-    <div class="hub-section-heading"><div><span class="eyebrow">PREFERÊNCIAS</span><h2>Configurações do Studio</h2><small>Personalize o editor e gerencie seus dados.</small></div><button class="btn" id="settings-return-project" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5m6 6-6-6 6-6"/></svg><span>Voltar ao projeto</span></button></div>
+    <div class="hub-section-heading"><div><span class="eyebrow">PREFERÊNCIAS</span><h2>Configurações do Studio</h2><small>Personalize o editor e gerencie seus dados.</small></div><button class="btn" id="settings-return-project"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5m6 6-6-6 6-6"/></svg><span>Voltar ao projeto</span></button></div>
     <div class="settings-layout">
       <section class="settings-section"><div class="settings-section-heading"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7Z"/><path d="m19 13 2 1-2 3-2-.5-1.5.8-.5 2h-3l-.5-2-1.5-.8-2 .5-2-3 2-1v-2l-2-1 2-3 2 .5 1.5-.8.5-2h3l.5 2 1.5.8 2-.5 2 3-2 1z"/></svg><div><strong>Editor</strong><small>Comportamento padrão do palco 2D</small></div></div>
         <label class="setting-row"><span><strong>Mostrar grade</strong><small>Exibir a grade de alinhamento no palco.</small></span><input type="checkbox" id="pref-grid"></label>
@@ -921,13 +986,18 @@ html,body{background:#111820}
         <button class="settings-action" id="settings-export-project"><span class="settings-action-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m-4-4 4 4 4-4"/><path d="M5 17v3h14v-3"/></svg></span><span><strong>Exportar projeto atual</strong><small>Salvar o projeto aberto e os arquivos que ele utiliza.</small></span><svg class="settings-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></button></div>
         <input type="file" id="file-input" accept=".flowiq,.flowiq-backup,.json,application/json,application/vnd.flowiq.backup+json" hidden><input type="file" id="backup-file-input" accept=".flowiq-backup,application/vnd.flowiq.backup+json,.json" hidden>
       </section>
-      <section class="settings-section settings-about"><div class="settings-section-heading"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5m0-8h.01"/></svg><div><strong>Sobre o Flowiq Studio</strong><small id="settings-version">Versão 2026.11.16.62</small></div></div><p>Um ambiente mobile-first para criar interfaces 2D, organizar recursos e construir experiências interativas.</p></section>
+      <section class="settings-section settings-about"><div class="settings-section-heading"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5m0-8h.01"/></svg><div><strong>Sobre o Flowiq Studio</strong><small id="settings-version">Versão 2026.11.16.63</small></div></div><p>Um ambiente mobile-first para criar interfaces 2D, organizar recursos e construir experiências interativas.</p></section>
     </div>
   </section>
 </section>
-</main><main id="workspace" class="screen"><header class="topbar"><div class="topbar-brand"><img src="./assets/icon.svg" alt="">Flowiq Studio</div><span class="build-tag" title="Versão do Studio">v2026.11.16.62</span><div class="breadcrumb">/ <span id="project-title">Projeto</span></div><div class="topbar-spacer"></div><div class="topbar-actions"><button class="icon-action" id="btn-settings" title="Configurações" aria-label="Configurações"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19 13.5a7 7 0 0 0 0-3l-2-1.5-2-3.5-2.4 1a7 7 0 0 0-2.6-1.5L10.5 3h3l.5 2a7 7 0 0 1 2.6 1.5l2.4-1L21 9l-2 1.5a7 7 0 0 1 0 3L21 15l-2 3.5-2.4-1a7 7 0 0 1-2.6-1.5l-.5 2h-3l-.5-2"/></svg></button><button class="icon-action" id="btn-library-nav" title="Biblioteca" aria-label="Biblioteca"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v17H6.5A2.5 2.5 0 0 1 4 17.5zM4 17.5A2.5 2.5 0 0 1 6.5 15H20"/></svg></button><button class="icon-action" id="btn-fullscreen" title="Tela cheia" aria-label="Ativar tela cheia" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3H3v5M16 3h5v5M3 16v5h5M21 16v5h-5"/></svg></button><button class="icon-action" id="btn-export" title="Exportar" aria-label="Exportar" disabled hidden></button><button class="icon-action primary" id="btn-save" hidden title="Salvar" aria-label="Salvar" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h12l3 3v13H4V4z"/><path d="M8 4v6h8V4M8 20v-6h8v6"/></svg></button></div></header>
+</main><main id="library-screen" class="screen library-screen"><header class="hub-header library-header"><div class="brand"><img src="./assets/icon.svg" alt=""><span>Flowiq <b>Studio</b></span><span class="brand-separator">/</span><strong>Biblioteca</strong></div><div class="hub-header-actions"><button class="btn" id="library-back"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5m6 6-6-6 6-6"/></svg><span>Voltar</span></button><div class="studio-menu-wrap"><button class="icon-action studio-menu-trigger" type="button" data-studio-menu-toggle aria-label="Abrir menu do Flowiq Studio" aria-expanded="false" title="Menu do Studio"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button><div class="studio-menu-popover" data-studio-menu hidden><div class="studio-menu-title">FLOWIQ STUDIO</div><button type="button" data-studio-action="settings"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7Z"/><path d="m19.4 15 .1.1 1.1.9-1.4 2.4-1.4-.5a7.8 7.8 0 0 1-1.5.9l-.3 1.5h-2.8l-.3-1.5a7.8 7.8 0 0 1-1.5-.9l-1.4.5-1.4-2.4 1.1-.9a7 7 0 0 1 0-1.8l-1.1-.9 1.4-2.4 1.4.5a7.8 7.8 0 0 1 1.5-.9l.3-1.5h2.8l.3 1.5a7.8 7.8 0 0 1 1.5.9l1.4-.5 1.4 2.4-1.1.9a7 7 0 0 1 0 1.8Z"/></svg><span>Configurações</span></button><button type="button" data-studio-action="library"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v17H6.5A2.5 2.5 0 0 1 4 17.5zM4 17.5A2.5 2.5 0 0 1 6.5 15H20"/></svg><span>Biblioteca</span></button><div class="studio-menu-divider"></div><button type="button" data-studio-action="fullscreen" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3H3v5M16 3h5v5M3 16v5h5M21 16v5h-5"/></svg><span>Tela cheia</span></button></div></div></div></header><section class="library-main">  <section id="hub-library-view" class="hub-view">
+    <div class="hub-section-heading"><div><span class="eyebrow">ASSETS</span><h2>Biblioteca</h2><small id="library-summary-text">Carregando arquivos…</small></div><button class="btn primary" id="asset-upload-button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4m-4 4 4-4 4 4"/><path d="M4 15v5h16v-5"/></svg><span>Adicionar arquivos</span></button><input type="file" id="asset-file-input" accept="image/*,video/*,audio/*,font/*,.woff,.woff2,.ttf,.otf,.pdf,.json,.svg,.txt" multiple hidden></div>
+    <div class="library-controls"><label class="library-search"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 5 5"/></svg><input type="search" id="asset-search" placeholder="Buscar arquivos..." aria-label="Buscar arquivos"></label><select id="asset-folder-filter" aria-label="Filtrar pasta"><option value="">Todas as pastas</option></select><input id="asset-folder-name" maxlength="48" placeholder="Pasta ao enviar" aria-label="Pasta para novos arquivos"></div>
+    <div class="library-workspace"><div id="asset-list" class="asset-list"><div class="empty">Sua biblioteca está vazia.</div></div><aside id="asset-preview-pane" class="asset-preview-pane"><div class="preview-empty"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m4 17 5-5 4 4 3-3 4 4"/></svg><strong>Pré-visualização</strong><span>Selecione um arquivo para ver os detalhes e o conteúdo.</span></div></aside></div>
+    <p class="library-note">Os arquivos são armazenados localmente e incluídos nos backups completos.</p>
+  </section></section></main><main id="workspace" class="screen"><header class="topbar"><div class="topbar-brand"><img src="./assets/icon.svg" alt=""><span>Flowiq <b>Studio</b></span></div><span class="build-tag" title="Versão do Studio">v2026.11.16.63</span><div class="breadcrumb">/ <span id="project-title">Projeto</span></div><div class="topbar-spacer"></div><div class="studio-menu-wrap"><button class="icon-action studio-menu-trigger" type="button" data-studio-menu-toggle aria-label="Abrir menu do Flowiq Studio" aria-expanded="false" title="Menu do Studio"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button><div class="studio-menu-popover" data-studio-menu hidden><div class="studio-menu-title">FLOWIQ STUDIO</div><button type="button" data-studio-action="settings"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7Z"/><path d="m19.4 15 .1.1 1.1.9-1.4 2.4-1.4-.5a7.8 7.8 0 0 1-1.5.9l-.3 1.5h-2.8l-.3-1.5a7.8 7.8 0 0 1-1.5-.9l-1.4.5-1.4-2.4 1.1-.9a7 7 0 0 1 0-1.8l-1.1-.9 1.4-2.4 1.4.5a7.8 7.8 0 0 1 1.5-.9l.3-1.5h2.8l.3 1.5a7.8 7.8 0 0 1 1.5.9l1.4-.5 1.4 2.4-1.1.9a7 7 0 0 1 0 1.8Z"/></svg><span>Configurações</span></button><button type="button" data-studio-action="library"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v17H6.5A2.5 2.5 0 0 1 4 17.5zM4 17.5A2.5 2.5 0 0 1 6.5 15H20"/></svg><span>Biblioteca</span></button><div class="studio-menu-divider"></div><button type="button" data-studio-action="fullscreen" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3H3v5M16 3h5v5M3 16v5h5M21 16v5h-5"/></svg><span>Tela cheia</span></button></div></div><button class="icon-action primary" id="btn-save" hidden title="Salvar" aria-label="Salvar" disabled></button><button class="icon-action" id="btn-export" title="Exportar" aria-label="Exportar" disabled hidden></button></header>
 <section class="preview-window" id="preview-window" aria-hidden="true"><header class="preview-window-bar"><div><span class="preview-live-dot"></span><strong>Pré-visualização</strong><small id="preview-window-project">Projeto</small></div><button class="btn" id="preview-exit"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg><span>Voltar ao editor</span></button></header><div class="preview-window-body"><div class="preview-window-stage"><div id="preview-canvas" class="preview-canvas"></div></div></div></section><div class="editor-layout"><aside class="side-panel explorer" id="explorer"><div class="panel-header"><h2>Hierarquia</h2><button data-close-panel aria-label="Fechar Explorer"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button></div><div class="panel-content"><div class="explorer-search"><input id="tree-search" type="search" placeholder="Buscar objetos..." aria-label="Buscar objetos"></div><div class="explorer-toolbar"><small>HIERARQUIA</small><div class="explorer-toolbar-actions"><button class="icon-action" id="open-project-library" title="Abrir biblioteca de arquivos" aria-label="Abrir biblioteca de arquivos"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7h7l2 2h9v10H3z"/><path d="M3 7V5h7l2 2"/></svg></button><button class="icon-action instance-add" id="open-instances" title="Adicionar instância" aria-label="Adicionar instância"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button></div></div><div id="tree" role="tree" aria-label="Hierarquia do projeto"></div><section class="instance-library" id="instance-library" aria-label="Biblioteca de instâncias" hidden><header><strong>Inserir instância</strong><button class="icon-action" id="close-instances" aria-label="Fechar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button></header><p id="instance-parent-label">Adicionar em Projeto</p><div class="instance-category"><small>INTERFACE</small><button data-instance="Frame"><span class="instance-symbol" data-instance-icon="Frame"></span><span><b>Frame</b><small>Container visual</small></span></button><button data-instance="TextButton"><span class="instance-symbol" data-instance-icon="TextButton"></span><span><b>TextButton</b><small>Botão com texto</small></span></button><button data-instance="TextLabel"><span class="instance-symbol" data-instance-icon="TextLabel"></span><span><b>TextLabel</b><small>Texto</small></span></button></div><div class="instance-category"><small>MÍDIA</small><button data-instance="ImageLabel"><span class="instance-symbol" data-instance-icon="ImageLabel"></span><span><b>ImageLabel</b><small>Imagem</small></span></button></div></section></div></aside>
-<section class="stage-area"><div class="stage-toolbar"><strong id="stage-mode-label">PALCO 2D</strong><button class="panel-toggle" id="show-explorer" type="button" aria-pressed="true">Hierarquia</button><span>Arraste para posicionar</span><div class="spacer"></div><div class="history-buttons" aria-label="Histórico"><button class="icon-action" id="undo-action" title="Desfazer (Ctrl+Z)" aria-label="Desfazer"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14 4 9l5-5"/><path d="M4 9h9a7 7 0 0 1 0 14h-2"/></svg></button><button class="icon-action" id="redo-action" title="Refazer (Ctrl+Shift+Z)" aria-label="Refazer"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 14 5-5-5-5"/><path d="M20 9h-9a7 7 0 0 0 0 14h2"/></svg></button></div><div class="stage-arrange-tools"><button class="icon-action" id="btn-grid" type="button" aria-label="Mostrar ou ocultar grade" aria-pressed="true" title="Grade visível"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h16v16H4zM4 10h16M4 16h16M10 4v16M16 4v16"/></svg></button><div class="stage-mode-switch" role="group" aria-label="Modo de posicionamento"><button class="mode-option" id="btn-free" type="button" aria-pressed="false" title="Posicionamento livre">Livre</button><button class="mode-option is-active" id="btn-align" type="button" aria-pressed="true" title="Alinhamento inteligente">Alinhar</button></div></div><button class="panel-toggle" id="show-inspector" type="button" aria-pressed="true">Propriedades</button><div class="stage-zoom" aria-label="Zoom do palco"><button class="icon-action" id="zoom-out" aria-label="Diminuir zoom" title="Diminuir zoom"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/></svg></button><output id="zoom-level">100%</output><button class="icon-action" id="zoom-in" aria-label="Aumentar zoom" title="Aumentar zoom"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button><button class="icon-action fit-action" id="zoom-fit" title="Ajustar ao palco" aria-label="Ajustar ao palco"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3H3v5M16 3h5v5M3 16v5h5M21 16v5h-5"/></svg></button></div><button class="btn preview-trigger" id="btn-play"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8 5 11 7-11 7z"/></svg><span>Prévia</span></button></div><div class="stage-scroll" id="stage-scroll"><div id="stage-wrap"><div id="canvas"><div class="empty-canvas">Seu palco está vazio.<br>Adicione um Frame para começar.</div></div></div></div><section class="console" id="console-panel" aria-label="Console"><div class="console-header"><strong>Console</strong><div class="console-actions"><button id="clear-console" class="btn"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M10 11v6m4-6v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg> Limpar</button></div></div><div id="console-log" aria-live="polite"></div></section></section>
+<section class="stage-area"><div class="stage-toolbar"><strong id="stage-mode-label">PALCO 2D</strong><button class="panel-toggle" id="show-explorer" type="button" aria-pressed="true">Hierarquia</button><span>Arraste para posicionar</span><div class="spacer"></div><button class="icon-action focus-stage-toggle" id="btn-focus-stage" type="button" aria-label="Focar no palco" aria-pressed="false" title="Focar no palco"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3H3v5M16 3h5v5M3 16v5h5M21 16v5h-5"/></svg></button><div class="history-buttons" aria-label="Histórico"><button class="icon-action" id="undo-action" title="Desfazer (Ctrl+Z)" aria-label="Desfazer"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14 4 9l5-5"/><path d="M4 9h9a7 7 0 0 1 0 14h-2"/></svg></button><button class="icon-action" id="redo-action" title="Refazer (Ctrl+Shift+Z)" aria-label="Refazer"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 14 5-5-5-5"/><path d="M20 9h-9a7 7 0 0 0 0 14h2"/></svg></button></div><div class="stage-arrange-tools"><button class="icon-action" id="btn-grid" type="button" aria-label="Mostrar ou ocultar grade" aria-pressed="true" title="Grade visível"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h16v16H4zM4 10h16M4 16h16M10 4v16M16 4v16"/></svg></button><div class="stage-mode-switch" role="group" aria-label="Modo de posicionamento"><button class="mode-option" id="btn-free" type="button" aria-pressed="false" title="Posicionamento livre">Livre</button><button class="mode-option is-active" id="btn-align" type="button" aria-pressed="true" title="Alinhamento inteligente">Alinhar</button></div></div><button class="panel-toggle" id="show-inspector" type="button" aria-pressed="true">Propriedades</button><div class="stage-zoom" aria-label="Zoom do palco"><button class="icon-action" id="zoom-out" aria-label="Diminuir zoom" title="Diminuir zoom"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/></svg></button><output id="zoom-level">100%</output><button class="icon-action" id="zoom-in" aria-label="Aumentar zoom" title="Aumentar zoom"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button><button class="icon-action fit-action" id="zoom-fit" title="Ajustar ao palco" aria-label="Ajustar ao palco"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3H3v5M16 3h5v5M3 16v5h5M21 16v5h-5"/></svg></button></div><button class="btn preview-trigger" id="btn-play"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8 5 11 7-11 7z"/></svg><span>Prévia</span></button></div><div class="stage-scroll" id="stage-scroll"><div id="stage-wrap"><div id="canvas"><div class="empty-canvas">Seu palco está vazio.<br>Adicione um Frame para começar.</div></div></div></div><section class="console" id="console-panel" aria-label="Console"><div class="console-header"><strong>Console</strong><div class="console-actions"><button id="clear-console" class="btn"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M10 11v6m4-6v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg> Limpar</button></div></div><div id="console-log" aria-live="polite"></div></section></section>
 <aside class="side-panel inspector" id="inspector"><div class="panel-header"><h2>Propriedades</h2><button data-close-panel aria-label="Fechar Properties"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button></div><div class="panel-content" id="inspector-content"><p class="muted">Selecione um objeto para editar.</p></div></aside></div><nav class="mobile-nav" id="editor-bottom-nav" aria-label="Painéis do editor"><button type="button" data-panel="explorer" aria-expanded="false"><svg viewBox="0 0 24 24"><path d="M4 5h16v14H4zM9 5v14M9 9h11M9 14h11"/></svg><span>Explorer</span></button><button type="button" data-panel="inspector" aria-expanded="false"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v3m0 14v3M2 12h3m14 0h3"/></svg><span>Propriedades</span></button><button type="button" data-panel="console" aria-expanded="false"><svg viewBox="0 0 24 24"><path d="m5 6 5 6-5 6M12 18h7"/></svg><span>Console</span></button></nav><div class="drawer-backdrop" id="drawer-backdrop"></div></main>
 <div class="modal-backdrop" id="modal"><section class="modal-box" id="modal-content"></section></div><div id="studio-toast" class="studio-toast" role="status" aria-live="polite"></div>
 <script>
@@ -958,41 +1028,15 @@ html,body{background:#111820}
 
 <script id="flowiq-fullscreen-controller">
 (() => {
-  const button=document.getElementById('btn-fullscreen');
+  const buttons=()=>[...document.querySelectorAll('[data-studio-action="fullscreen"]')];
   const root=document.documentElement;
   const supports=()=>Boolean(root.requestFullscreen||root.webkitRequestFullscreen);
   const active=()=>Boolean(document.fullscreenElement||document.webkitFullscreenElement);
-  let requesting=false;
-  const sync=()=>{
-    if(button){
-      button.setAttribute('aria-pressed',String(active()));
-      button.setAttribute('aria-label',active()?'Tela cheia ativada':'Ativar tela cheia');
-      button.title=active()?'Tela cheia ativada':'Ativar tela cheia';
-      button.classList.toggle('active',active());
-    }
-    document.documentElement.classList.toggle('flowiq-immersive',active());
-  };
-  const enter=async()=>{
-    if(active()||requesting||!supports())return;
-    requesting=true;
-    try{
-      if(root.requestFullscreen)await root.requestFullscreen({navigationUI:'hide'});
-      else if(root.webkitRequestFullscreen)root.webkitRequestFullscreen();
-    }catch(error){}
-    finally{requesting=false;sync();}
-  };
-  if(button)button.addEventListener('click',enter);
-  // Acquire fullscreen on the first deliberate interaction, then retry on
-  // later user gestures if Android/browser has left immersive mode.
-  const gesture=()=>{if(!active())enter();};
-  ['pointerdown','touchend','keydown'].forEach(type=>{
-    document.addEventListener(type,gesture,{capture:true,passive:type!=='keydown'});
-  });
-  document.addEventListener('fullscreenchange',sync);
-  document.addEventListener('webkitfullscreenchange',sync);
-  window.addEventListener('pageshow',sync);
-  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')sync();});
-  sync();
+  const sync=()=>{buttons().forEach(button=>{button.setAttribute('aria-pressed',String(active()));button.querySelector('span')?.replaceChildren(document.createTextNode(active()?'Sair da tela cheia':'Tela cheia'));button.title=active()?'Sair da tela cheia':'Tela cheia';});root.classList.toggle('flowiq-immersive',active());};
+  const enter=async()=>{if(active()||!supports())return;try{if(root.requestFullscreen)await root.requestFullscreen({navigationUI:'hide'});else root.webkitRequestFullscreen?.();}catch{}sync();};
+  const exit=async()=>{if(!active())return;try{await (document.exitFullscreen?.()||document.webkitExitFullscreen?.());}catch{}sync();};
+  document.addEventListener('click',event=>{if(event.target.closest('[data-studio-action="fullscreen"]')){event.preventDefault();active()?exit():enter();}});
+  document.addEventListener('fullscreenchange',sync);document.addEventListener('webkitfullscreenchange',sync);window.addEventListener('pageshow',sync);document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')sync();});sync();
 })();
 </script>
 
