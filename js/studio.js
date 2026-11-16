@@ -332,22 +332,25 @@ class StudioApp {
       p.rotation=Math.round(p.rotation);
       d.el.style.transform='rotate('+p.rotation+'deg)';
     }else if(d.mode==='resize'){
-      // Resize in the object's unrotated coordinate space, but keep the
-      // original top-left anchoring behavior to avoid cumulative drift.
-      const dir=d.direction;let x=d.baseX,y=d.baseY,w=d.baseW,h=d.baseH;
-      if(dir.includes('e'))w=Math.max(24,d.baseW+dx);
-      if(dir.includes('s'))h=Math.max(24,d.baseH+dy);
-      if(dir.includes('w')){w=Math.max(24,d.baseW-dx);x=d.baseX+d.baseW-w;}
-      if(dir.includes('n')){h=Math.max(24,d.baseH-dy);y=d.baseY+d.baseH-h;}
-      const localShiftX=x-d.baseX,localShiftY=y-d.baseY;
+      const dir=d.direction;
+      const oldW=d.baseW,oldH=d.baseH;
+      const w=dir.includes('e')?Math.max(24,oldW+dx):dir.includes('w')?Math.max(24,oldW-dx):oldW;
+      const h=dir.includes('s')?Math.max(24,oldH+dy):dir.includes('n')?Math.max(24,oldH-dy):oldH;
+      // Keep the opposite edge/corner fixed in world space. CSS rotates
+      // around the element center, so the layout origin needs a half-delta
+      // correction before applying the object's rotation.
+      const deltaW=oldW-w,deltaH=oldH-h;
+      const anchorLocalX=dir.includes('w')?deltaW/2:dir.includes('e')?-deltaW/2:0;
+      const anchorLocalY=dir.includes('n')?deltaH/2:dir.includes('s')?-deltaH/2:0;
       const angle=(d.baseRotation||0)*Math.PI/180,cos=Math.cos(angle),sin=Math.sin(angle);
-      p.positionX=Math.round(d.baseX+localShiftX*cos-localShiftY*sin);
-      p.positionY=Math.round(d.baseY+localShiftX*sin+localShiftY*cos);
+      const centerShiftX=cos*anchorLocalX-sin*anchorLocalY;
+      const centerShiftY=sin*anchorLocalX+cos*anchorLocalY;
+      p.positionX=Math.round(d.baseX+centerShiftX-deltaW/2);
+      p.positionY=Math.round(d.baseY+centerShiftY-deltaH/2);
       p.width=Math.round(w);p.height=Math.round(h);
       d.el.style.left=p.positionX+'px';d.el.style.top=p.positionY+'px';d.el.style.width=p.width+'px';d.el.style.height=p.height+'px';
       const width=$('p-w'),height=$('p-h'),px=$('p-x'),py=$('p-y');
-      if(width)width.value=p.width;if(height)height.value=p.height;if(px)px.value=p.positionX;if(py)py.value=p.positionY;
-    }else{
+      if(width)width.value=p.width;if(height)height.value=p.height;if(px)px.value=p.positionX;if(py)py.value=p.positionY;    }else{
       p.positionX=Math.round(d.baseX+dx);p.positionY=Math.round(d.baseY+dy);
       d.el.style.left=p.positionX+'px';d.el.style.top=p.positionY+'px';
       const x=$('p-x'),y=$('p-y');if(x)x.value=p.positionX;if(y)y.value=p.positionY;
