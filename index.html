@@ -23,166 +23,55 @@
 
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; -webkit-tap-highlight-color: transparent; }
         
-        body { 
-            background-color: var(--bg-base); 
-            color: var(--text-main); 
-            height: 100vh; 
-            display: flex; 
-            flex-direction: column; 
-            overflow: hidden; 
-        }
+        body { background-color: var(--bg-base); color: var(--text-main); height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
 
-        header { 
-            background: var(--bg-surface);
-            border-bottom: 1px solid var(--border-subtle); 
-            padding: 14px 20px; 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center; 
-        }
-
-        h1 { 
-            font-size: 1rem; 
-            font-weight: 600; 
-            color: var(--text-main);
-            letter-spacing: -0.2px;
-            display: flex; 
-            align-items: center; 
-            gap: 8px; 
-        }
+        header { background: var(--bg-surface); border-bottom: 1px solid var(--border-subtle); padding: 14px 20px; display: flex; justify-content: space-between; align-items: center; }
+        h1 { font-size: 1rem; font-weight: 600; color: var(--text-main); letter-spacing: -0.2px; display: flex; align-items: center; gap: 8px; }
 
         .main-container { flex: 1; display: flex; flex-direction: column; overflow: hidden; position: relative; }
 
-        /* Telas */
         .screen { display: none; flex: 1; flex-direction: column; overflow: hidden; height: 100%; }
         .screen.active { display: flex; }
 
         .hub-screen { padding: 20px; gap: 16px; overflow-y: auto; }
 
-        .card { 
-            background: var(--bg-surface); 
-            border: 1px solid var(--border-subtle); 
-            border-radius: var(--radius-lg); 
-            padding: 20px; 
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
-        }
+        .card { background: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); padding: 20px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2); }
 
-        .btn { 
-            background: var(--accent); 
-            color: white; 
-            border: none; 
-            padding: 12px 18px; 
-            border-radius: var(--radius-md); 
-            font-weight: 500; 
-            font-size: 0.9rem; 
-            width: 100%; 
-            cursor: pointer; 
-            text-align: center; 
-            transition: background 0.15s ease, transform 0.1s ease;
-        }
+        .btn { background: var(--accent); color: white; border: none; padding: 12px 18px; border-radius: var(--radius-md); font-weight: 500; font-size: 0.9rem; width: 100%; cursor: pointer; text-align: center; transition: background 0.15s ease, transform 0.1s ease; }
         .btn:active { transform: scale(0.98); background: var(--accent-hover); }
 
-        .btn-secondary { 
-            background: var(--bg-card); 
-            border: 1px solid var(--border-subtle); 
-            color: var(--text-main); 
-        }
+        .btn-secondary { background: var(--bg-card); border: 1px solid var(--border-subtle); color: var(--text-main); }
 
         .project-list { display: flex; flex-direction: column; gap: 10px; margin-top: 10px; }
-        
-        .project-item { 
-            background: var(--bg-card); 
-            border: 1px solid var(--border-subtle); 
-            padding: 14px 16px; 
-            border-radius: var(--radius-md); 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center; 
-        }
+        .project-item { background: var(--bg-card); border: 1px solid var(--border-subtle); padding: 14px 16px; border-radius: var(--radius-md); display: flex; justify-content: space-between; align-items: center; }
 
         /* Workspace do Studio */
-        .workspace-header { 
-            background: var(--bg-surface);
-            padding: 10px 16px; 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center; 
-            border-bottom: 1px solid var(--border-subtle); 
-            font-size: 0.85rem; 
-        }
-
-        .workspace-body { 
-            flex: 1; 
-            position: relative; 
-            background: #0d0f14; 
-            display: flex; 
-            justify-content: center; 
-            align-items: center; 
-            overflow: hidden; 
-        }
+        .workspace-header { background: var(--bg-surface); padding: 10px 16px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-subtle); font-size: 0.85rem; }
+        .workspace-body { flex: 1; position: relative; background: #0d0f14; display: flex; justify-content: center; align-items: center; overflow: hidden; }
 
         /* Viewport do Celular Virtual */
-        .phone-viewport { 
-            width: 290px; 
-            height: 520px; 
-            background: #000; 
-            border: 2px solid #2a3142; 
-            border-radius: 32px; 
-            position: relative; 
-            overflow: hidden; 
-            box-shadow: 0 15px 40px rgba(0,0,0,0.6); 
-        }
+        .phone-viewport { width: 290px; height: 520px; background: #000; border: 2px solid #2a3142; border-radius: 32px; position: relative; overflow: hidden; box-shadow: 0 15px 40px rgba(0,0,0,0.6); }
+
+        /* Renderizador interno de elementos UI */
+        .ui-element { position: absolute; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; color: white; box-sizing: border-box; }
 
         /* Barra de Ferramentas Inferior */
-        .studio-nav { 
-            background: var(--bg-surface);
-            border-top: 1px solid var(--border-subtle); 
-            display: flex; 
-            justify-content: space-around; 
-            padding: 10px 0 16px 0; 
-        }
-
-        .nav-btn { 
-            background: none; 
-            border: none; 
-            color: var(--text-muted); 
-            font-size: 0.7rem; 
-            font-weight: 500;
-            display: flex; 
-            flex-direction: column; 
-            align-items: center; 
-            gap: 4px; 
-            cursor: pointer; 
-            transition: color 0.15s ease;
-        }
+        .studio-nav { background: var(--bg-surface); border-top: 1px solid var(--border-subtle); display: flex; justify-content: space-around; padding: 10px 0 16px 0; }
+        .nav-btn { background: none; border: none; color: var(--text-muted); font-size: 0.7rem; font-weight: 500; display: flex; flex-direction: column; align-items: center; gap: 4px; cursor: pointer; transition: color 0.15s ease; }
         .nav-btn span.icon { font-size: 1.1rem; }
         .nav-btn.active { color: var(--accent); }
 
         /* Gavetas Deslizantes */
-        .studio-drawer { 
-            position: absolute; 
-            bottom: 56px; 
-            left: 0; 
-            width: 100%; 
-            max-height: 55%; 
-            background: var(--bg-surface); 
-            border-top: 1px solid var(--border-subtle); 
-            border-radius: var(--radius-lg) var(--radius-lg) 0 0; 
-            padding: 18px; 
-            display: none; 
-            flex-direction: column; 
-            gap: 12px; 
-            z-index: 30; 
-            overflow-y: auto; 
-            box-shadow: 0 -10px 30px rgba(0,0,0,0.4);
-        }
+        .studio-drawer { position: absolute; bottom: 56px; left: 0; width: 100%; max-height: 55%; background: var(--bg-surface); border-top: 1px solid var(--border-subtle); border-radius: var(--radius-lg) var(--radius-lg) 0 0; padding: 18px; display: none; flex-direction: column; gap: 12px; z-index: 30; overflow-y: auto; box-shadow: 0 -10px 30px rgba(0,0,0,0.4); }
         .studio-drawer.open { display: flex; }
+
+        .tree-item { padding: 6px 10px; background: var(--bg-card); border-radius: 6px; margin-bottom: 4px; display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem; border: 1px solid var(--border-subtle); }
     </style>
 </head>
 <body>
     <header>
         <h1>⚡ Flowiq Studio</h1>
-        <span style="font-size: 0.7rem; color: var(--text-muted); background: var(--bg-card); padding: 4px 8px; border-radius: 20px; border: 1px solid var(--border-subtle);">Engine v0.4</span>
+        <span style="font-size: 0.7rem; color: var(--text-muted); background: var(--bg-card); padding: 4px 8px; border-radius: 20px; border: 1px solid var(--border-subtle);">Engine v0.5</span>
     </header>
 
     <div class="main-container">
@@ -208,13 +97,13 @@
             <div class="workspace-header">
                 <button class="btn btn-secondary" style="width: auto; padding: 5px 10px; font-size: 0.75rem; border-radius: var(--radius-md);" onclick="returnToHub()">← Voltar</button>
                 <span id="currentProjectTitle" style="font-weight: 600;">Projeto</span>
-                <button class="btn" style="width: auto; padding: 5px 12px; font-size: 0.75rem; border-radius: var(--radius-md); background: var(--success);" onclick="alert('Modo Play simulado com sucesso!')">▶ Play</button>
+                <button class="btn" style="width: auto; padding: 5px 12px; font-size: 0.75rem; border-radius: var(--radius-md); background: var(--success);" onclick="alert('Modo Play: Executando interface no ambiente isolado!')">▶ Play</button>
             </div>
 
             <div class="workspace-body">
                 <!-- Palco onde o OS é montado -->
                 <div class="phone-viewport" id="viewportCanvas">
-                    <div style="color: var(--text-muted); font-size: 0.75rem; text-align: center; margin-top: 220px;">Palco 2D Vazio</div>
+                    <!-- Elementos injetados aqui em tempo real -->
                 </div>
 
                 <!-- Gaveta do Explorer -->
@@ -223,8 +112,9 @@
                         <strong style="font-size: 0.9rem;">Explorer (Hierarquia)</strong>
                         <button onclick="toggleDrawer(null)" style="background:none; border:none; color:var(--text-muted); font-size:1rem; padding: 4px;">✕</button>
                     </div>
-                    <button class="btn" style="font-size: 0.8rem; padding: 10px;" onclick="alert('Adicionar componente em breve!')">+ Adicionar Componente</button>
-                    <div id="instanceTree" style="font-size: 0.8rem; color: var(--text-muted); background: var(--bg-card); padding: 10px; border-radius: var(--radius-md); border: 1px solid var(--border-subtle);">
+                    <button class="btn" style="font-size: 0.8rem; padding: 10px;" onclick="addInstance('Frame')">+ Adicionar Frame</button>
+                    <button class="btn" style="font-size: 0.8rem; padding: 10px; background: var(--bg-card); border: 1px solid var(--border-subtle);" onclick="addInstance('TextButton')">+ Adicionar Botão</button>
+                    <div id="instanceTree" style="font-size: 0.8rem; color: var(--text-muted); background: var(--bg-card); padding: 10px; border-radius: var(--radius-md); border: 1px solid var(--border-subtle); max-height: 180px; overflow-y: auto;">
                         <div>📁 ScreenRoot (Raiz)</div>
                     </div>
                 </div>
@@ -235,7 +125,7 @@
                         <strong style="font-size: 0.9rem;">Propriedades</strong>
                         <button onclick="toggleDrawer(null)" style="background:none; border:none; color:var(--text-muted); font-size:1rem; padding: 4px;">✕</button>
                     </div>
-                    <p style="font-size: 0.8rem; color: var(--text-muted);">Selecione um elemento na hierarquia para ajustar suas propriedades.</p>
+                    <p style="font-size: 0.8rem; color: var(--text-muted);" id="propDetails">Selecione um elemento na hierarquia para ajustar suas propriedades.</p>
                 </div>
             </div>
 
@@ -249,7 +139,7 @@
                     <span class="icon">⚙️</span>
                     <span>Propriedades</span>
                 </button>
-                <button class="nav-btn" onclick="alert('Editor de scripts em breve!')">
+                <button class="nav-btn" onclick="alert('Editor de scripts em desenvolvimento.')">
                     <span class="icon">💻</span>
                     <span>Scripts</span>
                 </button>
@@ -266,7 +156,14 @@
             if (!projectName) return;
             
             const projects = JSON.parse(localStorage.getItem('flowiq_projects') || '[]');
-            const newProj = { id: Date.now(), name: projectName, created: new Date().toLocaleDateString(), instances: [] };
+            const newProj = { 
+                id: Date.now(), 
+                name: projectName, 
+                created: new Date().toLocaleDateString(), 
+                instances: [
+                    { id: 1, name: "Background", type: "Frame", bg: "#1e293b", width: "100%", height: "100%", top: "0px", left: "0px" }
+                ] 
+            };
             projects.push(newProj);
             localStorage.setItem('flowiq_projects', JSON.stringify(projects));
             
@@ -301,23 +198,105 @@
             document.getElementById('currentProjectTitle').innerText = currentProject.name;
             document.getElementById('hubScreen').classList.remove('active');
             document.getElementById('workspaceScreen').classList.add('active');
+            renderViewport();
+            renderExplorerTree();
         }
 
         function returnToHub() {
+            saveCurrentProject();
             document.getElementById('workspaceScreen').classList.remove('active');
             document.getElementById('hubScreen').classList.add('active');
             loadProjects();
             toggleDrawer(null);
         }
 
-        function toggleDrawer(drawerId) {
-            document.querySelectorAll('.studio-drawer').forEach(d => {
-                if (d.id === drawerId) {
-                    d.classList.toggle('open');
-                } else {
-                    d.classList.remove('open');
-                }
+        function saveCurrentProject() {
+            if (!currentProject) return;
+            const projects = JSON.parse(localStorage.getItem('flowiq_projects') || '[]');
+            const index = projects.findIndex(p => p.id === currentProject.id);
+            if (index !== -1) {
+                projects[index] = currentProject;
+                localStorage.setItem('flowiq_projects', JSON.stringify(projects));
+            }
+        }
+
+        function addInstance(type) {
+            if (!currentProject) return;
+            const newId = Date.now();
+            const newObj = {
+                id: newId,
+                name: type + "_" + currentProject.instances.length,
+                type: type,
+                bg: type === 'Frame' ? '#3b82f6' : '#10b981',
+                width: "80%",
+                height: "50px",
+                top: (50 + (currentProject.instances.length * 60)) + "px",
+                left: "10%"
+            };
+            currentProject.instances.push(newObj);
+            saveCurrentProject();
+            renderViewport();
+            renderExplorerTree();
+        }
+
+        function renderViewport() {
+            const viewport = document.getElementById('viewportCanvas');
+            viewport.innerHTML = '';
+            
+            if (!currentProject.instances || currentProject.instances.length === 0) {
+                viewport.innerHTML = `<div style="color: var(--text-muted); font-size: 0.75rem; text-align: center; margin-top: 220px;">Palco Vazio</div>`;
+                return;
+            }
+
+            currentProject.instances.forEach(obj => {
+                const el = document.createElement('div');
+                el.className = 'ui-element';
+                el.style.backgroundColor = obj.bg;
+                el.style.width = obj.width;
+                el.style.height = obj.height;
+                el.style.top = obj.top;
+                el.style.left = obj.left;
+                el.style.borderRadius = '8px';
+                el.style.border = '1px solid rgba(255,255,255,0.2)';
+                el.innerText = obj.name;
+                viewport.appendChild(el);
             });
+        }
+
+        function renderExplorerTree() {
+            const tree = document.getElementById('instanceTree');
+            if (!currentProject.instances) return;
+
+            let html = `<div>📁 ScreenRoot (Raiz)</div>`;
+            currentProject.instances.forEach(obj => {
+                html += `
+                    <div class="tree-item" onclick="selectInstance(${obj.id})">
+                        <span>📄 ${obj.name} (${obj.type})</span>
+                        <span style="color: var(--text-muted); font-size: 0.7rem;">✏️</span>
+                    </div>
+                `;
+            });
+            tree.innerHTML = html;
+        }
+
+        function selectInstance(id) {
+            const obj = currentProject.instances.find(i => i.id === id);
+            if (!obj) return;
+            document.getElementById('propDetails').innerHTML = `
+                <b>Selecionado:</b> ${obj.name}<br>
+                <b>Tipo:</b> ${obj.type}<br>
+                <b>Cor:</b> <input type="color" value="${obj.bg}" onchange="updateObjProp(${obj.id}, 'bg', this.value)">
+            `;
+            toggleDrawer('propertiesDrawer');
+        }
+
+        function updateObjProp(id, prop, val) {
+            const obj = currentProject.instances.find(i => i.id === id);
+            if (obj) {
+                obj[prop] = val;
+                saveCurrentProject();
+                renderViewport();
+            }
         }
 
         loadProjects();
