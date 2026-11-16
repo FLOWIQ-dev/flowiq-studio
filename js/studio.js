@@ -1,7 +1,7 @@
-import { DataModel, Instance } from './datamodel.js?v=2026.11.16.66';
-import { VirtualFS } from './vfs.js?v=2026.11.16.66';
-import { createProjectRecord, normalizeProject, FlowiqRuntime } from './engine.js?v=2026.11.16.66';
-import { createBackupFile, inspectBackupFile, restoreBackup } from './backup.js?v=2026.11.16.66';
+import { DataModel, Instance } from './datamodel.js?v=2026.11.16.67';
+import { VirtualFS } from './vfs.js?v=2026.11.16.67';
+import { createProjectRecord, normalizeProject, FlowiqRuntime } from './engine.js?v=2026.11.16.67';
+import { createBackupFile, inspectBackupFile, restoreBackup } from './backup.js?v=2026.11.16.67';
 
 const $ = (id) => document.getElementById(id);
 const esc = (value) => String(value ?? '').replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -183,7 +183,7 @@ class StudioApp {
     $('settings-export-project').disabled=!this.project;
     $('settings-export-project').classList.toggle('is-disabled',!this.project);
     $('settings-export-project').querySelector('small').textContent=this.project?'Salvar '+this.project.name+' e os arquivos que ele utiliza.':'Abra um projeto para habilitar esta opção.';
-    $('settings-version').textContent='Versão 2026.11.16.66';
+    $('settings-version').textContent='Versão 2026.11.16.67';
     this.applyPreferences();
   }
 
@@ -198,7 +198,7 @@ class StudioApp {
   }
 
   async returnFromSettings() {
-    if(this.settingsReturnTo==='library'){await this.openLibrary();return;}
+    if(this.settingsReturnTo==='library'){$('hub').classList.remove('active');$('library-screen').classList.add('active');await this.loadHub();this.renderLibrary();return;}
     if(this.settingsReturnTo==='editor'&&this.project){await this.returnToEditor();return;}
     this.showHubView('home');
   }
@@ -583,7 +583,7 @@ class StudioApp {
     this.project = null; this.selected = null; this.playMode = false;
     $('workspace').classList.remove('active'); $('library-screen').classList.remove('active'); $('hub').classList.add('active');
     $('btn-save').disabled = true; $('btn-export').disabled = true;
-    this.closePanels(); await this.loadHub(); this.showHubView('projects');
+    this.closePanels(); await this.loadHub(); this.showHubView('home');
   }
 
   async save() {
