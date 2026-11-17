@@ -19,8 +19,9 @@ export function renderScene(container, scene, { selectedId = null, preview = fal
   for (const url of container._objectUrls || []) URL.revokeObjectURL(url);
   container._objectUrls = [];
   container.replaceChildren();
-  const rootWidth = container.clientWidth || Math.max(1, Number(sceneSize.width) || 960);
-  const rootHeight = container.clientHeight || Math.max(1, Number(sceneSize.height) || 640);
+  // O tamanho lógico da raiz vem das configurações do projeto, nunca do zoom ou do viewport.
+  const rootWidth = Math.max(1, Number(sceneSize.width) || 960);
+  const rootHeight = Math.max(1, Number(sceneSize.height) || 640);
   const assetMap = new Map(assets.map(asset => [asset.id, asset]));
   const measureLayout = (node, parentWidth, parentHeight) => {
     const layout = resolveNodeLayout(node, parentWidth, parentHeight);
