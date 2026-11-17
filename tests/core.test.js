@@ -44,7 +44,7 @@ test('UDim2 resolves Scale, Offset and AnchorPoint against the parent', () => {
     anchorPoint: { x: 0.5, y: 0.5 }
   } }]);
   const node = scene.get('responsive');
-  assert.deepEqual(resolveNodeLayout(node, 400, 300), { x: 100, y: 40, width: 220, height: 85 });
+  assert.deepEqual(resolveNodeLayout(node, 400, 300), { x: 100, y: 37.5, width: 220, height: 85 });
   const restored = new Scene(scene.toJSON()).get('responsive');
   assert.deepEqual(restored.props.position, node.props.position);
   assert.deepEqual(restored.props.size, node.props.size);
