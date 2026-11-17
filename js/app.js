@@ -603,6 +603,32 @@ class FlowiqStudio {
     }
   }
 
+  screenDeltaToParent(target, dx, dy) {
+    // Converte o deslocamento da tela para o espaço local do pai,
+    // considerando o zoom do palco e rotações de todos os ancestrais.
+    try {
+      const scene = $('scene');
+      const ancestors = [];
+      let element = target.parentElement;
+      while (element && element !== scene) {
+        ancestors.push(element);
+        element = element.parentElement;
+      }
+      let matrix = new DOMMatrix(getComputedStyle(scene).transform);
+      for (const ancestor of ancestors.reverse()) {
+        const transform = getComputedStyle(ancestor).transform;
+        if (transform && transform !== 'none') matrix = matrix.multiply(new DOMMatrix(transform));
+      }
+      const inverse = matrix.inverse();
+      return {
+        x: inverse.a * dx + inverse.c * dy,
+        y: inverse.b * dx + inverse.d * dy
+      };
+    } catch {
+      return { x: dx / this.zoom, y: dy / this.zoom };
+    }
+  }
+
   pointerDown(event) {
     if (this.runtime.running || event.button > 0) return;
     const target = event.target.closest('.scene-node');
@@ -636,8 +662,9 @@ class FlowiqStudio {
     const move = moveEvent => {
       const drag = this.drag;
       if (!drag || moveEvent.pointerId !== drag.pointerId) return;
-      const dx = (moveEvent.clientX - drag.startX) / this.zoom;
-      const dy = (moveEvent.clientY - drag.startY) / this.zoom;
+      const delta = this.screenDeltaToParent(target, moveEvent.clientX - drag.startX, moveEvent.clientY - drag.startY);
+      const dx = delta.x;
+      const dy = delta.y;
       if (Math.abs(dx) + Math.abs(dy) > 2) drag.moved = true;
       if (!drag.moved) return;
       if (!drag.historyRecorded) { this.history.checkpoint(this.historySnapshot()); drag.historyRecorded = true; }
