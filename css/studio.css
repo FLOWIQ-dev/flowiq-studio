@@ -421,17 +421,19 @@ body[data-screen=editor]{
   #screen-editor .explorer-panel .tree-container{
     display:block;
     width:100%;
-    height:100%;
+    min-width:0;
     min-height:0;
-    max-height:100%;
+    height:auto;
+    max-height:none;
+    align-self:stretch;
     overflow-x:hidden;
     overflow-y:auto;
-    overscroll-behavior:contain;
+    overscroll-behavior-y:contain;
     -webkit-overflow-scrolling:touch;
-    touch-action:pan-y;
+    touch-action:pan-y !important;
   }
   #screen-editor .tree-row{
-    touch-action:none;
+    touch-action:pan-y !important;
     user-select:none;
     -webkit-user-select:none;
   }
@@ -449,30 +451,11 @@ body[data-screen=editor]{
 }
 
 
-/* Build 0.90: destino explícito para reordenar no início da raiz */
-#tree .tree-root-start-drop{display:none;min-height:42px;margin:4px 8px 8px;padding:0 12px;align-items:center;justify-content:center;border:1px dashed transparent;border-radius:9px;color:var(--muted);font-size:12px;font-weight:600;pointer-events:none;}
-#tree.tree-root-start-active .tree-root-start-drop{display:flex;pointer-events:auto;border-color:rgba(92,224,195,.38);background:rgba(48,190,158,.07);color:var(--text);}
-#tree .tree-root-start-drop.tree-root-start-target{border:2px solid #5ce0c3;background:rgba(48,190,158,.2);color:#8af1dc;box-shadow:inset 0 0 0 1px rgba(92,224,195,.2);}
-
-/* Build 0.91: arraste altera somente a ordem entre irmãos */
-#tree .tree-drop-target{outline:none!important;background:transparent!important;box-shadow:none!important}
-
-
-/* Build 0.92: seleção de destino no modo mover e alvos de hierarquia no arraste */
-.tree-move-banner{position:sticky;top:0;z-index:8;display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:0 0 8px;padding:9px;border:1px solid rgba(101,167,255,.3);border-radius:9px;background:#172941;box-shadow:0 5px 14px rgba(0,0,0,.22)}
-.tree-move-banner span{flex:1 1 auto;color:#dce9fa;font-size:11px;font-weight:600}
-.tree-move-banner button{min-height:32px;padding:0 9px;border:1px solid #405b7b;border-radius:7px;background:#203754;color:#dce9fa;font-size:11px}
-.tree-move-banner button:last-child{margin-left:auto;color:#ffb4b4}
-#tree .tree-drop-target{outline:2px solid #5ce0c3!important;background:rgba(48,190,158,.2)!important;box-shadow:inset 0 0 0 1px rgba(92,224,195,.2)!important}
-#tree .tree-drop-before{box-shadow:inset 0 3px 0 #5ce0c3!important;background:rgba(48,190,158,.09)!important}
-#tree .tree-drop-after{box-shadow:inset 0 -3px 0 #5ce0c3!important;background:rgba(48,190,158,.09)!important}
-
-
-/* Build 0.94: scroll nativo da hierarquia, inclusive no modo mover */
+/* Build 0.95: Explorer sem arrastar, com scroll nativo */
 @media(max-width:680px){
-  #screen-editor .tree-container{touch-action:pan-y;}
-  #tree.tree-move-mode-active .tree-row{touch-action:pan-y;}
+  #screen-editor .explorer-panel{grid-template-rows:56px 48px minmax(0,1fr);}
+  #screen-editor .explorer-panel .tree-container{min-height:0;overflow-y:auto;touch-action:pan-y!important;-webkit-overflow-scrolling:touch;}
+  #screen-editor .tree-row{touch-action:pan-y!important;}
 }
 #tree.tree-move-mode-active .tree-row{cursor:pointer;}
 #tree .tree-row.tree-move-source{opacity:.48;}
-.tree-move-banner{display:none!important;}
