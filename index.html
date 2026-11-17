@@ -4,12 +4,12 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#101827">
-  <meta name="flowiq-build" content="2026.11.16.83">
+  <meta name="flowiq-build" content="2026.11.16.84">
   <meta name="description" content="Flowiq Studio, editor mobile-first de interfaces 2D.">
   <title>Flowiq Studio</title>
   <link rel="manifest" href="./manifest.json">
   <link rel="icon" href="./assets/icon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="./css/studio.css?v=2026.11.16.83">
+  <link rel="stylesheet" href="./css/studio.css?v=2026.11.16.84">
 </head>
 <body>
   <main id="screen-home" class="screen home-screen">
@@ -33,7 +33,7 @@
     </header>
     <div id="editor-shell" class="editor-shell" data-panel="stage">
       <aside class="editor-panel explorer-panel">
-        <div class="panel-title explorer-heading"><div><span class="eyebrow">CENA</span><h2>Hierarquia</h2></div></div><label class="tree-search"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 4.5 4.5"/></svg><input id="tree-search" type="search" placeholder="Pesquisar objetos..." aria-label="Pesquisar objetos na hierarquia"></label>
+        <div class="panel-title explorer-heading"><div><span class="eyebrow">CENA</span><h2>Hierarquia</h2></div><button id="explorer-close" class="icon-button mobile-only" aria-label="Fechar hierarquia">×</button></div><label class="tree-search"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 4.5 4.5"/></svg><input id="tree-search" type="search" placeholder="Pesquisar objetos..." aria-label="Pesquisar objetos na hierarquia"></label>
         <div id="tree" class="tree-container"></div>
       </aside>
 
@@ -97,12 +97,12 @@
       });
       window.addEventListener('load', async () => {
         try {
-          const registration = await navigator.serviceWorker.register('./sw.js?v=2026.11.16.83', { updateViaCache: 'none' });
+          const registration = await navigator.serviceWorker.register('./sw.js?v=2026.11.16.84', { updateViaCache: 'none' });
           await registration.update();
         } catch (error) { console.warn('Flowiq: cache offline indisponível.', error); }
       });
     }
   </script>
-  <script type="module" src="./js/app.js?v=2026.11.16.83"></script>
+  <script type="module" src="./js/app.js?v=2026.11.16.84"></script>
 </body>
 </html>
