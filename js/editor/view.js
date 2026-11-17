@@ -60,7 +60,7 @@ export function renderScene(container, scene, { selectedId = null, preview = fal
         handle.type = 'button'; handle.dataset.resize = direction; handle.setAttribute('aria-label', 'Redimensionar ' + direction);
         item.append(handle);
       }
-      const rotate = el('button', 'rotate-handle', '↻');
+      const rotate = el('button', 'rotate-handle'); rotate.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 0 0-14.8-3L3 11m0-5v5h5M4 13a8 8 0 0 0 14.8 3L21 13m0 5v-5h-5"/></svg>';
       rotate.type = 'button'; rotate.dataset.rotate = 'true'; rotate.setAttribute('aria-label', 'Girar objeto');
       item.append(rotate);
     }
@@ -191,7 +191,7 @@ export function renderInspector(container, node, { onChange, onDelete, assets = 
     const actions = Array.isArray(rule?.actions) ? rule.actions : [];
     if (!rule) {
       const hint = el('p', 'event-editor-note', 'Defina o que acontece quando alguém tocar neste botão na prévia.');
-      const create = el('button', 'button subtle', '＋ Criar evento Ao clicar');
+      const create = el('button', 'button subtle', 'Criar evento Ao clicar');
       create.type = 'button'; create.addEventListener('click', () => onEventSave?.(node.id, []));
       logic.append(hint, create);
     } else {
@@ -226,7 +226,7 @@ export function renderInspector(container, node, { onChange, onDelete, assets = 
         }
         logic.append(card);
       });
-      const add = el('button', 'button subtle', '＋ Adicionar ação');
+      const add = el('button', 'button subtle', 'Adicionar ação');
       add.type = 'button'; add.addEventListener('click', () => onEventSave?.(node.id, [...actions, { type: 'setText', targetId: '', value: 'Olá!' }]));
       const removeEvent = el('button', 'button subtle danger-text', 'Excluir evento');
       removeEvent.type = 'button'; removeEvent.addEventListener('click', () => onEventSave?.(node.id, null));
