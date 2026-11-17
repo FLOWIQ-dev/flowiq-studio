@@ -90,11 +90,6 @@ class FlowiqStudio {
     $('tree').addEventListener('pointerdown', event => { if (event.pointerType !== 'touch') this.treePointerDown(event); });
     window.addEventListener('pointermove', event => { if (event.pointerType !== 'touch') this.treePointerMove(event); });
     window.addEventListener('pointerup', event => { if (event.pointerType !== 'touch') this.treePointerUp(event); });
-    window.addEventListener('pointercancel', event => { if (event.pointerType !== 'touch') this.cancelTreeDrag(); });
-    $('tree').addEventListener('touchstart', event => this.treeTouchStart(event), { passive: true });
-    window.addEventListener('touchmove', event => this.treeTouchMove(event), { passive: false });
-    window.addEventListener('touchend', event => this.treeTouchEnd(event), { passive: true });
-    window.addEventListener('touchcancel', () => { this.treeTouch = null; this.cancelTreeDrag(); }, { passive: true });
     $('add-menu-backdrop').addEventListener('click', () => this.closeAddMenu());
     $('scene').addEventListener('pointerdown', event => this.pointerDown(event));
     $('scene').addEventListener('click', event => {
@@ -468,7 +463,6 @@ class FlowiqStudio {
 
   startTreeMoveMode(id) {
     if (!this.scene.get(id)) return;
-    this.cancelTreeDrag();
     this.treeMoveMode = id;
     this.treeExpanded.add(id);
     this.renderTreePanel();
@@ -543,175 +537,6 @@ class FlowiqStudio {
     else if (action === 'delete') this.deleteSelected();
   }
 
-
-  treePointerDown(event) {
-    if (this.treeMoveMode) return;
-    const row = event.target.closest('[data-tree-node]');
-    if (!row || event.target.closest('button') || event.button > 0) return;
-    const id = row.dataset.treeNode, x = event.clientX, y = event.clientY;
-    this._treePointerStart = { id, x, y, pointerId: event.pointerId, cancelled: false };
-    clearTimeout(this.treeHoldTimer);
-    this.treeHoldTimer = setTimeout(() => {
-      if (this._treePointerStart && !this._treePointerStart.cancelled) this.beginTreeDrag(id, event.pointerId, x, y);
-    }, 430);
-  }
-  treePointerMove(event) {
-    const start = this._treePointerStart;
-    if (start && start.pointerId === event.pointerId && !this.treeDrag && Math.hypot(event.clientX - start.x, event.clientY - start.y) > 9) {
-      start.cancelled = true; clearTimeout(this.treeHoldTimer); this.treeHoldTimer = null;
-    }
-    const drag = this.treeDrag;
-    if (!drag || drag.pointerId !== event.pointerId) return;
-    if (event.cancelable) event.preventDefault();
-    this.updateTreeDrag(event.clientX, event.clientY);
-  }
-  treeTouchStart(event) {
-    if (this.treeMoveMode) return;
-    if (event.touches.length !== 1) { this.treeTouch = null; this.cancelTreeDrag(); return; }
-    const touch = event.touches[0], row = event.target.closest('[data-tree-node]');
-    if (!row || event.target.closest('button')) return;
-    const now = touch.clientY;
-    this.treeTouch = {
-      id: row.dataset.treeNode, x: touch.clientX, y: now, lastY: now,
-      active: false, scrolling: false, cancelled: false
-    };
-    clearTimeout(this.treeHoldTimer);
-    const id = row.dataset.treeNode;
-    this.treeHoldTimer = setTimeout(() => {
-      if (!this.treeTouch || this.treeTouch.cancelled || this.treeTouch.scrolling) return;
-      this.treeTouch.active = true;
-      this.beginTreeDrag(id, 'touch', this.treeTouch.x, this.treeTouch.y);
-    }, 460);
-  }
-  treeTouchMove(event) {
-    const touch = event.touches[0], gesture = this.treeTouch;
-    if (!touch || !gesture) return;
-    if (!gesture.active) {
-      if (!gesture.scrolling && Math.hypot(touch.clientX - gesture.x, touch.clientY - gesture.y) > 12) {
-        gesture.scrolling = true;
-        clearTimeout(this.treeHoldTimer); this.treeHoldTimer = null;
-      }
-      // A rolagem fica inteiramente a cargo do navegador.
-    } else if (this.treeDrag) {
-      if (event.cancelable) event.preventDefault();
-      this.updateTreeDrag(touch.clientX, touch.clientY);
-    }
-    gesture.lastY = touch.clientY;
-  }
-  treeTouchEnd(event) {
-    if (!this.treeTouch) return;
-    const touch = event.changedTouches[0], active = this.treeTouch.active;
-    this.treeTouch = null;
-    clearTimeout(this.treeHoldTimer); this.treeHoldTimer = null;
-    if (active && touch) this.finishTreeDrag(touch.clientX, touch.clientY);
-    else this.cancelTreeDrag();
-  }
-  beginTreeDrag(id, pointerId, x, y) {
-    clearTimeout(this.treeHoldTimer); this.treeHoldTimer = null;
-    const node = this.scene.get(id);
-    if (!node) return;
-    this.treeDrag = { id, pointerId, active: true, x, y, targetId: null, position: 'root' };
-    document.querySelector('[data-tree-node="' + CSS.escape(id) + '"]')?.classList.add('tree-source-dragging');
-    const ghost = document.createElement('div');
-    ghost.className = 'tree-drag-ghost';
-    const marker = document.createElement('span'); marker.className = 'tree-drag-ghost-icon'; marker.innerHTML = icon(node.type);
-    const copy = document.createElement('span'); copy.className = 'tree-drag-ghost-copy'; copy.textContent = node.name + ' · ' + node.type;
-    ghost.append(marker, copy); document.body.append(ghost); this.treeDragGhost = ghost;
-    document.body.classList.add('tree-dragging');
-    $('tree')?.classList.add('tree-root-start-active');
-    this.updateTreeDrag(x, y);
-    this.startTreeAutoScroll();
-  }
-  startTreeAutoScroll() {
-    cancelAnimationFrame(this.treeAutoScrollFrame);
-    const tick = () => {
-      const drag = this.treeDrag, tree = $('tree');
-      if (!drag || !tree) { this.treeAutoScrollFrame = 0; return; }
-      const bounds = tree.getBoundingClientRect(), edge = Math.min(64, Math.max(38, bounds.height * .16));
-      let speed = 0;
-      if (drag.y >= bounds.top && drag.y < bounds.top + edge) {
-        const intensity = 1 - Math.max(0, drag.y - bounds.top) / edge;
-        speed = -Math.max(2, Math.ceil(intensity * intensity * 22));
-      } else if (drag.y <= bounds.bottom && drag.y > bounds.bottom - edge) {
-        const intensity = 1 - Math.max(0, bounds.bottom - drag.y) / edge;
-        speed = Math.max(2, Math.ceil(intensity * intensity * 22));
-      }
-      if (speed) {
-        const before = tree.scrollTop;
-        tree.scrollTop += speed;
-        if (tree.scrollTop !== before) this.updateTreeDrag(drag.x, drag.y);
-      }
-      this.treeAutoScrollFrame = requestAnimationFrame(tick);
-    };
-    this.treeAutoScrollFrame = requestAnimationFrame(tick);
-  }
-  updateTreeDrag(x, y) {
-    const drag = this.treeDrag;
-    if (!drag) return;
-    drag.active = true;
-    drag.x = x; drag.y = y;
-    if (this.treeDragGhost) {
-      this.treeDragGhost.style.left = Math.min(window.innerWidth - 230, Math.max(8, x + 14)) + 'px';
-      this.treeDragGhost.style.top = Math.min(window.innerHeight - 54, Math.max(8, y + 14)) + 'px';
-    }
-    document.querySelectorAll('.tree-drop-target,.tree-drop-before,.tree-drop-after,.tree-root-start-target').forEach(item => item.classList.remove('tree-drop-target','tree-drop-before','tree-drop-after','tree-root-start-target'));
-    const tree = $('tree'), bounds = tree.getBoundingClientRect();
-    const insideTree = x >= bounds.left && x <= bounds.right && y >= bounds.top && y <= bounds.bottom;
-    const hit = document.elementFromPoint(x, y);
-    const rootStart = hit?.closest('[data-tree-root-start]');
-    const target = hit?.closest('[data-tree-node]');
-    if (!insideTree) { drag.targetId = null; drag.position = 'cancel'; tree.classList.remove('tree-root-drop'); return; }
-    if (rootStart) { drag.targetId = null; drag.position = 'root-start'; tree.classList.remove('tree-root-drop'); rootStart.classList.add('tree-root-start-target'); return; }
-    if (!target) { drag.targetId = null; drag.position = 'root'; tree.classList.add('tree-root-drop'); return; }
-    tree.classList.remove('tree-root-drop');
-    if (target.dataset.treeNode === drag.id || this.scene.descendants(drag.id).some(item => item.id === target.dataset.treeNode)) {
-      drag.targetId = null; drag.position = 'cancel'; return;
-    }
-    const rect = target.getBoundingClientRect(), relative = (y - rect.top) / Math.max(1, rect.height);
-    drag.position = relative < .24 ? 'before' : relative > .76 ? 'after' : 'inside';
-    drag.targetId = target.dataset.treeNode;
-    target.classList.add(drag.position === 'inside' ? 'tree-drop-target' : drag.position === 'before' ? 'tree-drop-before' : 'tree-drop-after');
-  }
-  treePointerUp(event) {
-    clearTimeout(this.treeHoldTimer); this.treeHoldTimer = null;
-    const start = this._treePointerStart; this._treePointerStart = null;
-    if (this.treeDrag?.pointerId === event.pointerId) this.finishTreeDrag(event.clientX, event.clientY);
-    else if (start?.pointerId === event.pointerId) this.cancelTreeDrag();
-  }
-  finishTreeDrag(x, y) {
-    const drag = this.treeDrag;
-    if (!drag?.active) { this.cancelTreeDrag(); return; }
-    this.updateTreeDrag(x, y);
-    if (drag.position === 'cancel') { this.cancelTreeDrag(); return; }
-    try {
-      this.history.checkpoint(this.historySnapshot());
-      const source = this.scene.get(drag.id), targetNode = drag.targetId ? this.scene.get(drag.targetId) : null;
-      if (drag.position === 'root-start') this.scene.reparent(drag.id, null, 0);
-      else if (!targetNode) this.scene.reparent(drag.id, null);
-      else if (drag.position === 'inside') {
-        this.scene.reparent(drag.id, targetNode.id);
-        this.treeExpanded.add(targetNode.id);
-      } else {
-        const siblings = targetNode.parentId ? this.scene.get(targetNode.parentId).children : this.scene.roots;
-        let index = siblings.indexOf(targetNode.id) + (drag.position === 'after' ? 1 : 0);
-        const sourceSiblings = source.parentId ? this.scene.get(source.parentId).children : this.scene.roots;
-        const sourceIndex = sourceSiblings.indexOf(source.id);
-        if (sourceSiblings === siblings && sourceIndex >= 0 && sourceIndex < index) index--;
-        this.scene.reparent(drag.id, targetNode.parentId, index);
-      }
-      this.select(drag.id); this.scheduleSave();
-    } catch (error) { this.toast(error.message, 'error'); }
-    this.cancelTreeDrag();
-  }
-  cancelTreeDrag() {
-    cancelAnimationFrame(this.treeAutoScrollFrame); this.treeAutoScrollFrame = 0;
-    clearTimeout(this.treeHoldTimer); this.treeHoldTimer = null;
-    this.treeDrag = null; this._treePointerStart = null; this.treeDragGhost?.remove(); this.treeDragGhost = null;
-    document.querySelectorAll('.tree-source-dragging').forEach(item => item.classList.remove('tree-source-dragging'));
-    document.body.classList.remove('tree-dragging');
-    $('tree')?.classList.remove('tree-root-drop','tree-root-start-active');
-    document.querySelectorAll('.tree-drop-target,.tree-drop-before,.tree-drop-after,.tree-root-start-target,.tree-hold-ready').forEach(item => item.classList.remove('tree-drop-target','tree-drop-before','tree-drop-after','tree-root-start-target','tree-hold-ready'));
-  }
 
   renderEditor() {
     if (!this.project) return;
