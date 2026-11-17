@@ -141,9 +141,11 @@ class FlowiqStudio {
       if (button) this.setPanel(button.dataset.panel);
     });
     $('panel-close').addEventListener('click', () => this.setPanel('stage'));
-    const closeExplorer = event => { event.preventDefault(); event.stopPropagation(); this.setPanel('stage'); };
-    $('explorer-close').addEventListener('pointerup', closeExplorer);
-    $('explorer-close').addEventListener('click', closeExplorer);
+    $('explorer-close').addEventListener('click', event => {
+      event.preventDefault();
+      event.stopPropagation();
+      this.setPanel('stage');
+    });
     $('dialog').addEventListener('click', event => { if (event.target === $('dialog')) this.resolveDialog(null); });
     document.addEventListener('keydown', event => this.keydown(event));
     window.addEventListener('beforeunload', event => {
