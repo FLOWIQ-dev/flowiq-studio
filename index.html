@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#101827">
-  <meta name="flowiq-build" content="2026.11.16.75">
+  <meta name="flowiq-build" content="2026.11.16.76">
   <meta name="description" content="Flowiq Studio, editor mobile-first de interfaces 2D.">
   <title>Flowiq Studio</title>
   <link rel="manifest" href="./manifest.json">
@@ -34,18 +34,19 @@
     <div id="editor-shell" class="editor-shell" data-panel="stage">
       <aside class="editor-panel explorer-panel">
         <div class="panel-title"><div><span class="eyebrow">CENA</span><h2>Hierarquia</h2></div></div>
+
+        <div id="tree" class="tree-container"></div>
+      </aside>
+
+      <section class="stage-panel">
+        <div class="stage-toolbar"><div><span class="eyebrow">EDITOR VISUAL</span><strong>Palco 2D</strong><small id="scene-size">960 × 640</small></div>
         <div id="add-menu" class="add-menu" hidden>
           <span class="eyebrow">ADICIONAR OBJETO</span>
           <button data-add-type="Frame"><b><svg viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="17" height="17" rx="2"/><path d="M8 8h8v8H8z"/></svg></b><span>Quadro<small>Container visual</small></span></button>
           <button data-add-type="TextButton"><b><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M8 12h8"/></svg></b><span>Botão<small>Elemento interativo</small></span></button>
           <button data-add-type="TextLabel"><b><svg viewBox="0 0 24 24"><path d="M4 6h16M12 6v13M8 19h8"/></svg></b><span>Texto<small>Rótulo de texto</small></span></button>
           <button data-add-type="ImageLabel"><b><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9" r="1.5"/><path d="m4 17 5-5 3 3 3-4 5 6"/></svg></b><span>Imagem<small>Imagem da biblioteca</small></span></button>
-        </div>
-        <div id="tree" class="tree-container"></div>
-      </aside>
-
-      <section class="stage-panel">
-        <div class="stage-toolbar"><div><span class="eyebrow">EDITOR VISUAL</span><strong>Palco 2D</strong><small id="scene-size">960 × 640</small></div><div class="stage-tools"><button id="add-object" class="button primary add-object-action" aria-label="Novo objeto" title="Adicionar objeto ao palco"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span>Novo objeto</span></button><button id="zoom-out" class="icon-button" aria-label="Diminuir zoom"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/></svg></button><output id="zoom-value">100%</output><button id="zoom-in" class="icon-button" aria-label="Aumentar zoom"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button><button id="zoom-fit" class="icon-button" aria-label="Ajustar ao espaço"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3H3v5M16 3h5v5M3 16v5h5M21 16v5h-5"/></svg></button></div></div>
+        </div><div class="stage-tools"><button id="add-object" class="button primary add-object-action" aria-label="Novo objeto" title="Adicionar objeto ao palco"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span>Novo objeto</span></button><button id="zoom-out" class="icon-button" aria-label="Diminuir zoom"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/></svg></button><output id="zoom-value">100%</output><button id="zoom-in" class="icon-button" aria-label="Aumentar zoom"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button><button id="zoom-fit" class="icon-button" aria-label="Ajustar ao espaço"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3H3v5M16 3h5v5M3 16v5h5M21 16v5h-5"/></svg></button></div></div>
         <div id="stage-viewport" class="stage-viewport"><div id="scene-zoom" class="scene-zoom"><div id="scene" class="scene-canvas" aria-label="Palco de criação"></div></div></div>
         <div class="stage-footer"><span>Arraste os objetos para posicionar</span><span>Ctrl + Z para desfazer</span></div>
       </section>
@@ -97,6 +98,6 @@
       });
     }
   </script>
-  <script type="module" src="./js/app.js?v=2026.11.16.74"></script>
+  <script type="module" src="./js/app.js?v=2026.11.16.76"></script>
 </body>
 </html>
