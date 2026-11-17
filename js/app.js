@@ -874,7 +874,7 @@ class FlowiqStudio {
     else this.closeAddMenu();
   }
   openAddMenu(parentId = null) {
-    const parent = parentId ? this.scene.get(parentId) : null;
+    const parent = parentId ? this.scene.get(parentId) : this.scene.get(this.store.state.selectedId);
     this.addParentId = parent?.id ?? null;
     $('add-menu').hidden = false;
     $('add-menu-backdrop').hidden = false;
@@ -901,6 +901,9 @@ class FlowiqStudio {
       const match = button.textContent.toLocaleLowerCase('pt-BR').includes(term);
       button.hidden = !match;
       if (match) visible++;
+    });
+    document.querySelectorAll('#object-options .object-category').forEach(category => {
+      category.hidden = !category.querySelector('[data-add-type]:not([hidden])');
     });
     let empty = $('object-search-empty');
     if (!empty) {
