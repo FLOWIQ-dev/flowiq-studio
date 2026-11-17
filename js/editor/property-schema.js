@@ -55,7 +55,7 @@ const textAppearance = [
   ])
 ];
 
-export const PROPERTY_SCHEMA_VERSION = 1;
+export const PROPERTY_SCHEMA_VERSION = 2;
 
 export function registerPropertySchema(className, schema, { replace = false } = {}) {
   if (typeof className !== 'string' || (className !== '*' && !/^[A-Z][A-Za-z0-9]*$/.test(className))) {
@@ -103,9 +103,44 @@ registerPropertySchema('*', { sections: [
 ]});
 
 registerPropertySchema('Frame', { sections: [
-  { title: 'Identificação', fields: [text('name', 'Nome')] },
+  { title: 'Instance', fields: [
+    text('name', 'Name'),
+    checkbox('archivable', 'Archivable')
+  ]},
   ...layout,
-  { title: 'Aparência', fields: appearance.slice() }
+  { title: 'Data', fields: [
+    select('automaticSize', 'AutomaticSize', [
+      { value: 'None', label: 'None' }, { value: 'X', label: 'X' },
+      { value: 'Y', label: 'Y' }, { value: 'XY', label: 'XY' }
+    ]),
+    select('sizeConstraint', 'SizeConstraint', [
+      { value: 'RelativeXY', label: 'RelativeXY' },
+      { value: 'RelativeXX', label: 'RelativeXX' },
+      { value: 'RelativeYY', label: 'RelativeYY' }
+    ]),
+    number('layoutOrder', 'LayoutOrder', -32768, 32767),
+    number('zIndex', 'ZIndex', 1, 10),
+    number('selectionOrder', 'SelectionOrder', 0, 32767)
+  ]},
+  { title: 'Appearance', fields: [
+    color('backgroundColor3', 'BackgroundColor3'),
+    number('backgroundTransparency', 'BackgroundTransparency', 0, 1, 0.01),
+    color('borderColor3', 'BorderColor3'),
+    number('borderSizePixel', 'BorderSizePixel', 0, 20),
+    select('borderMode', 'BorderMode', [
+      { value: 'Outline', label: 'Outline' },
+      { value: 'Middle', label: 'Middle' },
+      { value: 'Inset', label: 'Inset' }
+    ]),
+    number('rotation', 'Rotation', -360, 360)
+  ]},
+  { title: 'Behavior', fields: [
+    checkbox('visible', 'Visible'),
+    checkbox('clipsDescendants', 'ClipsDescendants'),
+    checkbox('active', 'Active'),
+    checkbox('interactable', 'Interactable'),
+    checkbox('selectable', 'Selectable')
+  ]}
 ]});
 
 registerPropertySchema('TextButton', { sections: [
