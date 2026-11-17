@@ -297,3 +297,29 @@ button:disabled{opacity:.38;cursor:not-allowed}
 .object-parent-note{margin:0 2px 9px;color:#91a9c8;font-size:11px;line-height:1.45}
 .tree-row{touch-action:pan-y}
 .tree-hold-ready{outline:1px solid rgba(105,175,255,.65);background:rgba(85,145,220,.16)}
+
+/* Mobile-first hierarchy gestures and editor viewport containment */
+body[data-screen=editor]{height:100dvh;min-height:0;overflow:hidden}
+.editor-screen{min-height:0}
+.explorer-panel{display:grid;grid-template-rows:auto auto minmax(0,1fr);min-height:0;overflow:hidden}
+.tree-container{min-height:0;overflow:auto;overscroll-behavior:contain;touch-action:pan-y}
+.inspector-panel{min-height:0;overflow:auto;overscroll-behavior:contain}
+.add-menu{position:fixed;top:72px;right:18px;z-index:40;width:min(340px,calc(100vw - 28px));max-height:min(72dvh,560px);overflow-y:auto;overscroll-behavior:contain}
+.tree-dragging{cursor:grabbing!important}
+.tree-drag-ghost{position:fixed;z-index:3000;display:flex;align-items:center;gap:10px;min-width:170px;max-width:230px;padding:11px 14px;border:1px solid #82baff;border-radius:11px;background:#1b3554;color:#f3f8ff;box-shadow:0 12px 34px rgba(0,0,0,.55);pointer-events:none}
+.tree-drag-ghost-icon{display:grid;place-items:center;width:23px;height:23px;flex:none;color:#a9d0ff}
+.tree-drag-ghost-icon svg{width:21px;height:21px;fill:none;stroke:currentColor;stroke-width:1.7}
+.tree-drag-ghost-copy{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;font-weight:650}
+.tree-drop-target{outline:2px solid #5ce0c3!important;background:rgba(48,190,158,.2)!important;box-shadow:inset 0 0 0 1px rgba(92,224,195,.2)}
+.tree-drop-before:before,.tree-drop-after:after{content:'';position:absolute;left:0;right:0;height:3px;border-radius:3px;background:#5ce0c3;box-shadow:0 0 9px rgba(92,224,195,.8);pointer-events:none}
+.tree-drop-before:before{top:-2px}.tree-drop-after:after{bottom:-2px}
+@media(max-width:680px){
+ body[data-screen=editor]{height:100dvh;overflow:hidden;overscroll-behavior:none}
+ .editor-screen{height:100dvh;min-height:0;overflow:hidden;overscroll-behavior:none}
+ .editor-shell{height:100%;min-height:0;overflow:hidden;overscroll-behavior:none}
+ .explorer-panel,.inspector-panel{min-height:0;overflow:hidden}
+ .tree-container{overflow-y:auto;min-height:0;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+ .add-menu{top:auto;right:12px;bottom:calc(72px + env(safe-area-inset-bottom));left:12px;width:auto;max-height:min(62dvh,520px);border-radius:16px}
+ .tree-row{touch-action:pan-y}
+ .tree-drag-ghost{max-width:min(230px,calc(100vw - 24px))}
+}
