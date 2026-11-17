@@ -349,3 +349,25 @@ body.tree-dragging,body.tree-dragging *{cursor:grabbing!important}
   .explorer-panel{z-index:9}
   .tree-container{scroll-behavior:auto;overscroll-behavior:contain;touch-action:pan-y}
 }
+
+
+/* Build 88: viewport do editor travado e gesto da árvore sob controle do Studio */
+html[data-screen=editor]{
+  height:100%;
+  min-height:0;
+  overflow:hidden;
+  overscroll-behavior:none;
+}
+body[data-screen=editor]{
+  position:fixed;
+  inset:0;
+  width:100%;
+  height:100%;
+  min-height:0;
+  overflow:hidden;
+  overscroll-behavior:none;
+}
+@media(max-width:680px){
+  .tree-container{overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain;touch-action:pan-y}
+  .tree-row{touch-action:none}
+}
