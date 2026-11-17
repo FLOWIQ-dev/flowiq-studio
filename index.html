@@ -4,12 +4,12 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#101827">
-  <meta name="flowiq-build" content="2026.11.16.84">
+  <meta name="flowiq-build" content="2026.11.16.85">
   <meta name="description" content="Flowiq Studio, editor mobile-first de interfaces 2D.">
   <title>Flowiq Studio</title>
   <link rel="manifest" href="./manifest.json">
   <link rel="icon" href="./assets/icon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="./css/studio.css?v=2026.11.16.84">
+  <link rel="stylesheet" href="./css/studio.css?v=2026.11.16.85">
 </head>
 <body>
   <main id="screen-home" class="screen home-screen">
@@ -49,7 +49,8 @@
         <div id="inspector" class="inspector-content"><p class="inspector-empty">Selecione um objeto para editar.</p></div>
       </aside>
     </div>
-    <div id="add-menu" class="add-menu" role="dialog" aria-label="Adicionar objetos" hidden>
+    <div id="add-menu-backdrop" class="add-menu-backdrop" hidden></div>
+    <div id="add-menu" class="add-menu" role="dialog" aria-modal="true" aria-label="Adicionar objetos" hidden>
           <div class="add-menu-heading"><div><span class="eyebrow">BIBLIOTECA DE OBJETOS</span><strong id="object-dialog-title">Adicionar ao palco</strong></div><button id="close-add-menu" class="icon-button" type="button" aria-label="Fechar janela de objetos" title="Fechar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button></div>
           <label class="object-search"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 4.5 4.5"/></svg><input id="object-search" type="search" placeholder="Pesquisar objetos..." autocomplete="off" aria-label="Pesquisar objetos"></label>
           <p id="object-parent-note" class="object-parent-note">Escolha um objeto para inserir na cena.</p>
@@ -97,12 +98,12 @@
       });
       window.addEventListener('load', async () => {
         try {
-          const registration = await navigator.serviceWorker.register('./sw.js?v=2026.11.16.84', { updateViaCache: 'none' });
+          const registration = await navigator.serviceWorker.register('./sw.js?v=2026.11.16.85', { updateViaCache: 'none' });
           await registration.update();
         } catch (error) { console.warn('Flowiq: cache offline indisponível.', error); }
       });
     }
   </script>
-  <script type="module" src="./js/app.js?v=2026.11.16.84"></script>
+  <script type="module" src="./js/app.js?v=2026.11.16.85"></script>
 </body>
 </html>
