@@ -71,10 +71,6 @@ class FlowiqStudio {
     document.addEventListener('click', event => {
       const action = event.target.closest('[data-tree-action]');
       if (action) { this.handleTreeAction(action.dataset.treeAction, action.dataset.nodeId); return; }
-      const place = event.target.closest('[data-tree-move-place]');
-      if (place) { this.finishTreeMove(place.dataset.sourceId, place.dataset.targetId, place.dataset.treeMovePlace); return; }
-      const root = event.target.closest('[data-tree-move-root]');
-      if (root) { this.finishTreeMoveRoot(root.dataset.sourceId, root.dataset.treeMoveRoot); return; }
       if (event.target.closest('[data-tree-move-cancel]')) this.cancelTreeMoveMode();
     });
     $('tree').addEventListener('click', event => {
@@ -84,7 +80,7 @@ class FlowiqStudio {
       if (menu) { this.openTreeMenu(menu.dataset.treeMenu, menu); return; }
       const row = event.target.closest('[data-tree-node]');
       if (row && !event.target.closest('button')) {
-        if (this.treeMoveMode) this.openTreeMovePlacement(row.dataset.treeNode, row);
+        if (this.treeMoveMode) this.finishTreeMoveInside(row.dataset.treeNode);
         else this.select(row.dataset.treeNode);
       }
       const action = event.target.closest('[data-tree-action]');
@@ -471,10 +467,8 @@ class FlowiqStudio {
       if (source) {
         const banner = document.createElement('div'); banner.className = 'tree-move-banner';
         const label = document.createElement('span'); label.textContent = 'Movendo: ' + source.name + '. Toque no destino.';
-        const rootStart = document.createElement('button'); rootStart.type = 'button'; rootStart.dataset.treeMoveRoot = 'start'; rootStart.dataset.sourceId = source.id; rootStart.textContent = 'Início da raiz';
-        const rootEnd = document.createElement('button'); rootEnd.type = 'button'; rootEnd.dataset.treeMoveRoot = 'end'; rootEnd.dataset.sourceId = source.id; rootEnd.textContent = 'Fim da raiz';
         const cancel = document.createElement('button'); cancel.type = 'button'; cancel.dataset.treeMoveCancel = 'true'; cancel.textContent = 'Cancelar';
-        banner.append(label, rootStart, rootEnd, cancel); tree.prepend(banner); tree.classList.add('tree-move-mode-active');
+        banner.append(label, cancel); tree.prepend(banner); tree.classList.add('tree-move-mode-active');
       }
     } else tree.classList.remove('tree-move-mode-active');
   }
@@ -489,48 +483,22 @@ class FlowiqStudio {
     this.treeMoveMode = null; document.querySelector('.tree-context-menu')?.remove(); this.renderTreePanel();
   }
 
-  openTreeMovePlacement(targetId, anchor) {
-    const source = this.scene.get(this.treeMoveMode), target = this.scene.get(targetId);
-    if (!source || !target) return this.cancelTreeMoveMode();
-    if (source.id === target.id || this.scene.descendants(source.id).some(node => node.id === target.id)) {
-      this.toast('Não é possível mover um objeto para dentro de si mesmo ou de seus descendentes.', 'error'); return;
-    }
-    document.querySelector('.tree-context-menu')?.remove();
-    const menu = document.createElement('div'); menu.className = 'tree-context-menu tree-move-placement';
-    for (const [position, label] of [['before', 'Antes de ' + target.name], ['inside', 'Dentro de ' + target.name], ['after', 'Depois de ' + target.name]]) {
-      const button = document.createElement('button'); button.type = 'button'; button.textContent = label;
-      button.dataset.treeMovePlace = position; button.dataset.sourceId = source.id; button.dataset.targetId = target.id; menu.append(button);
-    }
-    const rect = anchor.getBoundingClientRect();
-    menu.style.left = Math.max(8, Math.min(rect.left, window.innerWidth - 220)) + 'px';
-    menu.style.top = Math.max(8, Math.min(rect.bottom, window.innerHeight - 170)) + 'px'; document.body.append(menu);
-    const close = event => { if (!menu.contains(event.target)) { menu.remove(); document.removeEventListener('pointerdown', close, true); } };
-    setTimeout(() => document.addEventListener('pointerdown', close, true), 0);
-  }
-
-  finishTreeMove(sourceId, targetId, position) {
+  finishTreeMoveInside(targetId) {
+    const sourceId = this.treeMoveMode;
     const source = this.scene.get(sourceId), target = this.scene.get(targetId);
-    if (!source || !target || source.id === target.id || this.scene.descendants(sourceId).some(node => node.id === targetId)) return;
+    if (!source || !target) { this.cancelTreeMoveMode(); return; }
+    if (source.id === target.id || this.scene.descendants(sourceId).some(node => node.id === targetId)) {
+      this.toast('Escolha outro objeto. Não é possível mover para dentro de si mesmo ou de um descendente.', 'error');
+      return;
+    }
     try {
       this.history.checkpoint(this.historySnapshot());
-      if (position === 'inside') { this.scene.reparent(sourceId, targetId); this.treeExpanded.add(targetId); }
-      else {
-        const siblings = target.parentId ? this.scene.get(target.parentId)?.children : this.scene.roots;
-        const sourceSiblings = source.parentId ? this.scene.get(source.parentId)?.children : this.scene.roots;
-        let index = siblings.indexOf(targetId) + (position === 'after' ? 1 : 0);
-        const sourceIndex = sourceSiblings.indexOf(sourceId); if (sourceSiblings === siblings && sourceIndex >= 0 && sourceIndex < index) index--;
-        this.scene.reparent(sourceId, target.parentId, index);
-      }
-      this.treeMoveMode = null; document.querySelector('.tree-context-menu')?.remove(); this.select(sourceId); this.scheduleSave(); this.toast('Objeto movido.');
-    } catch (error) { this.toast(error.message, 'error'); }
-  }
-
-  finishTreeMoveRoot(sourceId, edge) {
-    if (!this.scene.get(sourceId)) return this.cancelTreeMoveMode();
-    try {
-      this.history.checkpoint(this.historySnapshot());
-      this.scene.reparent(sourceId, null, edge === 'start' ? 0 : this.scene.roots.length);
-      this.treeMoveMode = null; this.select(sourceId); this.scheduleSave(); this.toast('Objeto movido para a raiz.');
+      this.scene.reparent(sourceId, targetId);
+      this.treeExpanded.add(targetId);
+      this.treeMoveMode = null;
+      this.select(sourceId);
+      this.scheduleSave();
+      this.toast('Objeto movido para dentro de ' + target.name + '.');
     } catch (error) { this.toast(error.message, 'error'); }
   }
 
