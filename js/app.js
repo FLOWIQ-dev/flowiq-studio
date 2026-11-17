@@ -462,21 +462,17 @@ class FlowiqStudio {
       onSelect: id => this.select(id),
       onToggle: id => this.toggleTreeNode(id)
     });
-    if (this.treeMoveMode) {
-      const source = this.scene.get(this.treeMoveMode);
-      if (source) {
-        const banner = document.createElement('div'); banner.className = 'tree-move-banner';
-        const label = document.createElement('span'); label.textContent = 'Movendo: ' + source.name + '. Toque no destino.';
-        const cancel = document.createElement('button'); cancel.type = 'button'; cancel.dataset.treeMoveCancel = 'true'; cancel.textContent = 'Cancelar';
-        banner.append(label, cancel); tree.prepend(banner); tree.classList.add('tree-move-mode-active');
-      }
-    } else tree.classList.remove('tree-move-mode-active');
+    tree.classList.toggle('tree-move-mode-active', !!this.treeMoveMode);
+    tree.querySelectorAll('[data-tree-node]').forEach(row => row.classList.toggle('tree-move-source', row.dataset.treeNode === this.treeMoveMode));
   }
 
   startTreeMoveMode(id) {
     if (!this.scene.get(id)) return;
-    this.cancelTreeDrag(); this.treeMoveMode = id; this.treeExpanded.add(id); this.select(id);
-    this.toast('Modo mover: role a hierarquia e toque no destino.');
+    this.cancelTreeDrag();
+    this.treeMoveMode = id;
+    this.treeExpanded.add(id);
+    this.renderTreePanel();
+    this.toast('Mover: toque no objeto que receberá este item.');
   }
 
   cancelTreeMoveMode() {
@@ -590,17 +586,12 @@ class FlowiqStudio {
   treeTouchMove(event) {
     const touch = event.touches[0], gesture = this.treeTouch;
     if (!touch || !gesture) return;
-    const deltaY = touch.clientY - gesture.lastY;
     if (!gesture.active) {
       if (!gesture.scrolling && Math.hypot(touch.clientX - gesture.x, touch.clientY - gesture.y) > 12) {
         gesture.scrolling = true;
         clearTimeout(this.treeHoldTimer); this.treeHoldTimer = null;
       }
-      if (gesture.scrolling) {
-        if (event.cancelable) event.preventDefault();
-        const tree = $('tree');
-        if (tree) tree.scrollTop -= deltaY;
-      }
+      // A rolagem fica inteiramente a cargo do navegador.
     } else if (this.treeDrag) {
       if (event.cancelable) event.preventDefault();
       this.updateTreeDrag(touch.clientX, touch.clientY);
