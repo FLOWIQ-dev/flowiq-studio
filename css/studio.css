@@ -371,3 +371,79 @@ body[data-screen=editor]{
   .tree-container{overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain;touch-action:pan-y}
   .tree-row{touch-action:none}
 }
+
+
+/* Build 89: corrigir o limite real do painel móvel e o scroll interno */
+@media(max-width:680px){
+  html[data-screen="editor"],
+  body[data-screen="editor"]{
+    position:fixed;
+    inset:0;
+    width:100%;
+    height:100%;
+    min-height:0;
+    overflow:hidden;
+    overscroll-behavior:none;
+  }
+  #screen-editor.editor-screen{
+    position:fixed;
+    inset:0;
+    width:100%;
+    height:100dvh;
+    min-height:0;
+    overflow:hidden;
+    overscroll-behavior:none;
+  }
+  #screen-editor .editor-shell{
+    position:relative;
+    display:block;
+    width:100%;
+    height:100%;
+    min-height:0;
+    overflow:hidden;
+    overscroll-behavior:none;
+  }
+  #screen-editor .explorer-panel{
+    position:absolute;
+    left:0;
+    right:0;
+    bottom:0;
+    display:none;
+    grid-template-rows:56px 48px minmax(0,1fr);
+    height:min(66%,520px);
+    min-height:0;
+    overflow:hidden;
+    overscroll-behavior:none;
+  }
+  #screen-editor .editor-shell[data-panel="explorer"] .explorer-panel{
+    display:grid;
+  }
+  #screen-editor .explorer-panel .tree-container{
+    display:block;
+    width:100%;
+    height:100%;
+    min-height:0;
+    max-height:100%;
+    overflow-x:hidden;
+    overflow-y:auto;
+    overscroll-behavior:contain;
+    -webkit-overflow-scrolling:touch;
+    touch-action:pan-y;
+  }
+  #screen-editor .tree-row{
+    touch-action:none;
+    user-select:none;
+    -webkit-user-select:none;
+  }
+  #screen-editor .explorer-heading #explorer-close{
+    position:relative;
+    z-index:20;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    pointer-events:auto;
+    touch-action:manipulation;
+  }
+  #screen-editor .editor-shell:before{z-index:7}
+  #screen-editor .explorer-panel{z-index:9}
+}
