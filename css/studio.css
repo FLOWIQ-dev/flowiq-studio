@@ -594,3 +594,58 @@ body[data-screen=editor]{
 .object-category button strong{font-size:13px;font-weight:650}
 .object-category button small{line-height:1.4}
 .object-parent-note{margin:0 0 10px;padding:8px 10px;border-radius:8px;background:rgba(101,167,255,.07);color:#9eb4d1;font-size:11px;line-height:1.5}
+
+
+/* Inspector architecture: fixed header + independently scrollable property surface. */
+.inspector-panel{
+  display:grid;
+  grid-template-rows:auto minmax(0,1fr);
+  min-width:0;
+  min-height:0;
+  overflow:hidden;
+}
+.inspector-content{
+  min-width:0;
+  min-height:0;
+  overflow-x:hidden;
+  overflow-y:auto;
+  overscroll-behavior-y:contain;
+  -webkit-overflow-scrolling:touch;
+  scrollbar-gutter:stable;
+  touch-action:pan-y;
+  padding-bottom:max(24px,env(safe-area-inset-bottom));
+}
+.inspector-content .property-group{
+  min-width:0;
+  align-content:start;
+}
+.inspector-content .property-field{min-width:0}
+.inspector-content input,
+.inspector-content select{width:100%;min-width:0}
+@media(max-width:680px){
+  #screen-editor .editor-shell[data-panel="inspector"] .inspector-panel{
+    display:grid;
+    grid-template-rows:56px minmax(0,1fr);
+    height:min(76%,680px);
+    overflow:hidden;
+  }
+  #screen-editor .inspector-content{
+    display:block;
+    height:100%;
+    min-height:0;
+    max-height:none;
+    overflow-x:hidden;
+    overflow-y:auto;
+    overscroll-behavior-y:contain;
+    -webkit-overflow-scrolling:touch;
+    touch-action:pan-y;
+    padding:12px 16px max(28px,env(safe-area-inset-bottom));
+  }
+  #screen-editor .inspector-content .property-group{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+  #screen-editor .inspector-content .logic-group,
+  #screen-editor .inspector-content .inspector-actions{
+    grid-column:1/-1;
+  }
+}
