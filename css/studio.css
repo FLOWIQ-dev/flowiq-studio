@@ -334,19 +334,10 @@ body[data-screen=editor]{height:100dvh;min-height:0;overflow:hidden}
 @media(max-width:680px){.explorer-heading .mobile-only{display:inline-flex}}
 
 
-/* Build 85: painéis iniciam recolhidos no mobile, arraste por alça e seletor modal */
-.tree-row{position:relative}
-.tree-drag-trigger{display:grid;place-items:center;flex:none;width:30px;height:34px;padding:0;border:0;border-radius:7px;background:transparent;color:#91a9c8;font-size:19px;line-height:1;cursor:grab;touch-action:none;user-select:none}
-.tree-drag-trigger:active{background:#294768;color:#fff;cursor:grabbing}
+
+/* Build 86: arraste por pressão longa, sem alça permanente */
+.tree-row{touch-action:pan-y;user-select:none;-webkit-user-select:none}
+.tree-drag-trigger{display:none!important}
 .tree-drag-ghost{z-index:5000;min-height:48px;padding:12px 15px;border:2px solid #91c5ff;border-radius:12px;background:rgba(22,49,80,.97);color:#fff;box-shadow:0 16px 42px rgba(0,0,0,.65),0 0 0 3px rgba(105,170,255,.2);font-size:13px;pointer-events:none;will-change:left,top}
 .tree-source-dragging{opacity:.18!important;outline:2px dashed #91c5ff!important;outline-offset:-3px;filter:saturate(.5)}
-.add-menu-backdrop{position:fixed;inset:0;z-index:39;background:rgba(0,0,0,.72);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);opacity:1;animation:fade-in .16s ease both}
-.add-menu-backdrop[hidden]{display:none}
-.add-menu{z-index:40;box-shadow:0 24px 80px rgba(0,0,0,.8);border-color:#587397}
-@media(max-width:680px){
- .editor-panel{display:none!important}
- .editor-shell[data-panel=explorer] .explorer-panel,.editor-shell[data-panel=inspector] .inspector-panel{display:grid!important}
- .tree-drag-trigger{width:36px;height:38px;font-size:22px;background:rgba(112,157,211,.09);color:#b6d5ff}
- .tree-row{touch-action:pan-y}
- .tree-drag-ghost{max-width:calc(100vw - 28px);min-width:190px}
-}
+body.tree-dragging,body.tree-dragging *{cursor:grabbing!important}
