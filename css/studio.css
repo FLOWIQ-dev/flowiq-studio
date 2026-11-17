@@ -325,3 +325,10 @@ body[data-screen=editor]{height:100dvh;min-height:0;overflow:hidden}
 }
 
 .tree-root-drop{outline:2px dashed rgba(92,224,195,.65);outline-offset:-5px;background:rgba(48,190,158,.06)}
+
+
+/* Build 84: feedback de arraste e fechamento explícito da hierarquia */
+.tree-source-dragging{opacity:.28!important;outline:1px dashed #82baff;outline-offset:-2px;background:rgba(90,155,230,.12)!important}
+.tree-drag-ghost{min-height:48px;backdrop-filter:blur(10px);border-width:1.5px;transform:translateZ(0)}
+.explorer-heading .mobile-only{display:none}
+@media(max-width:680px){.explorer-heading .mobile-only{display:inline-flex}}
