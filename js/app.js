@@ -24,6 +24,10 @@ class FlowiqStudio {
     this.previewScene = null;
     this.dialogResolve = null;
     this.search = '';
+    this.treeSearch = '';
+    this.treeExpanded = new Set();
+    this.treeDrag = null;
+    this.treeHoldTimer = null;
     this.guarded = task => (...args) => Promise.resolve(task(...args)).catch(error => this.toast(error.message || 'Ocorreu um erro inesperado.', 'error'));
     this.returnScreen = 'home';
     this.bind();
@@ -58,10 +62,27 @@ class FlowiqStudio {
       const button = event.target.closest('[data-add-type]');
       if (button) this.addNode(button.dataset.addType);
     });
+    $('tree-search').addEventListener('input', event => { this.treeSearch = event.target.value; this.renderTreePanel(); });
     $('tree').addEventListener('click', event => {
-      const row = event.target.closest('[data-node-id]');
-      if (row) this.select(row.dataset.nodeId);
+      const toggle = event.target.closest('[data-tree-toggle]');
+      if (toggle) { this.toggleTreeNode(toggle.dataset.treeToggle); return; }
+      const menu = event.target.closest('[data-tree-menu]');
+      if (menu) { this.openTreeMenu(menu.dataset.treeMenu, menu); return; }
+      const row = event.target.closest('[data-tree-node]');
+      if (row && !event.target.closest('button')) this.select(row.dataset.treeNode);
+      const action = event.target.closest('[data-tree-action]');
+      if (action) this.handleTreeAction(action.dataset.treeAction, action.dataset.nodeId);
     });
+    $('tree').addEventListener('contextmenu', event => {
+      const row = event.target.closest('[data-tree-node]');
+      if (!row) return;
+      event.preventDefault();
+      this.openTreeMenu(row.dataset.treeNode, row);
+    });
+    $('tree').addEventListener('pointerdown', event => this.treePointerDown(event));
+    window.addEventListener('pointermove', event => this.treePointerMove(event));
+    window.addEventListener('pointerup', event => this.treePointerUp(event));
+    window.addEventListener('pointercancel', () => this.cancelTreeDrag());
     $('scene').addEventListener('pointerdown', event => this.pointerDown(event));
     $('scene').addEventListener('click', event => {
       if (event.target === $('scene') && this.store.state.selectedId) this.select(null);
@@ -298,11 +319,11 @@ class FlowiqStudio {
     this.saveTimer = setTimeout(() => this.saveProject().catch(() => {}), 450);
   }
 
-  addNode(type) {
+  addNode(type, parentId = undefined) {
     if (!COMPONENTS.some(item => item.type === type)) return;
     this.history.checkpoint(this.historySnapshot());
-    const parent = this.scene.get(this.store.state.selectedId);
-    const node = this.scene.create(type, parent?.type === 'Frame' ? parent.id : null);
+    const parent = parentId === undefined ? this.scene.get(this.store.state.selectedId) : this.scene.get(parentId);
+    const node = this.scene.create(type, parent?.id || null);
     this.select(node.id);
     this.closeAddMenu();
     this.scheduleSave();
@@ -311,6 +332,7 @@ class FlowiqStudio {
 
   select(id) {
     if (id && !this.scene.get(id)) return;
+    if (id) { let parent = this.scene.get(id)?.parentId; while (parent) { this.treeExpanded.add(parent); parent = this.scene.get(parent)?.parentId; } }
     this.store.set({ selectedId: id });
     this.renderEditor();
   }
@@ -412,9 +434,114 @@ class FlowiqStudio {
     $('redo').disabled = !status.canRedo;
   }
 
+  renderTreePanel() {
+    renderTree($('tree'), this.scene, this.store.state.selectedId, {
+      search: this.treeSearch,
+      expanded: this.treeExpanded,
+      onSelect: id => this.select(id),
+      onToggle: id => this.toggleTreeNode(id)
+    });
+  }
+
+  toggleTreeNode(id) {
+    if (this.treeExpanded.has(id)) this.treeExpanded.delete(id);
+    else this.treeExpanded.add(id);
+    this.renderTreePanel();
+  }
+
+  openTreeMenu(id, anchor) {
+    const node = this.scene.get(id);
+    if (!node) return;
+    $('tree').querySelector('.tree-context-menu')?.remove();
+    const menu = document.createElement('div');
+    menu.className = 'tree-context-menu';
+    menu.innerHTML = '<button data-tree-action="rename" data-node-id="' + id + '">Renomear</button><button data-tree-action="add" data-node-id="' + id + '">Adicionar instância</button><button data-tree-action="duplicate" data-node-id="' + id + '">Duplicar</button><button data-tree-action="delete" data-node-id="' + id + '" class="danger-text">Excluir</button>';
+    const rect = anchor.getBoundingClientRect();
+    menu.style.left = Math.max(8, Math.min(rect.left, window.innerWidth - 190)) + 'px';
+    menu.style.top = Math.min(window.innerHeight - 190, rect.bottom) + 'px';
+    document.body.append(menu);
+    const close = event => {
+      if (!menu.contains(event.target)) { menu.remove(); document.removeEventListener('pointerdown', close, true); }
+    };
+    setTimeout(() => document.addEventListener('pointerdown', close, true), 0);
+  }
+
+  async handleTreeAction(action, id) {
+    document.querySelector('.tree-context-menu')?.remove();
+    const node = this.scene.get(id);
+    if (!node) return;
+    this.select(id);
+    if (action === 'rename') {
+      const name = await this.dialog({ title: 'Renomear objeto', label: 'Nome do objeto', value: node.name, confirm: 'Salvar' });
+      if (name && name.trim() !== node.name) this.updatePropertyForNode(id, 'name', name);
+    } else if (action === 'add') {
+      const type = await this.dialog({ title: 'Adicionar instância', message: 'Escolha um tipo para criar dentro de ' + node.name + '.', choices: COMPONENTS.map(item => ({ value: item.type, label: item.label })).concat([{ value: 'cancel', label: 'Cancelar' }]) });
+      if (type && type !== 'cancel') this.addNode(type, id);
+    } else if (action === 'duplicate') this.duplicateSelected();
+    else if (action === 'delete') this.deleteSelected();
+  }
+
+  updatePropertyForNode(id, key, value) {
+    const previous = this.store.state.selectedId;
+    this.store.set({ selectedId: id });
+    this.updateProperty(key, value);
+    this.store.set({ selectedId: previous === id ? id : id });
+  }
+
+  treePointerDown(event) {
+    this._treeDownX = event.clientX; this._treeDownY = event.clientY;
+    const row = event.target.closest('[data-tree-node]');
+    if (!row || event.target.closest('button') || event.button > 0) return;
+    const id = row.dataset.treeNode;
+    this.treeHoldTimer = setTimeout(() => {
+      this.treeDrag = { id, pointerId: event.pointerId, active: false, x: event.clientX, y: event.clientY };
+      row.classList.add('tree-hold-ready');
+    }, 260);
+  }
+
+  treePointerMove(event) {
+    if (this.treeHoldTimer && !this.treeDrag && Math.hypot(event.clientX - (this._treeDownX ?? event.clientX), event.clientY - (this._treeDownY ?? event.clientY)) > 12) { clearTimeout(this.treeHoldTimer); this.treeHoldTimer = null; }
+    const drag = this.treeDrag;
+    if (!drag || drag.pointerId !== event.pointerId) return;
+    if (!drag.active && Math.hypot(event.clientX - drag.x, event.clientY - drag.y) > 7) {
+      drag.active = true;
+      document.body.classList.add('tree-dragging');
+      this.select(drag.id);
+    }
+    if (!drag.active) return;
+    document.querySelectorAll('.tree-drop-target').forEach(item => item.classList.remove('tree-drop-target'));
+    const target = document.elementFromPoint(event.clientX, event.clientY)?.closest('[data-tree-node]');
+    if (target && target.dataset.treeNode !== drag.id && !this.scene.descendants(drag.id).some(item => item.id === target.dataset.treeNode)) target.classList.add('tree-drop-target');
+  }
+
+  treePointerUp(event) {
+    clearTimeout(this.treeHoldTimer); this.treeHoldTimer = null;
+    const drag = this.treeDrag;
+    if (!drag || drag.pointerId !== event.pointerId) return;
+    if (drag.active) {
+      const target = document.elementFromPoint(event.clientX, event.clientY)?.closest('[data-tree-node]');
+      const parentId = target?.dataset.treeNode || null;
+      try {
+        this.history.checkpoint(this.historySnapshot());
+        this.scene.reparent(drag.id, parentId);
+        if (parentId) this.treeExpanded.add(parentId);
+        this.select(drag.id);
+        this.scheduleSave();
+      } catch (error) { this.toast(error.message, 'error'); }
+    }
+    this.cancelTreeDrag();
+  }
+
+  cancelTreeDrag() {
+    clearTimeout(this.treeHoldTimer); this.treeHoldTimer = null;
+    this.treeDrag = null;
+    document.body.classList.remove('tree-dragging');
+    document.querySelectorAll('.tree-drop-target,.tree-hold-ready').forEach(item => item.classList.remove('tree-drop-target','tree-hold-ready'));
+  }
+
   renderEditor() {
     if (!this.project) return;
-    renderTree($('tree'), this.scene, this.store.state.selectedId, id => this.select(id));
+    this.renderTreePanel();
     renderScene($('scene'), this.scene, { selectedId: this.store.state.selectedId, assets: this.assets });
     this.renderInspectorPanel(this.scene.get(this.store.state.selectedId));
     $('project-name').textContent = this.project.name;
@@ -491,7 +618,7 @@ class FlowiqStudio {
     if (previous && previous.id !== node.id) document.querySelector('[data-node-id="' + previous.id + '"]')?.classList.remove('is-selected');
     this.store.set({ selectedId: node.id });
     target.classList.add('is-selected');
-    renderTree($('tree'), this.scene, node.id, id => this.select(id));
+    this.renderTreePanel();
     this.renderInspectorPanel(node);
 
     const resize = event.target.closest('[data-resize]')?.dataset.resize || null;
@@ -755,6 +882,7 @@ class FlowiqStudio {
     if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'z') { event.preventDefault(); event.shiftKey ? this.redo() : this.undo(); }
     if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'y') { event.preventDefault(); this.redo(); }
     if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'd' && this.store.state.screen === 'editor') { event.preventDefault(); this.duplicateSelected(); }
+    if ((event.ctrlKey || event.metaKey) && event.shiftKey && event.key.toLowerCase() === 'x') { event.preventDefault(); $('tree-search').focus(); }
     if ((event.key === 'Delete' || event.key === 'Backspace') && this.store.state.screen === 'editor') this.deleteSelected();
   }
 
