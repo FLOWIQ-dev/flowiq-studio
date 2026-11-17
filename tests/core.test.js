@@ -59,6 +59,19 @@ test('UDim2 resolves Scale, Offset and AnchorPoint against the parent', () => {
   assert.deepEqual(restored.props.anchorPoint, node.props.anchorPoint);
 });
 
+test('Frame SizeConstraint resolves both axes against the selected parent axis', () => {
+  const relativeXX = new Scene([{ id: 'xx', type: 'Frame', props: {
+    sizeConstraint: 'RelativeXX',
+    size: { x: { scale: 0.5, offset: 0 }, y: { scale: 0.5, offset: 0 } }
+  } }]).get('xx');
+  assert.deepEqual(resolveNodeLayout(relativeXX, 400, 300), { x: 24, y: 24, width: 200, height: 200 });
+  const relativeYY = new Scene([{ id: 'yy', type: 'Frame', props: {
+    sizeConstraint: 'RelativeYY',
+    size: { x: { scale: 0.5, offset: 0 }, y: { scale: 0.5, offset: 0 } }
+  } }]).get('yy');
+  assert.deepEqual(resolveNodeLayout(relativeYY, 400, 300), { x: 24, y: 24, width: 150, height: 150 });
+});
+
 test('duplicate copies a complete subtree with new IDs', () => {
   const scene = new Scene();
   const frame = scene.create('Frame');
@@ -142,10 +155,14 @@ test('service worker precaches every module used by the new application', async 
 
 
 test('Inspector property schemas are class-based and extensible', () => {
-  assert.equal(PROPERTY_SCHEMA_VERSION, 1);
+  assert.equal(PROPERTY_SCHEMA_VERSION, 2);
   const frame = getPropertySchema('Frame');
   assert.ok(frame.sections.some(section => section.title === 'Position · UDim2'));
   assert.ok(frame.sections.some(section => section.title === 'Size · UDim2'));
+  const frameKeys = frame.sections.flatMap(section => section.fields.map(field => field.key));
+  for (const key of ['archivable','automaticSize','sizeConstraint','layoutOrder','zIndex','backgroundColor3','backgroundTransparency','borderColor3','borderSizePixel','borderMode','visible','clipsDescendants','active','interactable','selectable','selectionOrder']) {
+    assert.ok(frameKeys.includes(key), 'Frame should expose ' + key);
+  }
   registerPropertySchema('FutureWidget', { sections: [
     { title: 'Dados', fields: [{ key: 'value', label: 'Valor', type: 'number', min: 0, max: 10 }] }
   ]});
