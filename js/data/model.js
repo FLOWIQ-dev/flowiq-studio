@@ -1,21 +1,66 @@
 const ID = () => globalThis.crypto?.randomUUID?.() || 'node_' + Date.now().toString(36) + Math.random().toString(36).slice(2);
 const TYPES = new Set(['Frame', 'TextButton', 'TextLabel', 'ImageLabel']);
 const DEFAULTS = Object.freeze({
-  Frame: { x: 24, y: 24, width: 320, height: 220, background: '#1b2940', radius: 14, opacity: 1, visible: true, border: '#334155', borderWidth: 0 },
-  TextButton: { x: 24, y: 24, width: 160, height: 48, background: '#2563eb', color: '#ffffff', radius: 10, fontSize: 15, text: 'Botão', opacity: 1, visible: true, border: '#334155', borderWidth: 0 },
-  TextLabel: { x: 24, y: 24, width: 220, height: 42, background: '#121e2e', color: '#f8fafc', radius: 0, fontSize: 16, text: 'Texto', opacity: 1, visible: true, border: '#334155', borderWidth: 0 },
-  ImageLabel: { x: 24, y: 24, width: 140, height: 120, background: '#24344c', color: '#ffffff', radius: 10, opacity: 1, visible: true, border: '#334155', borderWidth: 0, assetId: '', fit: 'cover' }
+  Frame: { x: 24, y: 24, width: 320, height: 220, position: { x: { scale: 0, offset: 24 }, y: { scale: 0, offset: 24 } }, size: { x: { scale: 0, offset: 320 }, y: { scale: 0, offset: 220 } }, anchorPoint: { x: 0, y: 0 }, background: '#1b2940', radius: 14, opacity: 1, visible: true, border: '#334155', borderWidth: 0 },
+  TextButton: { x: 24, y: 24, width: 160, height: 48, position: { x: { scale: 0, offset: 24 }, y: { scale: 0, offset: 24 } }, size: { x: { scale: 0, offset: 160 }, y: { scale: 0, offset: 48 } }, anchorPoint: { x: 0, y: 0 }, background: '#2563eb', color: '#ffffff', radius: 10, fontSize: 15, text: 'Botão', opacity: 1, visible: true, border: '#334155', borderWidth: 0 },
+  TextLabel: { x: 24, y: 24, width: 220, height: 42, position: { x: { scale: 0, offset: 24 }, y: { scale: 0, offset: 24 } }, size: { x: { scale: 0, offset: 220 }, y: { scale: 0, offset: 42 } }, anchorPoint: { x: 0, y: 0 }, background: '#121e2e', color: '#f8fafc', radius: 0, fontSize: 16, text: 'Texto', opacity: 1, visible: true, border: '#334155', borderWidth: 0 },
+  ImageLabel: { x: 24, y: 24, width: 140, height: 120, position: { x: { scale: 0, offset: 24 }, y: { scale: 0, offset: 24 } }, size: { x: { scale: 0, offset: 140 }, y: { scale: 0, offset: 120 } }, anchorPoint: { x: 0, y: 0 }, background: '#24344c', color: '#ffffff', radius: 10, opacity: 1, visible: true, border: '#334155', borderWidth: 0, assetId: '', fit: 'cover' }
 });
+const finite = (value, fallback = 0) => Number.isFinite(Number(value)) ? Number(value) : fallback;
 const cleanName = (value, fallback) => String(value ?? '').trim().slice(0, 64) || fallback;
 const cleanProps = value => {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return {};
   const out = Object.create(null);
   for (const [key, item] of Object.entries(value)) {
     if (['__proto__', 'prototype', 'constructor'].includes(key)) continue;
-    if (['string', 'number', 'boolean'].includes(typeof item) && (typeof item !== 'number' || Number.isFinite(item))) out[key] = item;
+    if (['position', 'size', 'anchorPoint'].includes(key) && item && typeof item === 'object' && !Array.isArray(item)) {
+      const pair = {};
+      for (const axis of ['x', 'y']) {
+        const source = item[axis];
+        if (source && typeof source === 'object' && !Array.isArray(source)) {
+          pair[axis] = { scale: finite(source.scale), offset: finite(source.offset) };
+        } else if (key === 'anchorPoint') pair[axis] = finite(source);
+      }
+      out[key] = pair;
+    } else if (['string', 'number', 'boolean'].includes(typeof item) && (typeof item !== 'number' || Number.isFinite(item))) out[key] = item;
   }
   return out;
 };
+
+function normalizeLayout(props) {
+  const position = props.position && typeof props.position === 'object' ? props.position : {};
+  const size = props.size && typeof props.size === 'object' ? props.size : {};
+  const anchor = props.anchorPoint && typeof props.anchorPoint === 'object' ? props.anchorPoint : {};
+  props.position = {
+    x: { scale: finite(position.x?.scale), offset: finite(position.x?.offset, finite(props.x, 0)) },
+    y: { scale: finite(position.y?.scale), offset: finite(position.y?.offset, finite(props.y, 0)) }
+  };
+  props.size = {
+    x: { scale: finite(size.x?.scale), offset: finite(size.x?.offset, finite(props.width, 1)) },
+    y: { scale: finite(size.y?.scale), offset: finite(size.y?.offset, finite(props.height, 1)) }
+  };
+  props.anchorPoint = {
+    x: Math.max(0, Math.min(1, finite(anchor.x))),
+    y: Math.max(0, Math.min(1, finite(anchor.y)))
+  };
+  // Legacy aliases keep existing editor tools and old project data compatible.
+  props.x = props.position.x.offset;
+  props.y = props.position.y.offset;
+  props.width = props.size.x.offset;
+  props.height = props.size.y.offset;
+  return props;
+}
+
+export function resolveNodeLayout(node, parentWidth, parentHeight) {
+  const p = node.props;
+  const width = Math.max(1, parentWidth * p.size.x.scale + p.size.x.offset);
+  const height = Math.max(1, parentHeight * p.size.y.scale + p.size.y.offset);
+  return {
+    x: parentWidth * p.position.x.scale + p.position.x.offset - width * p.anchorPoint.x,
+    y: parentHeight * p.position.y.scale + p.position.y.offset - height * p.anchorPoint.y,
+    width, height
+  };
+}
 
 export class SceneNode {
   constructor(type, name, props = {}, id = ID()) {
@@ -23,7 +68,7 @@ export class SceneNode {
     this.id = id;
     this.type = type;
     this.name = cleanName(name, type);
-    this.props = { rotation: 0, ...DEFAULTS[type], ...cleanProps(props) };
+    this.props = normalizeLayout({ rotation: 0, ...DEFAULTS[type], ...cleanProps(props) });
     this.parentId = null;
     this.children = [];
   }
@@ -61,13 +106,13 @@ export class Scene {
     if (!source) throw new Error('Objeto não encontrado.');
     const siblings = source.parentId ? this.get(source.parentId)?.children : this.roots;
     const index = (siblings?.indexOf(id) ?? -1) + 1;
-    const copyBranch = (original, parentId, at = null, isRoot = false) => {
+    const copyBranch = (original, parentId, at = null) => {
       const copy = new SceneNode(original.type, original.name + ' cópia', original.props);
       this.insert(copy, parentId, at);
       original.children.forEach(childId => copyBranch(this.get(childId), copy.id));
       return copy;
     };
-    return copyBranch(source, source.parentId, index, true);
+    return copyBranch(source, source.parentId, index);
   }
 
   descendants(id) {
@@ -138,7 +183,7 @@ export class Scene {
   toJSON() {
     const encode = id => {
       const node = this.get(id);
-      return { id: node.id, type: node.type, name: node.name, props: { ...node.props }, children: node.children.map(encode) };
+      return { id: node.id, type: node.type, name: node.name, props: { ...node.props, position: structuredClone(node.props.position), size: structuredClone(node.props.size), anchorPoint: { ...node.props.anchorPoint } }, children: node.children.map(encode) };
     };
     return this.roots.map(encode);
   }
@@ -147,8 +192,8 @@ export class Scene {
 }
 
 export const COMPONENTS = Object.freeze([
-  { type: 'Frame', label: 'Frame', detail: 'Container para outros elementos' },
-  { type: 'TextButton', label: 'TextButton', detail: 'Botão interativo' },
-  { type: 'TextLabel', label: 'TextLabel', detail: 'Texto e títulos' },
-  { type: 'ImageLabel', label: 'ImageLabel', detail: 'Imagem e mídia' }
+  { type: 'Frame', label: 'Frame', category: 'Contêineres', detail: 'Container para outros elementos' },
+  { type: 'TextButton', label: 'TextButton', category: 'Interação', detail: 'Botão interativo' },
+  { type: 'TextLabel', label: 'TextLabel', category: 'Texto', detail: 'Texto e títulos' },
+  { type: 'ImageLabel', label: 'ImageLabel', category: 'Mídia', detail: 'Imagem e mídia' }
 ]);
