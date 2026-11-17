@@ -105,6 +105,7 @@ class FlowiqStudio {
     $('backup-input').addEventListener('change', event => this.importBackup(event.target.files?.[0]));
     $('settings-back').addEventListener('click', guarded(() => this.returnHome()));
     $('library-back').addEventListener('click', guarded(() => this.returnHome()));
+    $('mobile-add-objects').addEventListener('click', () => { this.toggleAddMenu(); $('mobile-add-objects').setAttribute('aria-expanded', String(!$('add-menu').hidden)); });
     $('mobile-tabs').addEventListener('click', event => {
       const button = event.target.closest('[data-panel]');
       if (button) this.setPanel(button.dataset.panel);
