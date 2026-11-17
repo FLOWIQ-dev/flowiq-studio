@@ -139,6 +139,7 @@ class FlowiqStudio {
       if (button) this.setPanel(button.dataset.panel);
     });
     $('panel-close').addEventListener('click', () => this.setPanel('stage'));
+    $('explorer-close').addEventListener('click', () => this.setPanel('stage'));
     $('dialog').addEventListener('click', event => { if (event.target === $('dialog')) this.resolveDialog(null); });
     document.addEventListener('keydown', event => this.keydown(event));
     window.addEventListener('beforeunload', event => {
@@ -545,6 +546,7 @@ class FlowiqStudio {
     const node = this.scene.get(id);
     if (!node) return;
     this.treeDrag = { id, pointerId, active: pointerId === 'touch', x, y, targetId: null, position: 'root' };
+    document.querySelector('[data-tree-node="' + CSS.escape(id) + '"]')?.classList.add('tree-source-dragging');
     const ghost = document.createElement('div');
     ghost.className = 'tree-drag-ghost';
     const marker = document.createElement('span'); marker.className = 'tree-drag-ghost-icon'; marker.innerHTML = icon(node.type);
@@ -609,6 +611,7 @@ class FlowiqStudio {
   cancelTreeDrag() {
     clearTimeout(this.treeHoldTimer); this.treeHoldTimer = null;
     this.treeDrag = null; this.treeDragGhost?.remove(); this.treeDragGhost = null;
+    document.querySelectorAll('.tree-source-dragging').forEach(item => item.classList.remove('tree-source-dragging'));
     document.body.classList.remove('tree-dragging');
     $('tree')?.classList.remove('tree-root-drop');
     document.querySelectorAll('.tree-drop-target,.tree-drop-before,.tree-drop-after,.tree-hold-ready').forEach(item => item.classList.remove('tree-drop-target','tree-drop-before','tree-drop-after','tree-hold-ready'));
@@ -805,6 +808,7 @@ class FlowiqStudio {
     const shell = $('editor-shell');
     const current = shell.dataset.panel || 'stage';
     const next = name === current && name !== 'stage' ? 'stage' : name;
+    if (!['stage', 'explorer', 'inspector'].includes(name)) return;
     this.store.set({ panel: next });
     shell.dataset.panel = next;
     document.querySelectorAll('[data-panel]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.panel === next)));
@@ -824,7 +828,7 @@ class FlowiqStudio {
     $('object-parent-note').hidden = false;
     this.filterAddMenu('');
     $('mobile-add-objects').setAttribute('aria-expanded', 'true');
-    requestAnimationFrame(() => $('object-search').focus());
+    // Não focar automaticamente: abrir o seletor não deve chamar o teclado móvel.
   }
 
   closeAddMenu() {
