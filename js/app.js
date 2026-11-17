@@ -753,10 +753,27 @@ class FlowiqStudio {
 
   setZoom(value) {
     this.zoom = value;
+    const host = $('stage-viewport');
+    const mobile = window.matchMedia('(max-width: 680px)').matches;
+    const style = host ? getComputedStyle(host) : null;
+    const verticalPadding = style
+      ? (parseFloat(style.paddingTop) || 0) + (parseFloat(style.paddingBottom) || 0)
+      : 0;
+    const availableHeight = host
+      ? Math.max(1, host.clientHeight - verticalPadding - 2)
+      : 640 * this.zoom;
+
+    // No mobile, a largura lógica continua em 960 unidades e a altura
+    // acompanha a área útil real. Assim o palco alcança as duas bordas
+    // verticais sem deformar os objetos nem cortar a cena.
+    const logicalHeight = mobile ? availableHeight / this.zoom : 640;
+    $('scene').style.width = '960px';
+    $('scene').style.height = logicalHeight + 'px';
     $('scene-zoom').style.width = (960 * this.zoom) + 'px';
-    $('scene-zoom').style.height = (640 * this.zoom) + 'px';
+    $('scene-zoom').style.height = (logicalHeight * this.zoom) + 'px';
     $('scene').style.transform = 'scale(' + this.zoom + ')';
     $('scene').style.transformOrigin = 'top left';
+    $('scene-size').textContent = '960 × ' + Math.round(logicalHeight);
     $('zoom-value').textContent = Math.round(this.zoom * 100) + '%';
   }
 
@@ -769,7 +786,10 @@ class FlowiqStudio {
     const verticalPadding = (parseFloat(style.paddingTop) || 0) + (parseFloat(style.paddingBottom) || 0);
     const availableWidth = Math.max(1, host.clientWidth - horizontalPadding - 2);
     const availableHeight = Math.max(1, host.clientHeight - verticalPadding - 2);
-    const scale = Math.min(availableWidth / 960, availableHeight / 640, 1);
+    const mobile = window.matchMedia('(max-width: 680px)').matches;
+    const scale = mobile
+      ? Math.min(availableWidth / 960, 1)
+      : Math.min(availableWidth / 960, availableHeight / 640, 1);
     this.setZoom(Math.max(0.05, scale));
   }
 
