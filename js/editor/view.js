@@ -22,6 +22,27 @@ export function renderScene(container, scene, { selectedId = null, preview = fal
   const rootWidth = container.clientWidth || Math.max(1, Number(sceneSize.width) || 960);
   const rootHeight = container.clientHeight || Math.max(1, Number(sceneSize.height) || 640);
   const assetMap = new Map(assets.map(asset => [asset.id, asset]));
+  const measureLayout = (node, parentWidth, parentHeight) => {
+    const layout = measureLayout(node, parentWidth, parentHeight);
+    const automatic = node.props.automaticSize || 'None';
+    if (automatic === 'None' || !node.children.length) return layout;
+    for (let pass = 0; pass < 4; pass++) {
+      let contentWidth = 0;
+      let contentHeight = 0;
+      for (const childId of node.children) {
+        const child = scene.get(childId);
+        if (!child) continue;
+        const bounds = measureLayout(child, layout.width, layout.height);
+        contentWidth = Math.max(contentWidth, bounds.x + bounds.width);
+        contentHeight = Math.max(contentHeight, bounds.y + bounds.height);
+      }
+      if (automatic === 'X' || automatic === 'XY') layout.width = Math.max(1, contentWidth);
+      if (automatic === 'Y' || automatic === 'XY') layout.height = Math.max(1, contentHeight);
+      layout.x = parentWidth * node.props.position.x.scale + node.props.position.x.offset - layout.width * node.props.anchorPoint.x;
+      layout.y = parentHeight * node.props.position.y.scale + node.props.position.y.offset - layout.height * node.props.anchorPoint.y;
+    }
+    return layout;
+  };
   const build = (id, parent, parentWidth, parentHeight) => {
     const node = scene.get(id);
     if (!node || node.props.visible === false) return;
@@ -55,6 +76,9 @@ export function renderScene(container, scene, { selectedId = null, preview = fal
       item.style.outlineOffset = p.borderMode === 'Outline' ? '0' : '';
       item.style.boxShadow = p.borderMode === 'Inset' && borderSize ? 'inset 0 0 0 ' + borderSize + 'px ' + borderColor : 'none';
       if (p.style === 'DropShadow') item.style.boxShadow = '0 5px 14px rgba(0,0,0,.28)';
+      if (p.style === 'ChatBlue') item.style.backgroundColor = 'rgba(36,84,135,' + alpha + ')';
+      if (p.style === 'ChatGreen') item.style.backgroundColor = 'rgba(35,112,75,' + alpha + ')';
+      if (p.style === 'ChatRed') item.style.backgroundColor = 'rgba(137,48,55,' + alpha + ')';
     } else {
       item.style.borderRadius = Math.max(0, Number(p.radius) || 0) + 'px';
       item.style.opacity = String(Math.max(0, Math.min(1, Number(p.opacity ?? 1))));
