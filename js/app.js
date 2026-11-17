@@ -702,7 +702,7 @@ class FlowiqStudio {
       id: node.id, pointerId: event.pointerId, mode, direction: resize,
       startX: event.clientX, startY: event.clientY,
       x: Number(node.props.position.x.offset) || 0, y: Number(node.props.position.y.offset) || 0,
-      left: target.offsetLeft, top: target.offsetTop,
+      left: target.offsetLeft - (target.offsetWidth * node.props.anchorPoint.x), top: target.offsetTop - (target.offsetHeight * node.props.anchorPoint.y),
       width: target.offsetWidth || 1, height: target.offsetHeight || 1,
       parentWidth: target.parentElement?.clientWidth || 960, parentHeight: target.parentElement?.clientHeight || 640,
       rotation: Number(node.props.rotation) || 0,
@@ -747,8 +747,8 @@ class FlowiqStudio {
         const shiftLocalY = dir.includes('n') ? (drag.height - height) / 2 : dir.includes('s') ? (height - drag.height) / 2 : 0;
         const shiftWorldX = shiftLocalX * Math.cos(radians) - shiftLocalY * Math.sin(radians);
         const shiftWorldY = shiftLocalX * Math.sin(radians) + shiftLocalY * Math.cos(radians);
-        const centerX = drag.x + drag.width / 2 + shiftWorldX;
-        const centerY = drag.y + drag.height / 2 + shiftWorldY;
+        const centerX = drag.left + drag.width / 2 + shiftWorldX;
+        const centerY = drag.top + drag.height / 2 + shiftWorldY;
         const nextLeft = Math.round(centerX - width / 2);
         const nextTop = Math.round(centerY - height / 2);
         current.props.position.x.offset = Math.round(nextLeft + width * current.props.anchorPoint.x - drag.parentWidth * current.props.position.x.scale);
