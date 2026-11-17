@@ -89,6 +89,8 @@ class FlowiqStudio {
     $('tree').addEventListener('contextmenu', event => { event.preventDefault(); });
     $('add-menu-backdrop').addEventListener('click', () => this.closeAddMenu());
     $('scene').addEventListener('pointerdown', event => this.pointerDown(event));
+    window.addEventListener('pointerup', event => this.finishSceneTap(event));
+    window.addEventListener('pointercancel', event => { if (this.sceneTap?.pointerId === event.pointerId) this.sceneTap = null; });
     $('scene').addEventListener('click', event => {
       if (event.target === $('scene') && this.store.state.selectedId) this.select(null);
     });
@@ -629,20 +631,29 @@ class FlowiqStudio {
     }
   }
 
+  finishSceneTap(event) {
+    const tap = this.sceneTap;
+    if (!tap || tap.pointerId !== event.pointerId) return;
+    this.sceneTap = null;
+    if (Math.hypot(event.clientX - tap.startX, event.clientY - tap.startY) > 10 || this.runtime.running) return;
+    this.select(tap.id);
+  }
+
   pointerDown(event) {
     if (this.runtime.running || event.button > 0) return;
     const target = event.target.closest('.scene-node');
     if (!target) return;
     const node = this.scene.get(target.dataset.nodeId);
     if (!node) return;
-    event.preventDefault();
-    const previous = this.scene.get(this.store.state.selectedId);
-    if (previous && previous.id !== node.id) document.querySelector('[data-node-id="' + previous.id + '"]')?.classList.remove('is-selected');
-    this.store.set({ selectedId: node.id });
-    target.classList.add('is-selected');
-    this.renderTreePanel();
-    this.renderInspectorPanel(node);
 
+    // Objeto não selecionado: aguarda o fim do gesto para confirmar um tap.
+    // O primeiro toque nunca move, redimensiona ou gira.
+    if (this.store.state.selectedId !== node.id) {
+      this.sceneTap = { id: node.id, pointerId: event.pointerId, startX: event.clientX, startY: event.clientY };
+      return;
+    }
+
+    event.preventDefault();
     const resize = event.target.closest('[data-resize]')?.dataset.resize || null;
     const rotate = Boolean(event.target.closest('[data-rotate]'));
     const mode = rotate ? 'rotate' : resize ? 'resize' : 'move';
