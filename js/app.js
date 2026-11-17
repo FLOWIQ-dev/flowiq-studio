@@ -64,6 +64,8 @@ class FlowiqStudio {
     });
     $('tree-search').addEventListener('input', event => { this.treeSearch = event.target.value; this.renderTreePanel(); });
     document.addEventListener('click', event => {
+      const action = event.target.closest('[data-tree-action]');
+      if (action) this.handleTreeAction(action.dataset.treeAction, action.dataset.nodeId);
     });
     $('tree').addEventListener('click', event => {
       const toggle = event.target.closest('[data-tree-toggle]');
