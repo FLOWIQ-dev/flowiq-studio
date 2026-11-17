@@ -193,7 +193,7 @@ export class Scene {
   toJSON() {
     const encode = id => {
       const node = this.get(id);
-      return { id: node.id, type: node.type, name: node.name, props: { ...node.props, position: structuredClone(node.props.position), size: structuredClone(node.props.size), anchorPoint: { ...node.props.anchorPoint } }, children: node.children.map(encode) };
+      return { id: node.id, type: node.type, name: node.name, props: { ...node.props, position: { x: { ...node.props.position.x }, y: { ...node.props.position.y } }, size: { x: { ...node.props.size.x }, y: { ...node.props.size.y } }, anchorPoint: { ...node.props.anchorPoint } }, children: node.children.map(encode) };
     };
     return this.roots.map(encode);
   }
