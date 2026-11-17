@@ -22,7 +22,11 @@ export function renderScene(container, scene, { selectedId = null, preview = fal
   // A viewport define o espaço lógico atual. A câmera aplica zoom apenas aos objetos.
   const rootWidth = Math.max(1, Number(sceneSize.width) || container.clientWidth || 960);
   const rootHeight = Math.max(1, Number(sceneSize.height) || container.clientHeight || 640);
+  container.style.position = 'relative';
   const world = el('div', 'scene-world');
+  world.style.width = rootWidth + 'px';
+  world.style.height = rootHeight + 'px';
+  world.style.transformOrigin = preview ? 'top left' : '50% 50%';
   world.style.transform = 'scale(' + Math.max(0.25, Math.min(2.5, Number(zoom) || 1)) + ')';
   container.append(world);
   const assetMap = new Map(assets.map(asset => [asset.id, asset]));
