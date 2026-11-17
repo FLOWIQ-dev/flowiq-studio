@@ -915,3 +915,5 @@ body[data-screen=editor]{
   #screen-editor .stage-viewport{padding:0;overflow:hidden}
   #screen-editor .scene-zoom{width:100%;height:100%;margin:0}
 }
+
+#screen-editor .scene-world:empty:after,.preview-screen .scene-world:empty:after{content:'Seu palco está vazio. Adicione um objeto para começar.';position:absolute;inset:0;display:grid;place-items:center;color:#657a96;font-size:13px;pointer-events:none}
