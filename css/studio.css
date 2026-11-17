@@ -466,3 +466,13 @@ body[data-screen=editor]{
 #tree .tree-drop-target{outline:2px solid #5ce0c3!important;background:rgba(48,190,158,.2)!important;box-shadow:inset 0 0 0 1px rgba(92,224,195,.2)!important}
 #tree .tree-drop-before{box-shadow:inset 0 3px 0 #5ce0c3!important;background:rgba(48,190,158,.09)!important}
 #tree .tree-drop-after{box-shadow:inset 0 -3px 0 #5ce0c3!important;background:rgba(48,190,158,.09)!important}
+
+
+/* Build 0.94: scroll nativo da hierarquia, inclusive no modo mover */
+@media(max-width:680px){
+  #screen-editor .tree-row{touch-action:pan-y;}
+  #screen-editor .tree-container{touch-action:pan-y;}
+}
+#tree.tree-move-mode-active .tree-row{cursor:pointer;}
+#tree .tree-row.tree-move-source{opacity:.48;}
+.tree-move-banner{display:none!important;}
