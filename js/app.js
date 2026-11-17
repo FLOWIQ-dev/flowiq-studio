@@ -28,6 +28,8 @@ class FlowiqStudio {
     this.treeExpanded = new Set();
     this.treeDrag = null;
     this.treeHoldTimer = null;
+    this.treeTouch = null;
+    this.treeDragGhost = null;
     this.addParentId = null;
     this.guarded = task => (...args) => Promise.resolve(task(...args)).catch(error => this.toast(error.message || 'Ocorreu um erro inesperado.', 'error'));
     this.returnScreen = 'home';
@@ -78,16 +80,15 @@ class FlowiqStudio {
       const action = event.target.closest('[data-tree-action]');
       if (action) this.handleTreeAction(action.dataset.treeAction, action.dataset.nodeId);
     });
-    $('tree').addEventListener('contextmenu', event => {
-      event.preventDefault();
-      if (this._lastTreePointerType !== 'mouse' || event.button !== 2) return;
-      const row = event.target.closest('[data-tree-node]');
-      if (row) this.openTreeMenu(row.dataset.treeNode, row);
-    });
-    $('tree').addEventListener('pointerdown', event => { this._lastTreePointerType = event.pointerType; this.treePointerDown(event); });
-    window.addEventListener('pointermove', event => this.treePointerMove(event));
-    window.addEventListener('pointerup', event => this.treePointerUp(event));
-    window.addEventListener('pointercancel', () => this.cancelTreeDrag());
+    $('tree').addEventListener('contextmenu', event => { event.preventDefault(); });
+    $('tree').addEventListener('pointerdown', event => { this._lastTreePointerType = event.pointerType; if (event.pointerType !== 'touch') this.treePointerDown(event); });
+    window.addEventListener('pointermove', event => { if (event.pointerType !== 'touch') this.treePointerMove(event); });
+    window.addEventListener('pointerup', event => { if (event.pointerType !== 'touch') this.treePointerUp(event); });
+    window.addEventListener('pointercancel', event => { if (event.pointerType !== 'touch') this.cancelTreeDrag(); });
+    $('tree').addEventListener('touchstart', event => this.treeTouchStart(event), { passive: true });
+    window.addEventListener('touchmove', event => this.treeTouchMove(event), { passive: false });
+    window.addEventListener('touchend', event => this.treeTouchEnd(event), { passive: true });
+    window.addEventListener('touchcancel', () => { this.treeTouch = null; this.cancelTreeDrag(); }, { passive: true });
     $('scene').addEventListener('pointerdown', event => this.pointerDown(event));
     $('scene').addEventListener('click', event => {
       if (event.target === $('scene') && this.store.state.selectedId) this.select(null);
@@ -494,70 +495,116 @@ class FlowiqStudio {
 
 
   treePointerDown(event) {
-    this._treeDownX = event.clientX; this._treeDownY = event.clientY;
     const row = event.target.closest('[data-tree-node]');
     if (!row || event.target.closest('button') || event.button > 0) return;
-    const id = row.dataset.treeNode;
-    this.treeHoldTimer = setTimeout(() => {
-      this.treeDrag = { id, pointerId: event.pointerId, active: false, x: event.clientX, y: event.clientY };
-      row.classList.add('tree-hold-ready');
-    }, 260);
+    const id = row.dataset.treeNode, x = event.clientX, y = event.clientY;
+    this._treeDownPoint = { x, y };
+    this.treeHoldTimer = setTimeout(() => this.beginTreeDrag(id, event.pointerId, x, y), 320);
   }
-
   treePointerMove(event) {
-    if (this.treeHoldTimer && !this.treeDrag && Math.hypot(event.clientX - (this._treeDownX ?? event.clientX), event.clientY - (this._treeDownY ?? event.clientY)) > 12) { clearTimeout(this.treeHoldTimer); this.treeHoldTimer = null; }
+    if (this.treeHoldTimer && !this.treeDrag && Math.hypot(event.clientX - this._treeDownPoint.x, event.clientY - this._treeDownPoint.y) > 10) {
+      clearTimeout(this.treeHoldTimer); this.treeHoldTimer = null;
+    }
     const drag = this.treeDrag;
     if (!drag || drag.pointerId !== event.pointerId) return;
-    if (!drag.active && Math.hypot(event.clientX - drag.x, event.clientY - drag.y) > 7) {
-      drag.active = true;
-      document.body.classList.add('tree-dragging');
-      this.select(drag.id);
-    }
-    if (!drag.active) return;
-    document.querySelectorAll('.tree-drop-target').forEach(item => item.classList.remove('tree-drop-target'));
-    const target = document.elementFromPoint(event.clientX, event.clientY)?.closest('[data-tree-node]');
-    if (target && target.dataset.treeNode !== drag.id && !this.scene.descendants(drag.id).some(item => item.id === target.dataset.treeNode)) target.classList.add('tree-drop-target');
+    if (!drag.active && Math.hypot(event.clientX - drag.x, event.clientY - drag.y) > 5) drag.active = true;
+    if (drag.active) this.updateTreeDrag(event.clientX, event.clientY);
   }
-
+  treeTouchStart(event) {
+    if (event.touches.length !== 1) { this.cancelTreeDrag(); return; }
+    const touch = event.touches[0], row = event.target.closest('[data-tree-node]');
+    if (!row || event.target.closest('button')) return;
+    this.treeTouch = { id: row.dataset.treeNode, x: touch.clientX, y: touch.clientY, active: false };
+    this.treeHoldTimer = setTimeout(() => {
+      if (!this.treeTouch) return;
+      this.treeTouch.active = true;
+      this.beginTreeDrag(this.treeTouch.id, 'touch', this.treeTouch.x, this.treeTouch.y);
+    }, 360);
+  }
+  treeTouchMove(event) {
+    const touch = event.touches[0];
+    if (!touch || !this.treeTouch) return;
+    if (!this.treeTouch.active && Math.hypot(touch.clientX - this.treeTouch.x, touch.clientY - this.treeTouch.y) > 12) {
+      clearTimeout(this.treeHoldTimer); this.treeHoldTimer = null; this.treeTouch = null; return;
+    }
+    if (this.treeTouch.active && this.treeDrag) {
+      event.preventDefault();
+      this.updateTreeDrag(touch.clientX, touch.clientY);
+    }
+  }
+  treeTouchEnd(event) {
+    if (!this.treeTouch) return;
+    const touch = event.changedTouches[0], active = this.treeTouch.active;
+    this.treeTouch = null;
+    clearTimeout(this.treeHoldTimer); this.treeHoldTimer = null;
+    if (active && touch) this.finishTreeDrag(touch.clientX, touch.clientY);
+    else this.cancelTreeDrag();
+  }
+  beginTreeDrag(id, pointerId, x, y) {
+    clearTimeout(this.treeHoldTimer); this.treeHoldTimer = null;
+    const node = this.scene.get(id);
+    if (!node) return;
+    this.treeDrag = { id, pointerId, active: pointerId === 'touch', x, y, targetId: null, position: 'root' };
+    const ghost = document.createElement('div');
+    ghost.className = 'tree-drag-ghost';
+    const marker = document.createElement('span'); marker.className = 'tree-drag-ghost-icon'; marker.innerHTML = icon(node.type);
+    const copy = document.createElement('span'); copy.className = 'tree-drag-ghost-copy'; copy.textContent = node.name + ' · ' + node.type;
+    ghost.append(marker, copy); document.body.append(ghost); this.treeDragGhost = ghost;
+    document.body.classList.add('tree-dragging');
+    if (pointerId === 'touch') this.updateTreeDrag(x, y);
+    else document.querySelector('[data-tree-node="' + CSS.escape(id) + '"]')?.classList.add('tree-hold-ready');
+  }
+  updateTreeDrag(x, y) {
+    const drag = this.treeDrag;
+    if (!drag) return;
+    drag.active = true;
+    if (this.treeDragGhost) {
+      this.treeDragGhost.style.left = Math.min(window.innerWidth - 230, Math.max(8, x + 14)) + 'px';
+      this.treeDragGhost.style.top = Math.min(window.innerHeight - 54, Math.max(8, y + 14)) + 'px';
+    }
+    document.querySelectorAll('.tree-drop-target,.tree-drop-before,.tree-drop-after').forEach(item => item.classList.remove('tree-drop-target','tree-drop-before','tree-drop-after'));
+    const target = document.elementFromPoint(x, y)?.closest('[data-tree-node]');
+    if (!target || target.dataset.treeNode === drag.id || this.scene.descendants(drag.id).some(item => item.id === target.dataset.treeNode)) {
+      drag.targetId = null; drag.position = 'root'; return;
+    }
+    const rect = target.getBoundingClientRect(), relative = (y - rect.top) / Math.max(1, rect.height);
+    drag.position = relative < .24 ? 'before' : relative > .76 ? 'after' : 'inside';
+    drag.targetId = target.dataset.treeNode;
+    target.classList.add(drag.position === 'inside' ? 'tree-drop-target' : drag.position === 'before' ? 'tree-drop-before' : 'tree-drop-after');
+  }
   treePointerUp(event) {
     clearTimeout(this.treeHoldTimer); this.treeHoldTimer = null;
+    if (this.treeDrag?.pointerId === event.pointerId && this.treeDrag.active) this.finishTreeDrag(event.clientX, event.clientY);
+    else this.cancelTreeDrag();
+  }
+  finishTreeDrag(x, y) {
     const drag = this.treeDrag;
-    if (!drag || drag.pointerId !== event.pointerId) return;
-    if (drag.active) {
-      const target = document.elementFromPoint(event.clientX, event.clientY)?.closest('[data-tree-node]');
-      const targetNode = target ? this.scene.get(target.dataset.treeNode) : null;
-      try {
-        this.history.checkpoint(this.historySnapshot());
-        if (!targetNode) {
-          this.scene.reparent(drag.id, null);
-        } else {
-          const rect = target.getBoundingClientRect();
-          const relative = (event.clientY - rect.top) / Math.max(1, rect.height);
-          if (relative < 0.22 || relative > 0.78) {
-            const siblings = targetNode.parentId ? this.scene.get(targetNode.parentId).children : this.scene.roots;
-            let index = siblings.indexOf(targetNode.id) + (relative > 0.78 ? 1 : 0);
-            const source = this.scene.get(drag.id);
-            const sourceSiblings = source.parentId ? this.scene.get(source.parentId).children : this.scene.roots;
-            const sourceIndex = sourceSiblings.indexOf(source.id);
-            if (sourceSiblings === siblings && sourceIndex >= 0 && sourceIndex < index) index--;
-            this.scene.reparent(drag.id, targetNode.parentId, index);
-          } else {
-            this.scene.reparent(drag.id, targetNode.id);
-            this.treeExpanded.add(targetNode.id);
-          }
-        }
-        this.select(drag.id);
-        this.scheduleSave();
-      } catch (error) { this.toast(error.message, 'error'); }
-    }
+    if (!drag?.active) { this.cancelTreeDrag(); return; }
+    this.updateTreeDrag(x, y);
+    try {
+      this.history.checkpoint(this.historySnapshot());
+      const source = this.scene.get(drag.id), targetNode = drag.targetId ? this.scene.get(drag.targetId) : null;
+      if (!targetNode) this.scene.reparent(drag.id, null);
+      else if (drag.position === 'inside') {
+        this.scene.reparent(drag.id, targetNode.id);
+        this.treeExpanded.add(targetNode.id);
+      } else {
+        const siblings = targetNode.parentId ? this.scene.get(targetNode.parentId).children : this.scene.roots;
+        let index = siblings.indexOf(targetNode.id) + (drag.position === 'after' ? 1 : 0);
+        const sourceSiblings = source.parentId ? this.scene.get(source.parentId).children : this.scene.roots;
+        const sourceIndex = sourceSiblings.indexOf(source.id);
+        if (sourceSiblings === siblings && sourceIndex >= 0 && sourceIndex < index) index--;
+        this.scene.reparent(drag.id, targetNode.parentId, index);
+      }
+      this.select(drag.id); this.scheduleSave();
+    } catch (error) { this.toast(error.message, 'error'); }
     this.cancelTreeDrag();
   }
-
   cancelTreeDrag() {
     clearTimeout(this.treeHoldTimer); this.treeHoldTimer = null;
-    this.treeDrag = null;
+    this.treeDrag = null; this.treeDragGhost?.remove(); this.treeDragGhost = null;
     document.body.classList.remove('tree-dragging');
-    document.querySelectorAll('.tree-drop-target,.tree-hold-ready').forEach(item => item.classList.remove('tree-drop-target','tree-hold-ready'));
+    document.querySelectorAll('.tree-drop-target,.tree-drop-before,.tree-drop-after,.tree-hold-ready').forEach(item => item.classList.remove('tree-drop-target','tree-drop-before','tree-drop-after','tree-hold-ready'));
   }
 
   renderEditor() {
@@ -763,7 +810,6 @@ class FlowiqStudio {
   openAddMenu(parentId = null) {
     const parent = parentId ? this.scene.get(parentId) : null;
     this.addParentId = parent?.id ?? null;
-    if (window.matchMedia('(max-width: 680px)').matches) this.setPanel('stage');
     $('add-menu').hidden = false;
     $('object-search').value = '';
     $('object-dialog-title').textContent = parent ? 'Adicionar instância' : 'Adicionar ao palco';
