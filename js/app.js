@@ -650,6 +650,7 @@ class FlowiqStudio {
     // O primeiro toque nunca move, redimensiona ou gira.
     if (this.store.state.selectedId !== node.id) {
       this.sceneTap = { id: node.id, pointerId: event.pointerId, startX: event.clientX, startY: event.clientY };
+      target.setPointerCapture?.(event.pointerId);
       return;
     }
 
