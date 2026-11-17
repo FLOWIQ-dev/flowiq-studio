@@ -184,3 +184,28 @@ test('editor stage follows the available viewport and zoom is isolated to the sc
   assert.match(view, /const world = el\('div', 'scene-world'\)/);
   assert.match(view, /build\(id, world, rootWidth, rootHeight\)/);
 });
+
+
+test('preview keeps the editor stage logical size and scales the complete canvas to fit', () => {
+  const app = readFileSync(new URL('../js/app.js', import.meta.url), 'utf8');
+  const view = readFileSync(new URL('../js/editor/view.js', import.meta.url), 'utf8');
+  assert.match(app, /this\.previewStageSize = this\.getStageSize\(\)/);
+  assert.match(app, /fitPreview\(\)/);
+  assert.match(app, /sceneSize: this\.previewStageSize/);
+  assert.match(view, /world\.style\.width = rootWidth \+ 'px'/);
+  assert.match(view, /world\.style\.height = rootHeight \+ 'px'/);
+});
+
+test('double tap opens the Inspector and deleting from Inspector closes its panel', () => {
+  const app = readFileSync(new URL('../js/app.js', import.meta.url), 'utf8');
+  assert.match(app, /addEventListener\('dblclick'/);
+  assert.match(app, /this\.setPanel\('inspector'\)/);
+  assert.match(app, /onDelete: \(\) => \{ this\.deleteSelected\(\); this\.setPanel\('stage'\); \}/);
+});
+
+test('selection handles are visually compact and half transparent', () => {
+  const css = readFileSync(new URL('../css/studio.css', import.meta.url), 'utf8');
+  assert.match(css, /width:8px;height:8px;min-width:8px;min-height:8px/);
+  assert.match(css, /opacity:\.5/);
+  assert.match(css, /width:22px;height:22px;min-width:22px;min-height:22px/);
+});
