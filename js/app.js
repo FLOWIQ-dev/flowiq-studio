@@ -1,6 +1,6 @@
 import { Store } from './core/store.js';
 import { History } from './core/history.js';
-import { Scene, COMPONENTS } from './data/model.js';
+import { Scene, COMPONENTS, resolveNodeLayout } from './data/model.js';
 import { Database } from './data/database.js';
 import { renderScene, renderTree, renderInspector } from './editor/view.js';
 import { Runtime } from './runtime/runtime.js';
@@ -595,19 +595,35 @@ class FlowiqStudio {
     });
   }
 
-  findAlignment(node, x, y) {
-    const width = Number(node.props.width) || 1;
-    const height = Number(node.props.height) || 1;
-    const movingX = [x, x + width / 2, x + width];
-    const movingY = [y, y + height / 2, y + height];
-    const targetsX = [0, 480, 960];
-    const targetsY = [0, 320, 640];
-    for (const other of this.scene.nodes.values()) {
-      if (other.id === node.id || other.props.visible === false) continue;
-      const ox = Number(other.props.x) || 0, oy = Number(other.props.y) || 0;
-      const ow = Number(other.props.width) || 1, oh = Number(other.props.height) || 1;
-      targetsX.push(ox, ox + ow / 2, ox + ow);
-      targetsY.push(oy, oy + oh / 2, oy + oh);
+  findAlignment(node, xOffset, yOffset) {
+    const parentSize = parentId => {
+      if (!parentId) return {
+        width: $('scene').clientWidth || this.project?.settings?.width || 960,
+        height: $('scene').clientHeight || this.project?.settings?.height || 640
+      };
+      const parent = this.scene.get(parentId);
+      if (!parent) return { width: 960, height: 640 };
+      const grand = parentSize(parent.parentId);
+      const layout = resolveNodeLayout(parent, grand.width, grand.height);
+      return { width: layout.width, height: layout.height };
+    };
+    const bounds = parentSize(node.parentId);
+    const p = node.props;
+    const width = Math.max(1, bounds.width * p.size.x.scale + p.size.x.offset);
+    const height = Math.max(1, bounds.height * p.size.y.scale + p.size.y.offset);
+    const left = bounds.width * p.position.x.scale + xOffset - width * p.anchorPoint.x;
+    const top = bounds.height * p.position.y.scale + yOffset - height * p.anchorPoint.y;
+    const movingX = [left, left + width / 2, left + width];
+    const movingY = [top, top + height / 2, top + height];
+    const targetsX = [0, bounds.width / 2, bounds.width];
+    const targetsY = [0, bounds.height / 2, bounds.height];
+    const siblings = node.parentId ? this.scene.get(node.parentId)?.children || [] : this.scene.roots;
+    for (const id of siblings) {
+      const other = this.scene.get(id);
+      if (!other || other.id === node.id || other.props.visible === false) continue;
+      const layout = resolveNodeLayout(other, bounds.width, bounds.height);
+      targetsX.push(layout.x, layout.x + layout.width / 2, layout.x + layout.width);
+      targetsY.push(layout.y, layout.y + layout.height / 2, layout.y + layout.height);
     }
     const threshold = 8 / this.zoom;
     const best = (moving, targets) => {
@@ -619,9 +635,8 @@ class FlowiqStudio {
       return result.distance <= threshold ? result : { delta: 0, guide: null };
     };
     const sx = best(movingX, targetsX), sy = best(movingY, targetsY);
-    return { dx: sx.delta, dy: sy.delta, guides: { x: sx.guide, y: sy.guide } };
+    return { dx: sx.delta, dy: sy.delta, guides: node.parentId ? { x: null, y: null } : { x: sx.guide, y: sy.guide } };
   }
-
   clearAlignmentGuides() {
     $('scene').querySelectorAll('.alignment-guide').forEach(guide => guide.remove());
   }
