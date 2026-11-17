@@ -459,3 +459,70 @@ body[data-screen=editor]{
 }
 #tree.tree-move-mode-active .tree-row{cursor:pointer;}
 #tree .tree-row.tree-move-source{opacity:.48;}
+
+/* Build 0.96: superfícies mais limpas e bordas apenas quando orientam */
+:root{
+  --line:rgba(150,177,211,.13);
+  --line-soft:rgba(150,177,211,.075);
+}
+.button{
+  border-color:transparent;
+}
+.button:hover{
+  border-color:transparent;
+}
+.button.primary,.button.primary:hover{
+  border-color:transparent;
+}
+.search-field,.tree-search,.object-search{
+  border-color:transparent;
+  background:var(--surface-2);
+}
+.project-card{
+  border-color:rgba(150,177,211,.10);
+}
+.project-card:hover{
+  border-color:rgba(150,177,211,.19);
+}
+.asset-row,.settings-card{
+  border-color:rgba(150,177,211,.11);
+}
+.editor-panel{
+  border-color:rgba(150,177,211,.09)!important;
+}
+.panel-title,.stage-toolbar{
+  border-color:rgba(150,177,211,.08);
+}
+.tree-children{
+  border-left-color:rgba(150,177,211,.12);
+}
+.tree-row.is-active{
+  border-color:transparent;
+}
+.tree-context-menu,.add-menu{
+  border-color:rgba(150,177,211,.16);
+}
+.add-menu-heading .icon-button{
+  border-color:transparent;
+}
+.add-menu button>b{
+  border-color:rgba(150,177,211,.12);
+}
+.mobile-tabs{
+  border-top-color:rgba(150,177,211,.09);
+}
+.mobile-tabs button[aria-label="Adicionar objetos"] span{
+  border-color:transparent;
+}
+.mobile-tabs button[aria-expanded=true] span{
+  border-color:rgba(101,167,255,.5);
+}
+.dialog-card{
+  border-color:rgba(150,177,211,.16);
+}
+.dialog-card input,.dialog-card select,.dialog-card textarea{
+  border-color:rgba(150,177,211,.13);
+}
+.toast{
+  border-color:rgba(150,177,211,.16);
+}
