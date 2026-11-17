@@ -68,7 +68,17 @@ export class SceneNode {
     this.id = id;
     this.type = type;
     this.name = cleanName(name, type);
-    this.props = normalizeLayout({ rotation: 0, ...DEFAULTS[type], ...cleanProps(props) });
+    const clean = cleanProps(props);
+    const merged = { rotation: 0, ...DEFAULTS[type], ...clean };
+    if (!Object.hasOwn(clean, 'position')) merged.position = {
+      x: { scale: 0, offset: finite(clean.x, DEFAULTS[type].x) },
+      y: { scale: 0, offset: finite(clean.y, DEFAULTS[type].y) }
+    };
+    if (!Object.hasOwn(clean, 'size')) merged.size = {
+      x: { scale: 0, offset: finite(clean.width, DEFAULTS[type].width) },
+      y: { scale: 0, offset: finite(clean.height, DEFAULTS[type].height) }
+    };
+    this.props = normalizeLayout(merged);
     this.parentId = null;
     this.children = [];
   }
