@@ -683,17 +683,30 @@ class FlowiqStudio {
     }
     dialog.append(box);
     dialog.hidden = false;
+    dialog.classList.remove('dialog-closing');
+    requestAnimationFrame(() => dialog.classList.add('dialog-visible'));
     return new Promise(resolve => { this.dialogResolve = resolve; });
   }
 
   async confirm(title, message) { return (await this.dialog({ title, message, choices: [{ value: 'yes', label: 'Confirmar' }, { value: 'no', label: 'Cancelar' }] })) === 'yes'; }
 
   resolveDialog(value) {
-    if ($('dialog').hidden) return;
-    $('dialog').hidden = true;
+    const dialog = $('dialog');
+    if (dialog.hidden || this.dialogClosing) return;
+    this.dialogClosing = true;
+    dialog.classList.remove('dialog-visible');
+    dialog.classList.add('dialog-closing');
     const resolve = this.dialogResolve;
     this.dialogResolve = null;
-    resolve?.(value);
+    const finish = () => {
+      if (!this.dialogClosing) return;
+      dialog.hidden = true;
+      dialog.classList.remove('dialog-closing');
+      this.dialogClosing = false;
+      resolve?.(value);
+    };
+    dialog.addEventListener('transitionend', event => { if (event.target === dialog && event.propertyName === 'opacity') finish(); }, { once: true });
+    setTimeout(finish, 240);
   }
 
   toast(message, type = 'info') {
