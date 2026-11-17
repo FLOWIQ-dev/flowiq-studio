@@ -94,6 +94,13 @@ class FlowiqStudio {
     $('scene').addEventListener('click', event => {
       if (event.target === $('scene') && this.store.state.selectedId) this.select(null);
     });
+    $('scene').addEventListener('dblclick', event => {
+      const target = event.target.closest('.scene-node');
+      if (!target || this.runtime.running) return;
+      event.preventDefault();
+      this.select(target.dataset.nodeId);
+      this.setPanel('inspector');
+    });
     $('inspector').addEventListener('change', event => {
       const input = event.target.closest('[data-property]');
       if (!input) return;
@@ -160,6 +167,7 @@ class FlowiqStudio {
       this.stageResizeObserver.observe(stageHost);
     }
     window.addEventListener('resize', () => this.fitStage(), { passive: true });
+    window.addEventListener('resize', () => this.fitPreview(), { passive: true });
     window.visualViewport?.addEventListener('resize', () => this.fitStage(), { passive: true });
   }
 
@@ -594,7 +602,7 @@ class FlowiqStudio {
       assets: this.assets,
       onChange: (key, value) => this.updateProperty(key, value),
       onDuplicate: () => this.duplicateSelected(),
-      onDelete: () => this.deleteSelected(),
+      onDelete: () => { this.deleteSelected(); this.setPanel('stage'); },
       onAsset: id => this.updateProperty('assetId', id),
       events: this.project?.events || [],
       nodes: [...this.scene.nodes.values()],
@@ -922,14 +930,42 @@ class FlowiqStudio {
 
   play() {
     if (!this.project) return;
+    this.previewStageSize = this.getStageSize();
     this.previewScene = new Scene(this.scene.toJSON());
     this.runtime.start({ ...this.project, scene: this.previewScene.toJSON() }, this.previewScene);
     $('preview-screen').hidden = false;
     $('preview-screen').classList.remove('preview-visible');
-    requestAnimationFrame(() => $('preview-screen').classList.add('preview-visible'));
     $('preview-name').textContent = this.project.name;
-    const renderPreview = () => renderScene($('preview-scene'), this.previewScene, { preview: true, assets: this.assets, sceneSize: { width: this.project.settings?.width || 960, height: this.project.settings?.height || 640 }, onRun: node => { this.runtime.dispatch(node, 'click'); renderPreview(); } });
+    const renderPreview = () => {
+      renderScene($('preview-scene'), this.previewScene, {
+        preview: true, assets: this.assets, sceneSize: this.previewStageSize,
+        onRun: node => { this.runtime.dispatch(node, 'click'); renderPreview(); }
+      });
+      this.fitPreview();
+    };
     renderPreview();
+    requestAnimationFrame(() => {
+      this.fitPreview();
+      $('preview-screen').classList.add('preview-visible');
+    });
+  }
+
+  fitPreview() {
+    const viewport = $('preview-screen')?.querySelector('.preview-viewport');
+    const canvas = $('preview-scene');
+    const world = canvas?.querySelector('.scene-world');
+    const size = this.previewStageSize;
+    if (!viewport || !canvas || !world || !size) return;
+    const style = getComputedStyle(viewport);
+    const availableWidth = Math.max(1, viewport.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight));
+    const availableHeight = Math.max(1, viewport.clientHeight - parseFloat(style.paddingTop) - parseFloat(style.paddingBottom));
+    const scale = Math.min(availableWidth / size.width, availableHeight / size.height, 1);
+    canvas.style.width = Math.max(1, size.width * scale) + 'px';
+    canvas.style.height = Math.max(1, size.height * scale) + 'px';
+    world.style.width = size.width + 'px';
+    world.style.height = size.height + 'px';
+    world.style.transformOrigin = 'top left';
+    world.style.transform = 'scale(' + scale + ')';
   }
 
   stopPreview(announce = true) {
@@ -940,6 +976,7 @@ class FlowiqStudio {
     }
     if (this.runtime.running) this.runtime.stop();
     this.previewScene = null;
+    this.previewStageSize = null;
     if (announce) this.renderEditor();
   }
 
