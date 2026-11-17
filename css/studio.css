@@ -470,8 +470,8 @@ body[data-screen=editor]{
 
 /* Build 0.94: scroll nativo da hierarquia, inclusive no modo mover */
 @media(max-width:680px){
-  #screen-editor .tree-row{touch-action:pan-y;}
   #screen-editor .tree-container{touch-action:pan-y;}
+  #tree.tree-move-mode-active .tree-row{touch-action:pan-y;}
 }
 #tree.tree-move-mode-active .tree-row{cursor:pointer;}
 #tree .tree-row.tree-move-source{opacity:.48;}
