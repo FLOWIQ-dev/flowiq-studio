@@ -580,6 +580,7 @@ class FlowiqStudio {
     const copy = document.createElement('span'); copy.className = 'tree-drag-ghost-copy'; copy.textContent = node.name + ' · ' + node.type;
     ghost.append(marker, copy); document.body.append(ghost); this.treeDragGhost = ghost;
     document.body.classList.add('tree-dragging');
+    $('tree')?.classList.add('tree-root-start-active');
     this.updateTreeDrag(x, y);
     this.startTreeAutoScroll();
   }
@@ -615,11 +616,14 @@ class FlowiqStudio {
       this.treeDragGhost.style.left = Math.min(window.innerWidth - 230, Math.max(8, x + 14)) + 'px';
       this.treeDragGhost.style.top = Math.min(window.innerHeight - 54, Math.max(8, y + 14)) + 'px';
     }
-    document.querySelectorAll('.tree-drop-target,.tree-drop-before,.tree-drop-after').forEach(item => item.classList.remove('tree-drop-target','tree-drop-before','tree-drop-after'));
+    document.querySelectorAll('.tree-drop-target,.tree-drop-before,.tree-drop-after,.tree-root-start-target').forEach(item => item.classList.remove('tree-drop-target','tree-drop-before','tree-drop-after','tree-root-start-target'));
     const tree = $('tree'), bounds = tree.getBoundingClientRect();
     const insideTree = x >= bounds.left && x <= bounds.right && y >= bounds.top && y <= bounds.bottom;
-    const target = document.elementFromPoint(x, y)?.closest('[data-tree-node]');
+    const hit = document.elementFromPoint(x, y);
+    const rootStart = hit?.closest('[data-tree-root-start]');
+    const target = hit?.closest('[data-tree-node]');
     if (!insideTree) { drag.targetId = null; drag.position = 'cancel'; tree.classList.remove('tree-root-drop'); return; }
+    if (rootStart) { drag.targetId = null; drag.position = 'root-start'; tree.classList.remove('tree-root-drop'); rootStart.classList.add('tree-root-start-target'); return; }
     if (!target) { drag.targetId = null; drag.position = 'root'; tree.classList.add('tree-root-drop'); return; }
     tree.classList.remove('tree-root-drop');
     if (target.dataset.treeNode === drag.id || this.scene.descendants(drag.id).some(item => item.id === target.dataset.treeNode)) {
@@ -644,7 +648,8 @@ class FlowiqStudio {
     try {
       this.history.checkpoint(this.historySnapshot());
       const source = this.scene.get(drag.id), targetNode = drag.targetId ? this.scene.get(drag.targetId) : null;
-      if (!targetNode) this.scene.reparent(drag.id, null);
+      if (drag.position === 'root-start') this.scene.reparent(drag.id, null, 0);
+      else if (!targetNode) this.scene.reparent(drag.id, null);
       else if (drag.position === 'inside') {
         this.scene.reparent(drag.id, targetNode.id);
         this.treeExpanded.add(targetNode.id);
@@ -666,8 +671,8 @@ class FlowiqStudio {
     this.treeDrag = null; this._treePointerStart = null; this.treeDragGhost?.remove(); this.treeDragGhost = null;
     document.querySelectorAll('.tree-source-dragging').forEach(item => item.classList.remove('tree-source-dragging'));
     document.body.classList.remove('tree-dragging');
-    $('tree')?.classList.remove('tree-root-drop');
-    document.querySelectorAll('.tree-drop-target,.tree-drop-before,.tree-drop-after,.tree-hold-ready').forEach(item => item.classList.remove('tree-drop-target','tree-drop-before','tree-drop-after','tree-hold-ready'));
+    $('tree')?.classList.remove('tree-root-drop','tree-root-start-active');
+    document.querySelectorAll('.tree-drop-target,.tree-drop-before,.tree-drop-after,.tree-root-start-target,.tree-hold-ready').forEach(item => item.classList.remove('tree-drop-target','tree-drop-before','tree-drop-after','tree-root-start-target','tree-hold-ready'));
   }
 
   renderEditor() {
