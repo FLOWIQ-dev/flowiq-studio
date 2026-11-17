@@ -833,6 +833,14 @@ class FlowiqStudio {
       ? Math.min(availableWidth / 960, 1)
       : Math.min(availableWidth / 960, availableHeight / 640, 1);
     this.setZoom(Math.max(0.05, scale));
+    // Recalculate root Scale values after the responsive canvas dimensions settle.
+    if (this.project && $('scene').clientWidth && $('scene').clientHeight) {
+      renderScene($('scene'), this.scene, {
+        selectedId: this.store.state.selectedId,
+        assets: this.assets,
+        sceneSize: { width: this.project.settings?.width || 960, height: this.project.settings?.height || 640 }
+      });
+    }
   }
 
   setPanel(name) {
