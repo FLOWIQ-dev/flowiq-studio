@@ -139,12 +139,11 @@ class FlowiqStudio {
       const button = event.target.closest('[data-panel]');
       if (button) this.setPanel(button.dataset.panel);
     });
-    const closeInspector = event => {
-      if (event.type === 'pointerup') event.preventDefault();
+    $('panel-close').addEventListener('click', event => {
+      event.preventDefault();
+      event.stopPropagation();
       this.setPanel('stage');
-    };
-    $('panel-close').addEventListener('pointerup', closeInspector);
-    $('panel-close').addEventListener('click', closeInspector);
+    });
     $('explorer-close').addEventListener('click', event => {
       event.preventDefault();
       event.stopPropagation();
