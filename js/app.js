@@ -139,7 +139,12 @@ class FlowiqStudio {
       const button = event.target.closest('[data-panel]');
       if (button) this.setPanel(button.dataset.panel);
     });
-    $('panel-close').addEventListener('click', () => this.setPanel('stage'));
+    const closeInspector = event => {
+      if (event.type === 'pointerup') event.preventDefault();
+      this.setPanel('stage');
+    };
+    $('panel-close').addEventListener('pointerup', closeInspector);
+    $('panel-close').addEventListener('click', closeInspector);
     $('explorer-close').addEventListener('click', event => {
       event.preventDefault();
       event.stopPropagation();
@@ -866,6 +871,8 @@ class FlowiqStudio {
     this.store.set({ panel: next });
     shell.dataset.panel = next;
     document.querySelectorAll('[data-panel]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.panel === next)));
+    $('panel-close')?.setAttribute('aria-expanded', String(next === 'inspector'));
+    $('explorer-close')?.setAttribute('aria-expanded', String(next === 'explorer'));
     if (next === 'stage') requestAnimationFrame(() => this.fitStage());
   }
 
