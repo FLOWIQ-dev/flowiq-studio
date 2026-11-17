@@ -4,6 +4,7 @@
 const registry = new Map();
 
 const number = (key, label, min, max, step = 1) => ({ key, label, type: 'number', min, max, step });
+const slider = (key, label, min, max, step = 0.01) => ({ key, label, type: 'slider', min, max, step });
 const text = (key, label) => ({ key, label, type: 'text' });
 const color = (key, label) => ({ key, label, type: 'color' });
 const select = (key, label, values) => ({ key, label, type: 'select', values });
@@ -75,7 +76,7 @@ export function registerPropertySchema(className, schema, { replace = false } = 
           if (!field || typeof field.key !== 'string' || typeof field.label !== 'string') {
             throw new TypeError('Campo de propriedade inválido.');
           }
-          if (!['text', 'number', 'color', 'select', 'checkbox', 'asset'].includes(field.type)) {
+          if (!['text', 'number', 'slider', 'color', 'select', 'checkbox', 'asset'].includes(field.type)) {
             throw new TypeError('Tipo de campo não suportado: ' + field.type);
           }
           return { ...field, values: field.values?.map(item => ({ ...item })) };
@@ -124,9 +125,9 @@ registerPropertySchema('Frame', { sections: [
   ]},
   { title: 'Appearance', fields: [
     color('backgroundColor3', 'BackgroundColor3'),
-    number('backgroundTransparency', 'BackgroundTransparency', 0, 1, 0.01),
+    slider('backgroundTransparency', 'BackgroundTransparency', 0, 1, 0.01),
     color('borderColor3', 'BorderColor3'),
-    number('borderSizePixel', 'BorderSizePixel', 0, 20),
+    slider('borderSizePixel', 'BorderSizePixel', 0, 20, 1),
     select('borderMode', 'BorderMode', [
       { value: 'Outline', label: 'Outline' },
       { value: 'Middle', label: 'Middle' },
