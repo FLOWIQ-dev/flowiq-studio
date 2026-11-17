@@ -529,7 +529,11 @@ class FlowiqStudio {
     document.querySelectorAll('[data-panel]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.panel === name)));
   }
 
-  toggleAddMenu() { $('add-menu').hidden = !$('add-menu').hidden; }
+  toggleAddMenu() {
+    const menu = $('add-menu');
+    if (window.matchMedia('(max-width: 680px)').matches && $('editor-shell').dataset.panel !== 'explorer') this.setPanel('explorer');
+    menu.hidden = !menu.hidden;
+  }
 
   play() {
     if (!this.project) return;
