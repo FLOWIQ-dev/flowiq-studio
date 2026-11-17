@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
-import { Scene, resolveNodeLayout } from '../js/data/model.js';
+import { Scene, UDim2, resolveNodeLayout } from '../js/data/model.js';
 import { History } from '../js/core/history.js';
 import { Store } from '../js/core/store.js';
 import { Runtime } from '../js/runtime/runtime.js';
@@ -35,6 +35,13 @@ test('legacy pixel layouts migrate to UDim2 without changing their geometry', ()
   assert.deepEqual(node.props.position, { x: { scale: 0, offset: 37 }, y: { scale: 0, offset: 52 } });
   assert.deepEqual(node.props.size, { x: { scale: 0, offset: 240 }, y: { scale: 0, offset: 130 } });
   assert.deepEqual(resolveNodeLayout(node, 960, 640), { x: 37, y: 52, width: 240, height: 130 });
+});
+
+test('UDim2 constructor follows the Roblox XScale, XOffset, YScale, YOffset order', () => {
+  assert.deepEqual(UDim2(0, 0, 0.4, 0), {
+    x: { scale: 0, offset: 0 },
+    y: { scale: 0.4, offset: 0 }
+  });
 });
 
 test('UDim2 resolves Scale, Offset and AnchorPoint against the parent', () => {
