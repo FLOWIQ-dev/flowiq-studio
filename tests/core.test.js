@@ -61,16 +61,21 @@ test('store publishes immutable state updates', () => {
 
 test('runtime executes only declared safe actions', () => {
   const scene = new Scene([{ id: 'button', type: 'TextButton', name: 'Botão', props: { text: 'Antes' } }]);
-  const runtime = new Runtime();
+  const logs = [];
+  const runtime = new Runtime({ onLog: message => logs.push(message) });
   runtime.start({ events: [{ nodeId: 'button', event: 'click', actions: [
     { type: 'setText', targetId: 'button', value: 'Depois' },
     { type: 'setProperty', targetId: 'button', property: 'opacity', value: 0.5 },
-    { type: 'setProperty', targetId: 'button', property: '__proto__', value: 'blocked' }
+    { type: 'setProperty', targetId: 'button', property: '__proto__', value: 'blocked' },
+    { type: 'toggleVisibility', targetId: 'button' },
+    { type: 'log', value: 'Ação registrada' }
   ] }] }, scene);
   runtime.dispatch(scene.get('button'), 'click');
   assert.equal(scene.get('button').props.text, 'Depois');
   assert.equal(scene.get('button').props.opacity, 0.5);
   assert.equal(Object.hasOwn(scene.get('button').props, '__proto__'), false);
+  assert.equal(scene.get('button').props.visible, false);
+  assert.ok(logs.includes('Ação registrada'));
 });
 
 test('HTML DOM references and module imports resolve to real files', async () => {
