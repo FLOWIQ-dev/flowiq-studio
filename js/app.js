@@ -150,6 +150,13 @@ class FlowiqStudio {
     window.addEventListener('beforeunload', event => {
       if (this.store.state.project && this.dirty) { event.preventDefault(); event.returnValue = ''; }
     });
+    const stageHost = $('stage-viewport');
+    if (stageHost && 'ResizeObserver' in window) {
+      this.stageResizeObserver = new ResizeObserver(() => this.fitStage());
+      this.stageResizeObserver.observe(stageHost);
+    }
+    window.addEventListener('resize', () => this.fitStage(), { passive: true });
+    window.visualViewport?.addEventListener('resize', () => this.fitStage(), { passive: true });
   }
 
   get zoom() { return this._zoom || 1; }
@@ -757,8 +764,13 @@ class FlowiqStudio {
     if (this.store.state.screen !== 'editor') return;
     const host = $('stage-viewport');
     if (!host) return;
-    const scale = Math.min((host.clientWidth - 48) / 960, (host.clientHeight - 48) / 640, 1);
-    this.setZoom(Math.max(0.35, scale || 1));
+    const style = getComputedStyle(host);
+    const horizontalPadding = (parseFloat(style.paddingLeft) || 0) + (parseFloat(style.paddingRight) || 0);
+    const verticalPadding = (parseFloat(style.paddingTop) || 0) + (parseFloat(style.paddingBottom) || 0);
+    const availableWidth = Math.max(1, host.clientWidth - horizontalPadding - 2);
+    const availableHeight = Math.max(1, host.clientHeight - verticalPadding - 2);
+    const scale = Math.min(availableWidth / 960, availableHeight / 640, 1);
+    this.setZoom(Math.max(0.05, scale));
   }
 
   setPanel(name) {
@@ -769,6 +781,7 @@ class FlowiqStudio {
     this.store.set({ panel: next });
     shell.dataset.panel = next;
     document.querySelectorAll('[data-panel]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.panel === next)));
+    if (next === 'stage') requestAnimationFrame(() => this.fitStage());
   }
 
   toggleAddMenu() {
