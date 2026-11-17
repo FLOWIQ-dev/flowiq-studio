@@ -5,6 +5,7 @@ import { Scene, UDim2, resolveNodeLayout } from '../js/data/model.js';
 import { History } from '../js/core/history.js';
 import { Store } from '../js/core/store.js';
 import { Runtime } from '../js/runtime/runtime.js';
+import { getPropertySchema, registerPropertySchema, PROPERTY_SCHEMA_VERSION } from '../js/editor/property-schema.js';
 
 test('scene creates valid nested objects and serializes without losing identity', () => {
   const scene = new Scene();
@@ -137,4 +138,17 @@ test('service worker precaches every module used by the new application', async 
   const list = worker.match(/const FILES = \[([\s\S]*?)\];/)?.[1] || '';
   const files = [...list.matchAll(/'\.\/([^']+)'/g)].map(match => match[1].split('?')[0]).filter(Boolean);
   for (const path of files) await readFile(new URL('../' + path, import.meta.url));
+});
+
+
+test('Inspector property schemas are class-based and extensible', () => {
+  assert.equal(PROPERTY_SCHEMA_VERSION, 1);
+  const frame = getPropertySchema('Frame');
+  assert.ok(frame.sections.some(section => section.title === 'Position · UDim2'));
+  assert.ok(frame.sections.some(section => section.title === 'Size · UDim2'));
+  registerPropertySchema('FutureWidget', { sections: [
+    { title: 'Dados', fields: [{ key: 'value', label: 'Valor', type: 'number', min: 0, max: 10 }] }
+  ]});
+  assert.equal(getPropertySchema('FutureWidget').sections[0].fields[0].key, 'value');
+  assert.throws(() => registerPropertySchema('FutureWidget', { sections: [] }), /Já existe/);
 });
