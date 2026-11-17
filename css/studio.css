@@ -341,3 +341,11 @@ body[data-screen=editor]{height:100dvh;min-height:0;overflow:hidden}
 .tree-drag-ghost{z-index:5000;min-height:48px;padding:12px 15px;border:2px solid #91c5ff;border-radius:12px;background:rgba(22,49,80,.97);color:#fff;box-shadow:0 16px 42px rgba(0,0,0,.65),0 0 0 3px rgba(105,170,255,.2);font-size:13px;pointer-events:none;will-change:left,top}
 .tree-source-dragging{opacity:.18!important;outline:2px dashed #91c5ff!important;outline-offset:-3px;filter:saturate(.5)}
 body.tree-dragging,body.tree-dragging *{cursor:grabbing!important}
+
+
+/* Build 87: fechamento da hierarquia e rolagem durante arrasto */
+@media(max-width:680px){
+  .explorer-heading #explorer-close{position:relative;z-index:12;display:inline-flex!important;align-items:center;justify-content:center;flex:none;width:38px;min-width:38px;height:38px;min-height:38px;pointer-events:auto;touch-action:manipulation}
+  .explorer-panel{z-index:9}
+  .tree-container{scroll-behavior:auto;overscroll-behavior:contain;touch-action:pan-y}
+}
