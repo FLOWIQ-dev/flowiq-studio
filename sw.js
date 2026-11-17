@@ -1,4 +1,4 @@
-const CACHE = 'flowiq-studio-clean-v78';
+const CACHE = 'flowiq-studio-clean-v79';
 const FILES = [
   './',
   './index.html',
