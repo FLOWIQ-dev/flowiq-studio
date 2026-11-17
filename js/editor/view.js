@@ -1,4 +1,5 @@
 import { resolveNodeLayout } from '../data/model.js';
+import { getPropertySchema } from './property-schema.js';
 const $ = id => document.getElementById(id);
 const ICONS = {
   Frame: '<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M8 8h8v8H8z"/>',
@@ -122,6 +123,7 @@ export function renderTree(container, scene, selectedId, { search = '', expanded
 }
 
 export function renderInspector(container, node, { onChange, onDelete, assets = [], onAsset, events = [], nodes = [], onEventSave } = {}) {
+  const previousScrollTop = container.scrollTop;
   container.replaceChildren();
   if (!node) {
     container.append(el('p', 'inspector-empty', 'Selecione um objeto no palco ou na hierarquia para editar suas propriedades.'));
@@ -130,13 +132,19 @@ export function renderInspector(container, node, { onChange, onDelete, assets = 
   const heading = el('div', 'inspector-heading');
   heading.append(el('span', 'eyebrow', node.type.toUpperCase()), el('strong', '', node.name));
   container.append(heading);
-  const field = (labelText, key, type = 'number', options = {}) => {
+
+  const readValue = key => key.split('.').reduce((value, part) => value?.[part], key === 'name' ? { name: node.name } : node.props);
+  const field = descriptor => {
+    const { key, label: labelText, type = 'number' } = descriptor;
     const wrap = el('label', 'property-field');
     wrap.append(el('span', '', labelText));
     let input;
-    if (type === 'select') {
+    if (type === 'select' || type === 'asset') {
       input = el('select');
-      options.values.forEach(value => {
+      const values = type === 'asset'
+        ? [{ value: '', label: 'Nenhum arquivo' }, ...assets.filter(asset => !descriptor.accept || asset.mime?.startsWith(descriptor.accept.replace('/*', '/'))).map(asset => ({ value: asset.id, label: asset.name }))]
+        : (descriptor.values || []);
+      values.forEach(value => {
         const option = el('option', '', value.label);
         option.value = value.value;
         input.append(option);
@@ -144,72 +152,33 @@ export function renderInspector(container, node, { onChange, onDelete, assets = 
     } else {
       input = el('input');
       input.type = type;
-      if (type === 'number') { input.min = options.min ?? '0'; input.max = options.max ?? '2000'; input.step = options.step ?? '1'; }
+      if (type === 'number') {
+        input.min = descriptor.min ?? '0';
+        input.max = descriptor.max ?? '2000';
+        input.step = descriptor.step ?? '1';
+      }
     }
-    const propertyValue = key.split('.').reduce((value, part) => value?.[part], node.props);
+    const propertyValue = readValue(key);
     if (type === 'checkbox') input.checked = Boolean(propertyValue);
-    else input.value = String(key === 'name' ? node.name : (propertyValue ?? options.fallback ?? ''));
+    else input.value = String(propertyValue ?? descriptor.fallback ?? '');
     input.addEventListener('change', () => {
       const value = type === 'number' ? Number(input.value) : type === 'checkbox' ? input.checked : input.value;
-      onChange(key, value);
+      if (type === 'asset') onAsset?.(value);
+      else onChange(key, value);
     });
     wrap.append(input);
     return wrap;
   };
-  const section = (title, fields) => {
+
+  const schema = getPropertySchema(node.type);
+  schema.sections.forEach(definition => {
     const group = el('section', 'property-group');
-    group.append(el('h3', '', title));
-    fields.forEach(item => group.append(item));
+    group.dataset.propertyCategory = definition.title;
+    group.append(el('h3', '', definition.title));
+    definition.fields.forEach(descriptor => group.append(field(descriptor)));
     container.append(group);
-  };
-  section('Identificação', [field('Nome', 'name', 'text')]);
-  section('Position · UDim2', [
-    field('X · Scale', 'position.x.scale', 'number', { min: -10, max: 10, step: 0.01 }),
-    field('X · Offset', 'position.x.offset', 'number', { min: -4000, max: 4000 }),
-    field('Y · Scale', 'position.y.scale', 'number', { min: -10, max: 10, step: 0.01 }),
-    field('Y · Offset', 'position.y.offset', 'number', { min: -4000, max: 4000 })
-  ]);
-  section('Size · UDim2', [
-    field('Largura · Scale', 'size.x.scale', 'number', { min: -10, max: 10, step: 0.01 }),
-    field('Largura · Offset', 'size.x.offset', 'number', { min: 1, max: 4000 }),
-    field('Altura · Scale', 'size.y.scale', 'number', { min: -10, max: 10, step: 0.01 }),
-    field('Altura · Offset', 'size.y.offset', 'number', { min: 1, max: 4000 })
-  ]);
-  section('AnchorPoint', [
-    field('X', 'anchorPoint.x', 'number', { min: 0, max: 1, step: 0.01 }),
-    field('Y', 'anchorPoint.y', 'number', { min: 0, max: 1, step: 0.01 })
-  ]);
-  if (node.type !== 'ImageLabel') {
-    section('Aparência', [
-      field('Fundo', 'background', 'color'),
-      ...(node.type !== 'Frame' ? [field('Cor do texto', 'color', 'color'), field('Texto', 'text', 'text'), field('Tamanho do texto', 'fontSize', 'number', { min: 8, max: 120 })] : []),
-      field('Arredondamento', 'radius', 'number', { min: 0, max: 120 }),
-      field('Opacidade', 'opacity', 'number', { min: 0, max: 1, step: 0.05 }),
-      field('Borda', 'border', 'color'), field('Espessura da borda', 'borderWidth', 'number', { min: 0, max: 30 }),
-      field('Rotação', 'rotation', 'number', { min: -360, max: 360 }),
-      field('Alinhamento do texto', 'textAlign', 'select', { values: [{value:'left',label:'Esquerda'},{value:'center',label:'Centro'},{value:'right',label:'Direita'}] }),
-      field('Peso do texto', 'fontWeight', 'select', { values: [{value:'400',label:'Normal'},{value:'500',label:'Médio'},{value:'600',label:'Seminegrito'},{value:'700',label:'Negrito'}] }),
-      field('Visível', 'visible', 'checkbox')
-    ]);
-  } else {
-    const media = el('section', 'property-group');
-    media.append(el('h3', '', 'Imagem'));
-    const select = el('select');
-    select.append(el('option', '', 'Nenhum arquivo'));
-    select.options[0].value = '';
-    for (const asset of assets.filter(item => item.mime?.startsWith('image/'))) {
-      const option = el('option', '', asset.name);
-      option.value = asset.id;
-      select.append(option);
-    }
-    select.value = node.props.assetId || '';
-    select.addEventListener('change', () => onAsset(select.value));
-    const assetLabel = el('label', 'property-field');
-    assetLabel.append(el('span', '', 'Arquivo da biblioteca'), select);
-    media.append(assetLabel);
-    container.append(media);
-    section('Aparência', [field('Ajuste', 'fit', 'select', { values: [{ value: 'cover', label: 'Preencher' }, { value: 'contain', label: 'Conter' }, { value: 'fill', label: 'Esticar' }] }), field('Arredondamento', 'radius', 'number', { min: 0, max: 120 })]);
-  }
+  });
+
   if (node.type === 'TextButton') {
     const logic = el('section', 'property-group logic-group');
     logic.append(el('h3', '', 'Interações'));
@@ -283,4 +252,5 @@ export function renderInspector(container, node, { onChange, onDelete, assets = 
   remove.addEventListener('click', onDelete);
   actions.append(remove);
   container.append(actions);
+  container.scrollTop = previousScrollTop;
 }
