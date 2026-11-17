@@ -1,12 +1,17 @@
 const ID = () => globalThis.crypto?.randomUUID?.() || 'node_' + Date.now().toString(36) + Math.random().toString(36).slice(2);
 const TYPES = new Set(['Frame', 'TextButton', 'TextLabel', 'ImageLabel']);
-const DEFAULTS = Object.freeze({
-  Frame: { x: 24, y: 24, width: 320, height: 220, position: { x: { scale: 0, offset: 24 }, y: { scale: 0, offset: 24 } }, size: { x: { scale: 0, offset: 320 }, y: { scale: 0, offset: 220 } }, anchorPoint: { x: 0, y: 0 }, background: '#1b2940', radius: 14, opacity: 1, visible: true, border: '#334155', borderWidth: 0 },
-  TextButton: { x: 24, y: 24, width: 160, height: 48, position: { x: { scale: 0, offset: 24 }, y: { scale: 0, offset: 24 } }, size: { x: { scale: 0, offset: 160 }, y: { scale: 0, offset: 48 } }, anchorPoint: { x: 0, y: 0 }, background: '#2563eb', color: '#ffffff', radius: 10, fontSize: 15, text: 'Botão', opacity: 1, visible: true, border: '#334155', borderWidth: 0 },
-  TextLabel: { x: 24, y: 24, width: 220, height: 42, position: { x: { scale: 0, offset: 24 }, y: { scale: 0, offset: 24 } }, size: { x: { scale: 0, offset: 220 }, y: { scale: 0, offset: 42 } }, anchorPoint: { x: 0, y: 0 }, background: '#121e2e', color: '#f8fafc', radius: 0, fontSize: 16, text: 'Texto', opacity: 1, visible: true, border: '#334155', borderWidth: 0 },
-  ImageLabel: { x: 24, y: 24, width: 140, height: 120, position: { x: { scale: 0, offset: 24 }, y: { scale: 0, offset: 24 } }, size: { x: { scale: 0, offset: 140 }, y: { scale: 0, offset: 120 } }, anchorPoint: { x: 0, y: 0 }, background: '#24344c', color: '#ffffff', radius: 10, opacity: 1, visible: true, border: '#334155', borderWidth: 0, assetId: '', fit: 'cover' }
-});
 const finite = (value, fallback = 0) => Number.isFinite(Number(value)) ? Number(value) : fallback;
+export const UDim = (scale = 0, offset = 0) => ({ scale: finite(scale), offset: finite(offset) });
+export const UDim2 = (xScale = 0, xOffset = 0, yScale = 0, yOffset = 0) => ({
+  x: UDim(xScale, xOffset),
+  y: UDim(yScale, yOffset)
+});
+const DEFAULTS = Object.freeze({
+  Frame: { x: 24, y: 24, width: 320, height: 220, position: UDim2(0, 24, 0, 24), size: UDim2(0, 320, 0, 220), anchorPoint: { x: 0, y: 0 }, background: '#1b2940', radius: 14, opacity: 1, visible: true, border: '#334155', borderWidth: 0 },
+  TextButton: { x: 24, y: 24, width: 160, height: 48, position: UDim2(0, 24, 0, 24), size: UDim2(0, 160, 0, 48), anchorPoint: { x: 0, y: 0 }, background: '#2563eb', color: '#ffffff', radius: 10, fontSize: 15, text: 'Botão', opacity: 1, visible: true, border: '#334155', borderWidth: 0 },
+  TextLabel: { x: 24, y: 24, width: 220, height: 42, position: UDim2(0, 24, 0, 24), size: UDim2(0, 220, 0, 42), anchorPoint: { x: 0, y: 0 }, background: '#121e2e', color: '#f8fafc', radius: 0, fontSize: 16, text: 'Texto', opacity: 1, visible: true, border: '#334155', borderWidth: 0 },
+  ImageLabel: { x: 24, y: 24, width: 140, height: 120, position: UDim2(0, 24, 0, 24), size: UDim2(0, 140, 0, 120), anchorPoint: { x: 0, y: 0 }, background: '#24344c', color: '#ffffff', radius: 10, opacity: 1, visible: true, border: '#334155', borderWidth: 0, assetId: '', fit: 'cover' }
+});
 const cleanName = (value, fallback) => String(value ?? '').trim().slice(0, 64) || fallback;
 const cleanProps = value => {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return {};
