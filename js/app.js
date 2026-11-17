@@ -81,10 +81,14 @@ class FlowiqStudio {
       if (action) this.handleTreeAction(action.dataset.treeAction, action.dataset.nodeId);
     });
     $('tree').addEventListener('contextmenu', event => { event.preventDefault(); });
-    $('tree').addEventListener('pointerdown', event => this.treePointerDown(event));
-    window.addEventListener('pointermove', event => this.treePointerMove(event));
-    window.addEventListener('pointerup', event => this.treePointerUp(event));
-    window.addEventListener('pointercancel', () => this.cancelTreeDrag());
+    $('tree').addEventListener('pointerdown', event => { if (event.pointerType !== 'touch') this.treePointerDown(event); });
+    window.addEventListener('pointermove', event => { if (event.pointerType !== 'touch') this.treePointerMove(event); });
+    window.addEventListener('pointerup', event => { if (event.pointerType !== 'touch') this.treePointerUp(event); });
+    window.addEventListener('pointercancel', event => { if (event.pointerType !== 'touch') this.cancelTreeDrag(); });
+    $('tree').addEventListener('touchstart', event => this.treeTouchStart(event), { passive: true });
+    window.addEventListener('touchmove', event => this.treeTouchMove(event), { passive: false });
+    window.addEventListener('touchend', event => this.treeTouchEnd(event), { passive: true });
+    window.addEventListener('touchcancel', () => { this.treeTouch = null; this.cancelTreeDrag(); }, { passive: true });
     $('add-menu-backdrop').addEventListener('click', () => this.closeAddMenu());
     $('scene').addEventListener('pointerdown', event => this.pointerDown(event));
     $('scene').addEventListener('click', event => {
@@ -494,29 +498,36 @@ class FlowiqStudio {
 
 
   treePointerDown(event) {
-    const handle = event.target.closest('[data-tree-drag]');
-    if (!handle || event.button > 0) return;
-    const row = handle.closest('[data-tree-node]');
-    if (!row) return;
-    event.preventDefault();
-    this.beginTreeDrag(row.dataset.treeNode, event.pointerId, event.clientX, event.clientY);
+    const row = event.target.closest('[data-tree-node]');
+    if (!row || event.target.closest('button') || event.button > 0) return;
+    const id = row.dataset.treeNode, x = event.clientX, y = event.clientY;
+    this._treePointerStart = { id, x, y, pointerId: event.pointerId, cancelled: false };
+    clearTimeout(this.treeHoldTimer);
+    this.treeHoldTimer = setTimeout(() => {
+      if (this._treePointerStart && !this._treePointerStart.cancelled) this.beginTreeDrag(id, event.pointerId, x, y);
+    }, 430);
   }
   treePointerMove(event) {
+    const start = this._treePointerStart;
+    if (start && start.pointerId === event.pointerId && !this.treeDrag && Math.hypot(event.clientX - start.x, event.clientY - start.y) > 9) {
+      start.cancelled = true; clearTimeout(this.treeHoldTimer); this.treeHoldTimer = null;
+    }
     const drag = this.treeDrag;
     if (!drag || drag.pointerId !== event.pointerId) return;
     if (event.cancelable) event.preventDefault();
     this.updateTreeDrag(event.clientX, event.clientY);
   }
   treeTouchStart(event) {
-    if (event.touches.length !== 1) { this.cancelTreeDrag(); return; }
+    if (event.touches.length !== 1) { this.treeTouch = null; this.cancelTreeDrag(); return; }
     const touch = event.touches[0], row = event.target.closest('[data-tree-node]');
     if (!row || event.target.closest('button')) return;
-    this.treeTouch = { id: row.dataset.treeNode, x: touch.clientX, y: touch.clientY, active: false };
+    this.treeTouch = { id: row.dataset.treeNode, x: touch.clientX, y: touch.clientY, active: false, cancelled: false };
+    clearTimeout(this.treeHoldTimer);
     this.treeHoldTimer = setTimeout(() => {
-      if (!this.treeTouch) return;
+      if (!this.treeTouch || this.treeTouch.cancelled) return;
       this.treeTouch.active = true;
-      this.beginTreeDrag(this.treeTouch.id, 'touch', this.treeTouch.x, this.treeTouch.y);
-    }, 360);
+      this.beginTreeDrag(this.treeTouch.id, 'touch', touch.clientX, touch.clientY);
+    }, 430);
   }
   treeTouchMove(event) {
     const touch = event.touches[0];
@@ -576,7 +587,9 @@ class FlowiqStudio {
   }
   treePointerUp(event) {
     clearTimeout(this.treeHoldTimer); this.treeHoldTimer = null;
+    const start = this._treePointerStart; this._treePointerStart = null;
     if (this.treeDrag?.pointerId === event.pointerId) this.finishTreeDrag(event.clientX, event.clientY);
+    else if (start?.pointerId === event.pointerId) this.cancelTreeDrag();
   }
   finishTreeDrag(x, y) {
     const drag = this.treeDrag;
@@ -604,7 +617,7 @@ class FlowiqStudio {
   }
   cancelTreeDrag() {
     clearTimeout(this.treeHoldTimer); this.treeHoldTimer = null;
-    this.treeDrag = null; this.treeDragGhost?.remove(); this.treeDragGhost = null;
+    this.treeDrag = null; this._treePointerStart = null; this.treeDragGhost?.remove(); this.treeDragGhost = null;
     document.querySelectorAll('.tree-source-dragging').forEach(item => item.classList.remove('tree-source-dragging'));
     document.body.classList.remove('tree-dragging');
     $('tree')?.classList.remove('tree-root-drop');
