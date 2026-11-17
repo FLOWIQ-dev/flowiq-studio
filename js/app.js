@@ -474,7 +474,7 @@ class FlowiqStudio {
     this.select(id);
     if (action === 'rename') {
       const name = await this.dialog({ title: 'Renomear objeto', label: 'Nome do objeto', value: node.name, confirm: 'Salvar' });
-      if (name && name.trim() !== node.name) this.updatePropertyForNode(id, 'name', name);
+      if (name && name.trim() !== node.name) this.updateProperty('name', name);
     } else if (action === 'add') {
       const type = await this.dialog({ title: 'Adicionar instância', message: 'Escolha um tipo para criar dentro de ' + node.name + '.', choices: COMPONENTS.map(item => ({ value: item.type, label: item.label })).concat([{ value: 'cancel', label: 'Cancelar' }]) });
       if (type && type !== 'cancel') this.addNode(type, id);
@@ -482,12 +482,6 @@ class FlowiqStudio {
     else if (action === 'delete') this.deleteSelected();
   }
 
-  updatePropertyForNode(id, key, value) {
-    const previous = this.store.state.selectedId;
-    this.store.set({ selectedId: id });
-    this.updateProperty(key, value);
-    this.store.set({ selectedId: previous === id ? id : id });
-  }
 
   treePointerDown(event) {
     this._treeDownX = event.clientX; this._treeDownY = event.clientY;
