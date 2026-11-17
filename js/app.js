@@ -128,7 +128,6 @@ class FlowiqStudio {
     $('settings-back').addEventListener('click', guarded(() => this.returnHome()));
     $('library-back').addEventListener('click', guarded(() => this.returnHome()));
     $('mobile-add-objects').addEventListener('click', () => this.toggleAddMenu());
-    $('desktop-add-objects').addEventListener('click', () => this.toggleAddMenu());
     $('mobile-tabs').addEventListener('click', event => {
       const button = event.target.closest('[data-panel]');
       if (button) this.setPanel(button.dataset.panel);
