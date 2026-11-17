@@ -433,6 +433,53 @@ class FlowiqStudio {
     });
   }
 
+  findAlignment(node, x, y) {
+    const width = Number(node.props.width) || 1;
+    const height = Number(node.props.height) || 1;
+    const movingX = [x, x + width / 2, x + width];
+    const movingY = [y, y + height / 2, y + height];
+    const targetsX = [0, 480, 960];
+    const targetsY = [0, 320, 640];
+    for (const other of this.scene.nodes.values()) {
+      if (other.id === node.id || other.props.visible === false) continue;
+      const ox = Number(other.props.x) || 0, oy = Number(other.props.y) || 0;
+      const ow = Number(other.props.width) || 1, oh = Number(other.props.height) || 1;
+      targetsX.push(ox, ox + ow / 2, ox + ow);
+      targetsY.push(oy, oy + oh / 2, oy + oh);
+    }
+    const threshold = 8 / this.zoom;
+    const best = (moving, targets) => {
+      let result = { delta: 0, guide: null, distance: threshold + 1 };
+      for (const from of moving) for (const to of targets) {
+        const distance = Math.abs(to - from);
+        if (distance < result.distance) result = { delta: to - from, guide: to, distance };
+      }
+      return result.distance <= threshold ? result : { delta: 0, guide: null };
+    };
+    const sx = best(movingX, targetsX), sy = best(movingY, targetsY);
+    return { dx: sx.delta, dy: sy.delta, guides: { x: sx.guide, y: sy.guide } };
+  }
+
+  clearAlignmentGuides() {
+    $('scene').querySelectorAll('.alignment-guide').forEach(guide => guide.remove());
+  }
+
+  showAlignmentGuides(guides) {
+    this.clearAlignmentGuides();
+    if (guides.x !== null) {
+      const line = document.createElement('i');
+      line.className = 'alignment-guide alignment-guide-x';
+      line.style.left = guides.x + 'px';
+      $('scene').append(line);
+    }
+    if (guides.y !== null) {
+      const line = document.createElement('i');
+      line.className = 'alignment-guide alignment-guide-y';
+      line.style.top = guides.y + 'px';
+      $('scene').append(line);
+    }
+  }
+
   pointerDown(event) {
     if (this.runtime.running || event.button > 0) return;
     const target = event.target.closest('.scene-node');
@@ -474,9 +521,16 @@ class FlowiqStudio {
       const current = this.scene.get(drag.id);
       if (!current) return;
       if (drag.mode === 'move') {
-        current.props.x = Math.round(drag.x + dx);
-        current.props.y = Math.round(drag.y + dy);
+        let nextX = drag.x + dx;
+        let nextY = drag.y + dy;
+        const snap = this.findAlignment(current, nextX, nextY);
+        nextX += snap.dx;
+        nextY += snap.dy;
+        current.props.x = Math.round(nextX);
+        current.props.y = Math.round(nextY);
+        this.showAlignmentGuides(snap.guides);
       } else if (drag.mode === 'resize') {
+        this.clearAlignmentGuides();
         const radians = drag.rotation * Math.PI / 180;
         const localDx = dx * Math.cos(radians) + dy * Math.sin(radians);
         const localDy = -dx * Math.sin(radians) + dy * Math.cos(radians);
@@ -485,13 +539,19 @@ class FlowiqStudio {
         const rawHeight = drag.height + (dir.includes('s') ? localDy : dir.includes('n') ? -localDy : 0);
         const width = Math.max(24, Math.min(2000, rawWidth));
         const height = Math.max(24, Math.min(2000, rawHeight));
-        const x = dir.includes('w') ? drag.x + drag.width - width : drag.x;
-        const y = dir.includes('n') ? drag.y + drag.height - height : drag.y;
-        current.props.x = Math.round(x);
-        current.props.y = Math.round(y);
+        // Mantém a borda oposta fixa no espaço local e compensa a rotação no espaço do palco.
+        const shiftLocalX = dir.includes('w') ? (drag.width - width) / 2 : dir.includes('e') ? (width - drag.width) / 2 : 0;
+        const shiftLocalY = dir.includes('n') ? (drag.height - height) / 2 : dir.includes('s') ? (height - drag.height) / 2 : 0;
+        const shiftWorldX = shiftLocalX * Math.cos(radians) - shiftLocalY * Math.sin(radians);
+        const shiftWorldY = shiftLocalX * Math.sin(radians) + shiftLocalY * Math.cos(radians);
+        const centerX = drag.x + drag.width / 2 + shiftWorldX;
+        const centerY = drag.y + drag.height / 2 + shiftWorldY;
+        current.props.x = Math.round(centerX - width / 2);
+        current.props.y = Math.round(centerY - height / 2);
         current.props.width = Math.round(width);
         current.props.height = Math.round(height);
       } else {
+        this.clearAlignmentGuides();
         const angle = Math.atan2(moveEvent.clientY - drag.centerY, moveEvent.clientX - drag.centerX);
         let angleDelta = angle - drag.startAngle;
         while (angleDelta > Math.PI) angleDelta -= Math.PI * 2;
@@ -513,6 +573,7 @@ class FlowiqStudio {
       window.removeEventListener('pointercancel', end);
       const changed = this.drag.moved;
       this.drag = null;
+      this.clearAlignmentGuides();
       if (changed) this.scheduleSave();
       this.renderEditor();
     };
