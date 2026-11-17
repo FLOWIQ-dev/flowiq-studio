@@ -293,3 +293,7 @@ button:disabled{opacity:.38;cursor:not-allowed}
 .tree-context-menu button:hover{background:#263d5c}
 .tree-context-menu .danger-text{color:#ff8585}
 @media(max-width:680px){.tree-search{height:40px;margin:8px 12px}.tree-row{min-height:39px}.tree-menu-trigger{width:32px;height:32px;opacity:1}}
+
+.object-parent-note{margin:0 2px 9px;color:#91a9c8;font-size:11px;line-height:1.45}
+.tree-row{touch-action:pan-y}
+.tree-hold-ready{outline:1px solid rgba(105,175,255,.65);background:rgba(85,145,220,.16)}
