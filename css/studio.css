@@ -48,7 +48,7 @@ button:disabled{opacity:.38;cursor:not-allowed}
 .project-card-body>small{display:block;margin-top:5px;color:var(--muted);font-size:11px}
 .project-card-actions{display:flex;gap:7px;margin-top:15px}
 .project-card-actions .button{min-height:32px;padding:0 10px;font-size:11px}
-.project-card-actions .primary{margin-right:auto}
+.project-card-actions .primary{margin-right:auto}.project-card-actions .project-icon-action{width:38px;min-width:38px;min-height:38px;padding:0;border:0;background:transparent;color:#a8b8ce}.project-card-actions .project-icon-action svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}.project-card-actions .project-icon-action:hover{background:rgba(145,170,205,.1);color:#e0ebfa}.project-card-actions .project-icon-action.danger-text{color:#e58c94}
 .empty-state{padding:32px 20px;border:1px dashed #31445e;border-radius:14px;color:var(--muted);text-align:center;font-size:13px;line-height:1.6}
 .home-footer{display:flex;justify-content:space-between;gap:20px;padding:18px clamp(18px,4vw,56px);border-top:1px solid var(--line-soft);color:#65758d;font-size:10px;letter-spacing:.03em}
 .secondary-content{width:min(900px,calc(100% - 40px));margin:0 auto;padding:52px 0}
@@ -106,7 +106,7 @@ button:disabled{opacity:.38;cursor:not-allowed}
 .stage-toolbar .eyebrow{grid-column:1/-1;font-size:9px}
 .stage-toolbar strong{font:700 13px Inter,ui-sans-serif,sans-serif}
 .stage-toolbar small{color:var(--muted);font-size:10px}
-.stage-tools{display:flex;align-items:center;gap:5px}
+.stage-tools{display:flex;align-items:center;gap:8px}.stage-tools .add-object-action{min-height:38px;padding:0 13px;font-size:13px}.stage-tools .add-object-action svg{width:19px;height:19px}
 .stage-tools .icon-button{width:30px;min-width:30px;min-height:30px;border-radius:8px;background:transparent}
 .stage-tools output{min-width:42px;color:#b5c3d6;text-align:center;font-size:10px;font-variant-numeric:tabular-nums}
 .stage-viewport{position:relative;display:block;min-width:0;min-height:0;overflow:auto;padding:24px;background-color:#0c1421;background-image:radial-gradient(#283950 1px,transparent 1px);background-size:18px 18px;overscroll-behavior:contain}
@@ -201,7 +201,7 @@ button:disabled{opacity:.38;cursor:not-allowed}
   .project-card-preview{height:100%;min-height:126px}
   .project-card-body{padding:12px}
   .project-card-actions{flex-wrap:wrap;margin-top:11px}
-  .project-card-actions .button{font-size:10px}
+  .project-card-actions .button{font-size:12px}.project-card-actions .project-icon-action{width:36px;min-width:36px;min-height:36px}
   .home-footer{flex-direction:column;gap:5px;padding:14px;font-size:9px}
   .secondary-content{padding:34px 0}
   .secondary-content h1{font-size:30px}
@@ -219,12 +219,13 @@ button:disabled{opacity:.38;cursor:not-allowed}
   #save-project{display:none}
   .editor-shell{position:relative;display:block;min-height:0;overflow:hidden}
   .stage-panel{position:absolute;inset:0;display:grid;grid-template-rows:55px minmax(0,1fr) 24px}
-  .stage-toolbar{padding:0 12px}
+  .stage-toolbar{padding:0 12px}.stage-tools .add-object-action{min-height:34px;padding:0 9px;font-size:11px}.stage-tools .add-object-action svg{width:18px;height:18px}
   .stage-toolbar strong{font-size:12px}
   .stage-toolbar small{font-size:9px}
   .stage-viewport{padding:16px 12px}
   .scene-zoom{width:960px;height:640px}
   .stage-footer{padding:0 10px;font-size:8px}
+  .editor-shell:before{content:'';position:absolute;inset:0;z-index:7;background:rgba(0,0,0,.48);opacity:0;pointer-events:none;transition:opacity .24s ease}.editor-shell[data-panel=explorer]:before,.editor-shell[data-panel=inspector]:before{opacity:1;pointer-events:auto}
   .editor-panel{position:absolute;left:0;right:0;bottom:0;z-index:8;display:none;height:min(66%,520px);border:1px solid #344b67;border-bottom:0;border-radius:16px 16px 0 0;box-shadow:0 -18px 50px rgba(0,0,0,.35);animation:sheet-in .22s cubic-bezier(.2,.75,.25,1) both}
   .editor-shell[data-panel=explorer] .explorer-panel,.editor-shell[data-panel=inspector] .inspector-panel{display:block;animation:sheet-in .28s cubic-bezier(.2,.75,.25,1) both}
   .panel-title{min-height:56px;padding:9px 15px}
