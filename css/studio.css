@@ -846,7 +846,8 @@ body[data-screen=editor]{
 #screen-editor .scene-canvas{
   flex:none;
   max-width:none;
-  border:1px solid #526984;
+  border:0;
+  outline:1px solid #526984;
   border-radius:2px;
   background-color:#111d2c;
   background-image:linear-gradient(rgba(138,165,198,.055) 1px,transparent 1px),linear-gradient(90deg,rgba(138,165,198,.055) 1px,transparent 1px);
