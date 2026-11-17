@@ -18,8 +18,8 @@ export function renderScene(container, scene, { selectedId = null, preview = fal
   for (const url of container._objectUrls || []) URL.revokeObjectURL(url);
   container._objectUrls = [];
   container.replaceChildren();
-  container.style.width = Math.max(1, Number(sceneSize.width) || 960) + 'px';
-  container.style.height = Math.max(1, Number(sceneSize.height) || 640) + 'px';
+  const rootWidth = container.clientWidth || Math.max(1, Number(sceneSize.width) || 960);
+  const rootHeight = container.clientHeight || Math.max(1, Number(sceneSize.height) || 640);
   const assetMap = new Map(assets.map(asset => [asset.id, asset]));
   const build = (id, parent, parentWidth, parentHeight) => {
     const node = scene.get(id);
@@ -70,7 +70,7 @@ export function renderScene(container, scene, { selectedId = null, preview = fal
       item.append(rotate);
     }
   };
-  for (const id of scene.roots) build(id, container, Number(sceneSize.width) || 960, Number(sceneSize.height) || 640);
+  for (const id of scene.roots) build(id, container, rootWidth, rootHeight);
 }
 
 export function renderTree(container, scene, selectedId, { search = '', expanded = new Set(), onSelect = () => {}, onToggle = () => {} } = {}) {
