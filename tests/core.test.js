@@ -160,10 +160,11 @@ test('Inspector property schemas are class-based and extensible', () => {
   assert.ok(frame.sections.some(section => section.title === 'Position · UDim2'));
   assert.ok(frame.sections.some(section => section.title === 'Size · UDim2'));
   const frameKeys = frame.sections.flatMap(section => section.fields.map(field => field.key));
-  for (const key of ['archivable','automaticSize','sizeConstraint','layoutOrder','zIndex','backgroundColor3','backgroundTransparency','borderColor3','borderSizePixel','borderMode','style','visible','clipsDescendants','active','interactable','selectable','selectionOrder']) {
+  for (const key of ['sizeConstraint','zIndex','backgroundColor3','backgroundTransparency','borderColor3','borderSizePixel','borderMode','visible','clipsDescendants']) {
     assert.ok(frameKeys.includes(key), 'Frame should expose ' + key);
   }
   const frameFields = frame.sections.flatMap(section => section.fields);
+  for (const unused of ['archivable','automaticSize','layoutOrder','style','active','interactable','selectable','selectionOrder']) assert.ok(!frameKeys.includes(unused), unused + ' should not clutter the Frame inspector');
   assert.equal(frameFields.find(field => field.key === 'backgroundTransparency')?.type, 'slider');
   assert.equal(frameFields.find(field => field.key === 'borderSizePixel')?.type, 'slider');
   registerPropertySchema('FutureWidget', { sections: [
