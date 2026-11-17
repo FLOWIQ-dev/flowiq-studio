@@ -623,16 +623,21 @@ class FlowiqStudio {
     const rootStart = hit?.closest('[data-tree-root-start]');
     const target = hit?.closest('[data-tree-node]');
     if (!insideTree) { drag.targetId = null; drag.position = 'cancel'; tree.classList.remove('tree-root-drop'); return; }
-    if (rootStart) { drag.targetId = null; drag.position = 'root-start'; tree.classList.remove('tree-root-drop'); rootStart.classList.add('tree-root-start-target'); return; }
-    if (!target) { drag.targetId = null; drag.position = 'root'; tree.classList.add('tree-root-drop'); return; }
+    if (rootStart) {
+      const source = this.scene.get(drag.id);
+      if (!source || source.parentId) { drag.targetId = null; drag.position = 'cancel'; return; }
+      drag.targetId = null; drag.position = 'root-start'; tree.classList.remove('tree-root-drop'); rootStart.classList.add('tree-root-start-target'); return;
+    }
+    if (!target) { drag.targetId = null; drag.position = 'cancel'; tree.classList.remove('tree-root-drop'); return; }
     tree.classList.remove('tree-root-drop');
-    if (target.dataset.treeNode === drag.id || this.scene.descendants(drag.id).some(item => item.id === target.dataset.treeNode)) {
+    const source = this.scene.get(drag.id), targetNode = this.scene.get(target.dataset.treeNode);
+    if (!source || !targetNode || targetNode.id === drag.id || this.scene.descendants(drag.id).some(item => item.id === targetNode.id) || source.parentId !== targetNode.parentId) {
       drag.targetId = null; drag.position = 'cancel'; return;
     }
     const rect = target.getBoundingClientRect(), relative = (y - rect.top) / Math.max(1, rect.height);
-    drag.position = relative < .24 ? 'before' : relative > .76 ? 'after' : 'inside';
+    drag.position = relative < .5 ? 'before' : 'after';
     drag.targetId = target.dataset.treeNode;
-    target.classList.add(drag.position === 'inside' ? 'tree-drop-target' : drag.position === 'before' ? 'tree-drop-before' : 'tree-drop-after');
+    target.classList.add(drag.position === 'before' ? 'tree-drop-before' : 'tree-drop-after');
   }
   treePointerUp(event) {
     clearTimeout(this.treeHoldTimer); this.treeHoldTimer = null;
@@ -648,18 +653,16 @@ class FlowiqStudio {
     try {
       this.history.checkpoint(this.historySnapshot());
       const source = this.scene.get(drag.id), targetNode = drag.targetId ? this.scene.get(drag.targetId) : null;
-      if (drag.position === 'root-start') this.scene.reparent(drag.id, null, 0);
-      else if (!targetNode) this.scene.reparent(drag.id, null);
-      else if (drag.position === 'inside') {
-        this.scene.reparent(drag.id, targetNode.id);
-        this.treeExpanded.add(targetNode.id);
-      } else {
-        const siblings = targetNode.parentId ? this.scene.get(targetNode.parentId).children : this.scene.roots;
+      const siblings = source.parentId ? this.scene.get(source.parentId)?.children : this.scene.roots;
+      if (drag.position === 'root-start' && !source.parentId) {
+        this.scene.reparent(drag.id, null, 0);
+      } else if (targetNode && targetNode.parentId === source.parentId) {
         let index = siblings.indexOf(targetNode.id) + (drag.position === 'after' ? 1 : 0);
-        const sourceSiblings = source.parentId ? this.scene.get(source.parentId).children : this.scene.roots;
-        const sourceIndex = sourceSiblings.indexOf(source.id);
-        if (sourceSiblings === siblings && sourceIndex >= 0 && sourceIndex < index) index--;
-        this.scene.reparent(drag.id, targetNode.parentId, index);
+        const sourceIndex = siblings.indexOf(source.id);
+        if (sourceIndex >= 0 && sourceIndex < index) index--;
+        this.scene.reparent(drag.id, source.parentId, index);
+      } else {
+        throw new Error('Só é possível mudar a posição sem alterar o nível hierárquico.');
       }
       this.select(drag.id); this.scheduleSave();
     } catch (error) { this.toast(error.message, 'error'); }
