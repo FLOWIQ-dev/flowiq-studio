@@ -233,7 +233,7 @@ button:disabled{opacity:.38;cursor:not-allowed}
   .editor-panel{position:absolute;left:0;right:0;bottom:0;z-index:8;display:none;height:min(66%,520px);border:1px solid #344b67;border-bottom:0;border-radius:16px 16px 0 0;box-shadow:0 -18px 50px rgba(0,0,0,.35);animation:sheet-in .22s cubic-bezier(.2,.75,.25,1) both}
   .editor-shell[data-panel=explorer] .explorer-panel,.editor-shell[data-panel=inspector] .inspector-panel{display:block;animation:sheet-in .28s cubic-bezier(.2,.75,.25,1) both}
   .panel-title{min-height:56px;padding:9px 15px}
-  .panel-title h2{font-size:13px}
+  .panel-title h2{font-size:13px}.panel-title .icon-button{width:34px;min-width:34px;min-height:34px;border:1px solid #354b67;border-radius:9px;background:#1a2b42;color:#b8d5ff}
   .mobile-only{display:inline-flex}
   .inspector-content{padding:12px 16px 24px}
   .property-group{padding:11px 0}
