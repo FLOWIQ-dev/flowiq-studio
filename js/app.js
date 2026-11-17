@@ -455,10 +455,18 @@ class FlowiqStudio {
   openTreeMenu(id, anchor) {
     const node = this.scene.get(id);
     if (!node) return;
-    $('tree').querySelector('.tree-context-menu')?.remove();
+    document.querySelector('.tree-context-menu')?.remove();
     const menu = document.createElement('div');
     menu.className = 'tree-context-menu';
-    menu.innerHTML = '<button data-tree-action="rename" data-node-id="' + id + '">Renomear</button><button data-tree-action="add" data-node-id="' + id + '">Adicionar instância</button><button data-tree-action="duplicate" data-node-id="' + id + '">Duplicar</button><button data-tree-action="delete" data-node-id="' + id + '" class="danger-text">Excluir</button>';
+    for (const [action, label] of [['rename', 'Renomear'], ['add', 'Adicionar instância'], ['duplicate', 'Duplicar'], ['delete', 'Excluir']]) {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.textContent = label;
+      button.dataset.treeAction = action;
+      button.dataset.nodeId = id;
+      if (action === 'delete') button.className = 'danger-text';
+      menu.append(button);
+    }
     const rect = anchor.getBoundingClientRect();
     menu.style.left = Math.max(8, Math.min(rect.left, window.innerWidth - 190)) + 'px';
     menu.style.top = Math.min(window.innerHeight - 190, rect.bottom) + 'px';
