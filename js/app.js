@@ -521,11 +521,27 @@ class FlowiqStudio {
     if (!drag || drag.pointerId !== event.pointerId) return;
     if (drag.active) {
       const target = document.elementFromPoint(event.clientX, event.clientY)?.closest('[data-tree-node]');
-      const parentId = target?.dataset.treeNode || null;
+      const targetNode = target ? this.scene.get(target.dataset.treeNode) : null;
       try {
         this.history.checkpoint(this.historySnapshot());
-        this.scene.reparent(drag.id, parentId);
-        if (parentId) this.treeExpanded.add(parentId);
+        if (!targetNode) {
+          this.scene.reparent(drag.id, null);
+        } else {
+          const rect = target.getBoundingClientRect();
+          const relative = (event.clientY - rect.top) / Math.max(1, rect.height);
+          if (relative < 0.22 || relative > 0.78) {
+            const siblings = targetNode.parentId ? this.scene.get(targetNode.parentId).children : this.scene.roots;
+            let index = siblings.indexOf(targetNode.id) + (relative > 0.78 ? 1 : 0);
+            const source = this.scene.get(drag.id);
+            const sourceSiblings = source.parentId ? this.scene.get(source.parentId).children : this.scene.roots;
+            const sourceIndex = sourceSiblings.indexOf(source.id);
+            if (sourceSiblings === siblings && sourceIndex >= 0 && sourceIndex < index) index--;
+            this.scene.reparent(drag.id, targetNode.parentId, index);
+          } else {
+            this.scene.reparent(drag.id, targetNode.id);
+            this.treeExpanded.add(targetNode.id);
+          }
+        }
         this.select(drag.id);
         this.scheduleSave();
       } catch (error) { this.toast(error.message, 'error'); }
