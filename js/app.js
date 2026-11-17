@@ -52,6 +52,7 @@ class FlowiqStudio {
     $('home-settings').addEventListener('click', guarded(() => this.openSettings()));
     $('back-home').addEventListener('click', guarded(() => this.returnHome()));
     $('add-object').addEventListener('click', () => this.toggleAddMenu());
+    $('editor-shell').addEventListener('click', event => { if (event.target === $('editor-shell') && window.matchMedia('(max-width: 680px)').matches && $('editor-shell').dataset.panel !== 'stage') this.setPanel('stage'); });
     $('add-menu').addEventListener('click', event => {
       const button = event.target.closest('[data-add-type]');
       if (button) this.addNode(button.dataset.addType);
@@ -182,9 +183,13 @@ class FlowiqStudio {
       actions.className = 'project-card-actions';
       const open = this.button('Abrir', 'button primary');
       open.addEventListener('click', () => this.openProject(project.id));
-      const rename = this.button('Renomear', 'button subtle');
+      const rename = this.button('', 'icon-button project-icon-action');
+      rename.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14 5 5 5M4 20l4.5-1 11-11a2.1 2.1 0 0 0-3-3l-11 11L4 20Z"/></svg>';
+      rename.setAttribute('aria-label', 'Renomear projeto'); rename.title = 'Renomear projeto';
       rename.addEventListener('click', this.guarded(() => this.renameProject(project)));
-      const remove = this.button('Excluir', 'button subtle danger-text');
+      const remove = this.button('', 'icon-button project-icon-action danger-text');
+      remove.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M5 7l1 14h12l1-14M9 7V4h6v3"/></svg>';
+      remove.setAttribute('aria-label', 'Excluir projeto'); remove.title = 'Excluir projeto';
       remove.addEventListener('click', this.guarded(() => this.deleteProject(project)));
       actions.append(open, rename, remove);
       body.append(name, meta, actions);
@@ -524,14 +529,23 @@ class FlowiqStudio {
   }
 
   setPanel(name) {
-    this.store.set({ panel: name });
-    $('editor-shell').dataset.panel = name;
-    document.querySelectorAll('[data-panel]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.panel === name)));
+    const shell = $('editor-shell');
+    const current = shell.dataset.panel || 'stage';
+    const next = name === current && name !== 'stage' ? 'stage' : name;
+    this.store.set({ panel: next });
+    shell.dataset.panel = next;
+    document.querySelectorAll('[data-panel]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.panel === next)));
   }
 
   toggleAddMenu() {
     const menu = $('add-menu');
-    if (window.matchMedia('(max-width: 680px)').matches && $('editor-shell').dataset.panel !== 'explorer') this.setPanel('explorer');
+    if (window.matchMedia('(max-width: 680px)').matches) {
+      const opening = menu.hidden;
+      if (opening && $('editor-shell').dataset.panel !== 'stage') this.setPanel('stage');
+      menu.hidden = !opening;
+      if (opening) this.setPanel('stage');
+      return;
+    }
     menu.hidden = !menu.hidden;
   }
 
