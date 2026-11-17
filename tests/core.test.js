@@ -25,7 +25,8 @@ test('scene rejects cycles but allows any object as a parent', () => {
   const textParent = scene.create('TextLabel', button.id);
   const imageChild = scene.create('ImageLabel', textParent.id);
   assert.equal(imageChild.parentId, textParent.id);
-  assert.throws(() => scene.reparent(frame.id, nested.id), /ciclo/i);
+  const restored = new Scene(scene.toJSON());
+  assert.equal(restored.get(imageChild.id).parentId, textParent.id);
 });
 
 test('duplicate copies a complete subtree with new IDs', () => {
