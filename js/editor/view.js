@@ -112,7 +112,9 @@ export function renderTree(container, scene, selectedId, { search = '', expanded
   };
   scene.roots.forEach(id => { const branch = build(id, 0); if (branch) list.append(branch); });
   if (!list.childElementCount) list.append(el('p', 'empty-inline', query ? 'Nenhum objeto encontrado.' : 'Seu projeto ainda não tem objetos.'));
-  container.append(list);
+  const rootStart = el('div', 'tree-root-start-drop', 'Mover para o topo · nível raiz');
+  rootStart.dataset.treeRootStart = 'true';
+  container.append(rootStart, list);
 }
 
 export function renderInspector(container, node, { onChange, onDelete, assets = [], onAsset, events = [], nodes = [], onEventSave } = {}) {
