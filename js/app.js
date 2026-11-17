@@ -332,7 +332,7 @@ class FlowiqStudio {
     } else {
       events.push({ id: makeId(), nodeId, event: 'click', actions: JSON.parse(JSON.stringify(actions)) });
     }
-    this.project.events = events.filter(rule => rule && (rule.actions || []).length);
+    this.project.events = events.filter(Boolean);
     this.scheduleSave();
     this.renderInspectorPanel(this.scene.get(nodeId));
     this.toast('Interação atualizada.');
