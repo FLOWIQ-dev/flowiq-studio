@@ -872,7 +872,7 @@ body[data-screen=editor]{
   padding:0;
   overflow:hidden;
   background:#0c1421;
-  border:0;
+  border:1px solid #354861;
 }
 #screen-editor .scene-zoom{
   position:relative;
@@ -893,7 +893,7 @@ body[data-screen=editor]{
   max-width:none;
   margin:0;
   overflow:hidden;
-  border:1px solid #354861;
+  border:0;
   border-radius:0;
   background-color:#121e2e;
   background-image:linear-gradient(rgba(138,165,198,.055) 1px,transparent 1px),linear-gradient(90deg,rgba(138,165,198,.055) 1px,transparent 1px);
