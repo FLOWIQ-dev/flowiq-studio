@@ -100,7 +100,7 @@ button:disabled{opacity:.38;cursor:not-allowed}
 .add-menu button>b{display:grid;place-items:center;width:32px;height:32px;border-radius:0;background:transparent;color:#a9ceff;font-size:17px}.add-menu button>b svg{width:26px;height:26px}
 .add-menu button span{display:grid;gap:4px;font-size:14px;font-weight:650}
 .add-menu button small{color:var(--muted);font-size:12px;font-weight:400}
-.stage-panel{display:grid;grid-template-rows:62px minmax(0,1fr) 30px;min-width:0;min-height:0;background:#0c1421}
+.stage-panel{position:relative;display:grid;grid-template-rows:62px minmax(0,1fr) 30px;min-width:0;min-height:0;background:#0c1421}
 .stage-toolbar{display:flex;align-items:center;justify-content:space-between;padding:0 18px;border-bottom:1px solid var(--line-soft);background:#101a29}
 .stage-toolbar>div:first-child{display:grid;grid-template-columns:auto auto;align-items:center;gap:4px 10px}
 .stage-toolbar .eyebrow{grid-column:1/-1;font-size:9px}
