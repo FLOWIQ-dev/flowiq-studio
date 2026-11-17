@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
-import { Scene } from '../js/data/model.js';
+import { Scene, resolveNodeLayout } from '../js/data/model.js';
 import { History } from '../js/core/history.js';
 import { Store } from '../js/core/store.js';
 import { Runtime } from '../js/runtime/runtime.js';
@@ -27,6 +27,28 @@ test('scene rejects cycles but allows any object as a parent', () => {
   assert.equal(imageChild.parentId, textParent.id);
   const restored = new Scene(scene.toJSON());
   assert.equal(restored.get(imageChild.id).parentId, textParent.id);
+});
+
+test('legacy pixel layouts migrate to UDim2 without changing their geometry', () => {
+  const scene = new Scene([{ id: 'legacy', type: 'Frame', name: 'Antigo', props: { x: 37, y: 52, width: 240, height: 130 } }]);
+  const node = scene.get('legacy');
+  assert.deepEqual(node.props.position, { x: { scale: 0, offset: 37 }, y: { scale: 0, offset: 52 } });
+  assert.deepEqual(node.props.size, { x: { scale: 0, offset: 240 }, y: { scale: 0, offset: 130 } });
+  assert.deepEqual(resolveNodeLayout(node, 960, 640), { x: 37, y: 52, width: 240, height: 130 });
+});
+
+test('UDim2 resolves Scale, Offset and AnchorPoint against the parent', () => {
+  const scene = new Scene([{ id: 'responsive', type: 'Frame', props: {
+    position: { x: { scale: 0.5, offset: 10 }, y: { scale: 0.25, offset: 5 } },
+    size: { x: { scale: 0.5, offset: 20 }, y: { scale: 0.25, offset: 10 } },
+    anchorPoint: { x: 0.5, y: 0.5 }
+  } }]);
+  const node = scene.get('responsive');
+  assert.deepEqual(resolveNodeLayout(node, 400, 300), { x: 100, y: 40, width: 220, height: 85 });
+  const restored = new Scene(scene.toJSON()).get('responsive');
+  assert.deepEqual(restored.props.position, node.props.position);
+  assert.deepEqual(restored.props.size, node.props.size);
+  assert.deepEqual(restored.props.anchorPoint, node.props.anchorPoint);
 });
 
 test('duplicate copies a complete subtree with new IDs', () => {
