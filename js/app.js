@@ -591,6 +591,7 @@ class FlowiqStudio {
     renderInspector($('inspector'), node, {
       assets: this.assets,
       onChange: (key, value) => this.updateProperty(key, value),
+      onDuplicate: () => this.duplicateSelected(),
       onDelete: () => this.deleteSelected(),
       onAsset: id => this.updateProperty('assetId', id),
       events: this.project?.events || [],
