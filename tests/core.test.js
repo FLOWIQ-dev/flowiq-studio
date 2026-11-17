@@ -173,3 +173,14 @@ test('Inspector property schemas are class-based and extensible', () => {
   assert.equal(getPropertySchema('FutureWidget').sections[0].fields[0].key, 'value');
   assert.throws(() => registerPropertySchema('FutureWidget', { sections: [] }), /Já existe/);
 });
+
+
+test('editor stage follows the available viewport and zoom is isolated to the scene world', async () => {
+  const app = await readFile(new URL('../js/app.js', import.meta.url), 'utf8');
+  const view = await readFile(new URL('../js/editor/view.js', import.meta.url), 'utf8');
+  assert.match(app, /getStageSize\(\)/);
+  assert.match(app, /host\?\.clientWidth/);
+  assert.match(app, /this\.fitStage\(true\)/);
+  assert.match(view, /const world = el\('div', 'scene-world'\)/);
+  assert.match(view, /build\(id, world, rootWidth, rootHeight\)/);
+});
