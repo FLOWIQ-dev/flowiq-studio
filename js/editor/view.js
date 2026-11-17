@@ -23,7 +23,7 @@ export function renderScene(container, scene, { selectedId = null, preview = fal
   const rootHeight = container.clientHeight || Math.max(1, Number(sceneSize.height) || 640);
   const assetMap = new Map(assets.map(asset => [asset.id, asset]));
   const measureLayout = (node, parentWidth, parentHeight) => {
-    const layout = measureLayout(node, parentWidth, parentHeight);
+    const layout = resolveNodeLayout(node, parentWidth, parentHeight);
     const automatic = node.props.automaticSize || 'None';
     if (automatic === 'None' || !node.children.length) return layout;
     for (let pass = 0; pass < 4; pass++) {
@@ -49,7 +49,7 @@ export function renderScene(container, scene, { selectedId = null, preview = fal
     const p = node.props;
     const item = el(node.type === 'TextButton' && preview ? 'button' : 'div', 'scene-node scene-' + node.type.toLowerCase());
     item.dataset.nodeId = node.id;
-    const layout = resolveNodeLayout(node, parentWidth, parentHeight);
+    const layout = measureLayout(node, parentWidth, parentHeight);
     item.style.left = (layout.x + layout.width * p.anchorPoint.x) + 'px';
     item.style.top = (layout.y + layout.height * p.anchorPoint.y) + 'px';
     item.style.width = layout.width + 'px';
@@ -173,7 +173,7 @@ export function renderTree(container, scene, selectedId, { search = '', expanded
   container.append(rootStart, list);
 }
 
-export function renderInspector(container, node, { onChange, onDelete, assets = [], onAsset, events = [], nodes = [], onEventSave } = {}) {
+export function renderInspector(container, node, { onChange, onDelete, onDuplicate, assets = [], onAsset, events = [], nodes = [], onEventSave } = {}) {
   const previousScrollTop = container.scrollTop;
   container.replaceChildren();
   if (!node) {
@@ -181,7 +181,21 @@ export function renderInspector(container, node, { onChange, onDelete, assets = 
     return;
   }
   const heading = el('div', 'inspector-heading');
-  heading.append(el('span', 'eyebrow', node.type.toUpperCase()), el('strong', '', node.name));
+  const identity = el('div', 'inspector-identity');
+  identity.append(el('span', 'eyebrow', node.type.toUpperCase()), el('strong', '', node.name));
+  const quickActions = el('div', 'inspector-quick-actions');
+  const duplicate = el('button', 'icon-button inspector-quick-button', 'Duplicar');
+  duplicate.type = 'button';
+  duplicate.title = 'Duplicar instância';
+  duplicate.setAttribute('aria-label', 'Duplicar instância');
+  duplicate.addEventListener('click', () => onDuplicate?.());
+  const removeQuick = el('button', 'icon-button inspector-quick-button danger-text', 'Excluir');
+  removeQuick.type = 'button';
+  removeQuick.title = 'Excluir instância';
+  removeQuick.setAttribute('aria-label', 'Excluir instância');
+  removeQuick.addEventListener('click', () => onDelete?.());
+  quickActions.append(duplicate, removeQuick);
+  heading.append(identity, quickActions);
   container.append(heading);
 
   const readValue = key => key.split('.').reduce((value, part) => value?.[part], key === 'name' ? { name: node.name } : node.props);
@@ -202,8 +216,8 @@ export function renderInspector(container, node, { onChange, onDelete, assets = 
       });
     } else {
       input = el('input');
-      input.type = type;
-      if (type === 'number') {
+      input.type = type === 'slider' ? 'range' : type;
+      if (type === 'number' || type === 'slider') {
         input.min = descriptor.min ?? '0';
         input.max = descriptor.max ?? '2000';
         input.step = descriptor.step ?? '1';
@@ -212,12 +226,19 @@ export function renderInspector(container, node, { onChange, onDelete, assets = 
     const propertyValue = readValue(key);
     if (type === 'checkbox') input.checked = Boolean(propertyValue);
     else input.value = String(propertyValue ?? descriptor.fallback ?? '');
-    input.addEventListener('change', () => {
-      const value = type === 'number' ? Number(input.value) : type === 'checkbox' ? input.checked : input.value;
-      if (type === 'asset') onAsset?.(value);
-      else onChange(key, value);
-    });
-    wrap.append(input);
+    if (type === 'slider') {
+      const output = el('output', 'property-slider-value', Number(input.value).toFixed(descriptor.step < 1 ? 2 : 0));
+      input.addEventListener('input', () => { output.value = Number(input.value).toFixed(descriptor.step < 1 ? 2 : 0); output.textContent = output.value; });
+      input.addEventListener('change', () => onChange(key, Number(input.value)));
+      wrap.append(input, output);
+    } else {
+      input.addEventListener('change', () => {
+        const value = type === 'number' ? Number(input.value) : type === 'checkbox' ? input.checked : input.value;
+        if (type === 'asset') onAsset?.(value);
+        else onChange(key, value);
+      });
+      wrap.append(input);
+    }
     return wrap;
   };
 
@@ -297,11 +318,5 @@ export function renderInspector(container, node, { onChange, onDelete, assets = 
     }
     container.append(logic);
   }
-  const actions = el('div', 'inspector-actions');
-  const remove = el('button', 'button danger', 'Excluir objeto');
-  remove.type = 'button';
-  remove.addEventListener('click', onDelete);
-  actions.append(remove);
-  container.append(actions);
   container.scrollTop = previousScrollTop;
 }
