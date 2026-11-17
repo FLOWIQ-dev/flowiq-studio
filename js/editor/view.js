@@ -15,13 +15,16 @@ const el = (tag, className, text) => {
   return node;
 };
 
-export function renderScene(container, scene, { selectedId = null, preview = false, assets = [], onRun = () => {}, sceneSize = { width: 960, height: 640 } } = {}) {
+export function renderScene(container, scene, { selectedId = null, preview = false, assets = [], onRun = () => {}, sceneSize = { width: 960, height: 640 }, zoom = 1 } = {}) {
   for (const url of container._objectUrls || []) URL.revokeObjectURL(url);
   container._objectUrls = [];
   container.replaceChildren();
-  // O tamanho lógico da raiz vem das configurações do projeto, nunca do zoom ou do viewport.
-  const rootWidth = Math.max(1, Number(sceneSize.width) || 960);
-  const rootHeight = Math.max(1, Number(sceneSize.height) || 640);
+  // A viewport define o espaço lógico atual. A câmera aplica zoom apenas aos objetos.
+  const rootWidth = Math.max(1, Number(sceneSize.width) || container.clientWidth || 960);
+  const rootHeight = Math.max(1, Number(sceneSize.height) || container.clientHeight || 640);
+  const world = el('div', 'scene-world');
+  world.style.transform = 'scale(' + Math.max(0.25, Math.min(2.5, Number(zoom) || 1)) + ')';
+  container.append(world);
   const assetMap = new Map(assets.map(asset => [asset.id, asset]));
   const measureLayout = (node, parentWidth, parentHeight) => {
     const layout = resolveNodeLayout(node, parentWidth, parentHeight);
@@ -123,7 +126,7 @@ export function renderScene(container, scene, { selectedId = null, preview = fal
       item.append(rotate);
     }
   };
-  for (const id of scene.roots) build(id, container, rootWidth, rootHeight);
+  for (const id of scene.roots) build(id, world, rootWidth, rootHeight);
 }
 
 export function renderTree(container, scene, selectedId, { search = '', expanded = new Set(), onSelect = () => {}, onToggle = () => {} } = {}) {
