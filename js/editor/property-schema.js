@@ -132,6 +132,13 @@ registerPropertySchema('Frame', { sections: [
       { value: 'Middle', label: 'Middle' },
       { value: 'Inset', label: 'Inset' }
     ]),
+    select('style', 'Style', [
+      { value: 'Custom', label: 'Custom' },
+      { value: 'ChatBlue', label: 'ChatBlue' },
+      { value: 'ChatGreen', label: 'ChatGreen' },
+      { value: 'ChatRed', label: 'ChatRed' },
+      { value: 'DropShadow', label: 'DropShadow' }
+    ]),
     number('rotation', 'Rotation', -360, 360)
   ]},
   { title: 'Behavior', fields: [
