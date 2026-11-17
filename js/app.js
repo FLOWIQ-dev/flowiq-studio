@@ -160,7 +160,7 @@ class FlowiqStudio {
   }
 
   get zoom() { return this._zoom || 1; }
-  set zoom(value) { this._zoom = Math.max(0.35, Math.min(2, value)); }
+  set zoom(value) { this._zoom = Math.max(0.05, Math.min(2, value)); }
 
   showScreen(screen) {
     const names = ['home', 'editor', 'library', 'settings'];
