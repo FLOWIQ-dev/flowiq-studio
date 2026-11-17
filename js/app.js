@@ -856,8 +856,8 @@ class FlowiqStudio {
     $('add-menu').hidden = false;
     $('add-menu-backdrop').hidden = false;
     $('object-search').value = '';
-    $('object-dialog-title').textContent = parent ? 'Adicionar instância' : 'Adicionar ao palco';
-    $('object-parent-note').textContent = parent ? 'Será criada dentro de ' + parent.name : 'Escolha um objeto para inserir na cena.';
+    $('object-dialog-title').textContent = parent ? 'Inserir instância' : 'Inserir objeto';
+    $('object-parent-note').textContent = parent ? 'Parent: ' + parent.name + ' · a nova instância será filha deste objeto.' : 'Selecione uma classe para inserir no nível raiz.';
     $('object-parent-note').hidden = false;
     this.filterAddMenu('');
     $('mobile-add-objects').setAttribute('aria-expanded', 'true');
