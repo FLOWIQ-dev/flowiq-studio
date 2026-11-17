@@ -50,16 +50,24 @@
       </aside>
     </div>
     <div id="add-menu-backdrop" class="add-menu-backdrop" hidden></div>
-    <div id="add-menu" class="add-menu" role="dialog" aria-modal="true" aria-label="Adicionar objetos" hidden>
-          <div class="add-menu-heading"><div><span class="eyebrow">BIBLIOTECA DE OBJETOS</span><strong id="object-dialog-title">Adicionar ao palco</strong></div><button id="close-add-menu" class="icon-button" type="button" aria-label="Fechar janela de objetos" title="Fechar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button></div>
-          <label class="object-search"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 4.5 4.5"/></svg><input id="object-search" type="search" placeholder="Pesquisar objetos..." autocomplete="off" aria-label="Pesquisar objetos"></label>
-          <p id="object-parent-note" class="object-parent-note">Escolha um objeto para inserir na cena.</p>
+    <div id="add-menu" class="add-menu" role="dialog" aria-modal="true" aria-label="Inserir objeto" hidden>
+          <div class="add-menu-heading"><div><span class="eyebrow">EXPLORER · INSERT OBJECT</span><strong id="object-dialog-title">Inserir objeto</strong></div><button id="close-add-menu" class="icon-button" type="button" aria-label="Fechar janela de objetos" title="Fechar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button></div>
+          <label class="object-search"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 4.5 4.5"/></svg><input id="object-search" type="search" placeholder="Pesquisar classes..." autocomplete="off" aria-label="Pesquisar classes"></label>
+          <p id="object-parent-note" class="object-parent-note">Selecione uma classe para inserir no nível raiz.</p>
           <div id="object-options" class="object-options">
-          <button data-add-type="Frame"><b><svg viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="17" height="17" rx="2"/><path d="M8 8h8v8H8z"/></svg></b><span>Quadro<small>Container visual</small></span></button>
-          <button data-add-type="TextButton"><b><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M8 12h8"/></svg></b><span>Botão<small>Elemento interativo</small></span></button>
-          <button data-add-type="TextLabel"><b><svg viewBox="0 0 24 24"><path d="M4 6h16M12 6v13M8 19h8"/></svg></b><span>Texto<small>Rótulo de texto</small></span></button>
-          <button data-add-type="ImageLabel"><b><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9" r="1.5"/><path d="m4 17 5-5 3 3 3-4 5 6"/></svg></b><span>Imagem<small>Imagem da biblioteca</small></span></button>
-          <p id="object-search-empty" class="object-search-empty" hidden>Nenhum objeto encontrado.</p>
+            <section class="object-category"><h3>Contêineres</h3>
+              <button data-add-type="Frame"><b><svg viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="17" height="17" rx="2"/><path d="M8 8h8v8H8z"/></svg></b><span><strong>Frame</strong><small>Contêiner visual para organizar outros objetos</small></span></button>
+            </section>
+            <section class="object-category"><h3>Interação</h3>
+              <button data-add-type="TextButton"><b><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M8 12h8"/></svg></b><span><strong>TextButton</strong><small>Botão com evento de clique</small></span></button>
+            </section>
+            <section class="object-category"><h3>Texto</h3>
+              <button data-add-type="TextLabel"><b><svg viewBox="0 0 24 24"><path d="M4 6h16M12 6v13M8 19h8"/></svg></b><span><strong>TextLabel</strong><small>Texto, rótulos e títulos</small></span></button>
+            </section>
+            <section class="object-category"><h3>Mídia</h3>
+              <button data-add-type="ImageLabel"><b><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9" r="1.5"/><path d="m4 17 5-5 3 3 3-4 5 6"/></svg></b><span><strong>ImageLabel</strong><small>Imagem vinculada à biblioteca</small></span></button>
+            </section>
+            <p id="object-search-empty" class="object-search-empty" hidden>Nenhuma classe encontrada.</p>
           </div>
         </div>
     <nav id="mobile-tabs" class="mobile-tabs" hidden aria-label="Painéis do editor">
