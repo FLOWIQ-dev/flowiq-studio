@@ -1,3 +1,4 @@
+import { resolveNodeLayout } from '../data/model.js';
 const $ = id => document.getElementById(id);
 const ICONS = {
   Frame: '<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M8 8h8v8H8z"/>',
@@ -13,26 +14,29 @@ const el = (tag, className, text) => {
   return node;
 };
 
-export function renderScene(container, scene, { selectedId = null, preview = false, assets = [], onRun = () => {} } = {}) {
+export function renderScene(container, scene, { selectedId = null, preview = false, assets = [], onRun = () => {}, sceneSize = { width: 960, height: 640 } } = {}) {
   for (const url of container._objectUrls || []) URL.revokeObjectURL(url);
   container._objectUrls = [];
   container.replaceChildren();
+  container.style.width = Math.max(1, Number(sceneSize.width) || 960) + 'px';
+  container.style.height = Math.max(1, Number(sceneSize.height) || 640) + 'px';
   const assetMap = new Map(assets.map(asset => [asset.id, asset]));
-  const build = (id, parent) => {
+  const build = (id, parent, parentWidth, parentHeight) => {
     const node = scene.get(id);
     if (!node || node.props.visible === false) return;
     const p = node.props;
     const item = el(node.type === 'TextButton' && preview ? 'button' : 'div', 'scene-node scene-' + node.type.toLowerCase());
     item.dataset.nodeId = node.id;
-    item.style.left = (Number(p.x) || 0) + 'px';
-    item.style.top = (Number(p.y) || 0) + 'px';
-    item.style.width = Math.max(1, Number(p.width) || 1) + 'px';
-    item.style.height = Math.max(1, Number(p.height) || 1) + 'px';
+    const layout = resolveNodeLayout(node, parentWidth, parentHeight);
+    item.style.left = (layout.x + layout.width * p.anchorPoint.x) + 'px';
+    item.style.top = (layout.y + layout.height * p.anchorPoint.y) + 'px';
+    item.style.width = layout.width + 'px';
+    item.style.height = layout.height + 'px';
+    item.style.transform = 'translate(' + (-p.anchorPoint.x * 100) + '%,' + (-p.anchorPoint.y * 100) + '%) rotate(' + (Number(p.rotation) || 0) + 'deg)';
     item.style.background = p.background || 'transparent';
     item.style.color = p.color || '#ffffff';
     item.style.borderRadius = Math.max(0, Number(p.radius) || 0) + 'px';
     item.style.opacity = String(Math.max(0, Math.min(1, Number(p.opacity ?? 1))));
-    item.style.transform = 'rotate(' + (Number(p.rotation) || 0) + 'deg)';
     item.style.border = Math.max(0, Number(p.borderWidth) || 0) + 'px solid ' + (p.border || 'transparent');
     item.style.fontSize = Math.max(8, Number(p.fontSize) || 16) + 'px';
     item.style.textAlign = p.textAlign || 'center';
@@ -53,7 +57,7 @@ export function renderScene(container, scene, { selectedId = null, preview = fal
     if (selectedId === node.id && !preview) item.classList.add('is-selected');
     if (preview && node.type === 'TextButton') item.addEventListener('click', event => { event.stopPropagation(); onRun(node, 'click'); });
     parent.append(item);
-    for (const childId of node.children) build(childId, item);
+    for (const childId of node.children) build(childId, item, layout.width, layout.height);
     if (selectedId === node.id && !preview) {
       for (const direction of ['nw','n','ne','e','se','s','sw','w']) {
         const handle = el('button', 'resize-handle handle-' + direction);
@@ -66,7 +70,7 @@ export function renderScene(container, scene, { selectedId = null, preview = fal
       item.append(rotate);
     }
   };
-  for (const id of scene.roots) build(id, container);
+  for (const id of scene.roots) build(id, container, Number(sceneSize.width) || 960, Number(sceneSize.height) || 640);
 }
 
 export function renderTree(container, scene, selectedId, { search = '', expanded = new Set(), onSelect = () => {}, onToggle = () => {} } = {}) {
@@ -142,8 +146,9 @@ export function renderInspector(container, node, { onChange, onDelete, assets = 
       input.type = type;
       if (type === 'number') { input.min = options.min ?? '0'; input.max = options.max ?? '2000'; input.step = options.step ?? '1'; }
     }
-    if (type === 'checkbox') input.checked = Boolean(node.props[key]);
-    else input.value = String(key === 'name' ? node.name : (node.props[key] ?? options.fallback ?? ''));
+    const propertyValue = key.split('.').reduce((value, part) => value?.[part], node.props);
+    if (type === 'checkbox') input.checked = Boolean(propertyValue);
+    else input.value = String(key === 'name' ? node.name : (propertyValue ?? options.fallback ?? ''));
     input.addEventListener('change', () => {
       const value = type === 'number' ? Number(input.value) : type === 'checkbox' ? input.checked : input.value;
       onChange(key, value);
@@ -158,10 +163,21 @@ export function renderInspector(container, node, { onChange, onDelete, assets = 
     container.append(group);
   };
   section('Identificação', [field('Nome', 'name', 'text')]);
-  section('Transformação', [
-    field('Posição X', 'x'), field('Posição Y', 'y'),
-    field('Largura', 'width', 'number', { min: 1, max: 2000 }),
-    field('Altura', 'height', 'number', { min: 1, max: 2000 })
+  section('Position · UDim2', [
+    field('X · Scale', 'position.x.scale', 'number', { min: -10, max: 10, step: 0.01 }),
+    field('X · Offset', 'position.x.offset', 'number', { min: -4000, max: 4000 }),
+    field('Y · Scale', 'position.y.scale', 'number', { min: -10, max: 10, step: 0.01 }),
+    field('Y · Offset', 'position.y.offset', 'number', { min: -4000, max: 4000 })
+  ]);
+  section('Size · UDim2', [
+    field('Largura · Scale', 'size.x.scale', 'number', { min: -10, max: 10, step: 0.01 }),
+    field('Largura · Offset', 'size.x.offset', 'number', { min: 1, max: 4000 }),
+    field('Altura · Scale', 'size.y.scale', 'number', { min: -10, max: 10, step: 0.01 }),
+    field('Altura · Offset', 'size.y.offset', 'number', { min: 1, max: 4000 })
+  ]);
+  section('AnchorPoint', [
+    field('X', 'anchorPoint.x', 'number', { min: 0, max: 1, step: 0.01 }),
+    field('Y', 'anchorPoint.y', 'number', { min: 0, max: 1, step: 0.01 })
   ]);
   if (node.type !== 'ImageLabel') {
     section('Aparência', [
