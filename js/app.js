@@ -63,6 +63,8 @@ class FlowiqStudio {
       if (button) this.addNode(button.dataset.addType);
     });
     $('tree-search').addEventListener('input', event => { this.treeSearch = event.target.value; this.renderTreePanel(); });
+    document.addEventListener('click', event => {
+    });
     $('tree').addEventListener('click', event => {
       const toggle = event.target.closest('[data-tree-toggle]');
       if (toggle) { this.toggleTreeNode(toggle.dataset.treeToggle); return; }
