@@ -161,6 +161,7 @@ class FlowiqStudio {
     const token = ++this.screenTransition;
     const current = names.map(name => $('screen-' + name)).find(element => element && !element.hidden && element !== next);
     this.store.set({ screen });
+    document.documentElement.dataset.screen = screen;
     document.body.dataset.screen = screen;
     next.hidden = false;
     next.classList.remove('screen-entering');
@@ -524,25 +525,38 @@ class FlowiqStudio {
     if (event.touches.length !== 1) { this.treeTouch = null; this.cancelTreeDrag(); return; }
     const touch = event.touches[0], row = event.target.closest('[data-tree-node]');
     if (!row || event.target.closest('button')) return;
-    const startX = touch.clientX, startY = touch.clientY, id = row.dataset.treeNode;
-    this.treeTouch = { id, x: startX, y: startY, active: false, cancelled: false };
+    const now = touch.clientY;
+    this.treeTouch = {
+      id: row.dataset.treeNode, x: touch.clientX, y: now, lastY: now,
+      active: false, scrolling: false, cancelled: false
+    };
     clearTimeout(this.treeHoldTimer);
+    const id = row.dataset.treeNode;
     this.treeHoldTimer = setTimeout(() => {
-      if (!this.treeTouch || this.treeTouch.cancelled) return;
+      if (!this.treeTouch || this.treeTouch.cancelled || this.treeTouch.scrolling) return;
       this.treeTouch.active = true;
       this.beginTreeDrag(id, 'touch', this.treeTouch.x, this.treeTouch.y);
     }, 460);
   }
   treeTouchMove(event) {
-    const touch = event.touches[0];
-    if (!touch || !this.treeTouch) return;
-    if (!this.treeTouch.active && Math.hypot(touch.clientX - this.treeTouch.x, touch.clientY - this.treeTouch.y) > 12) {
-      clearTimeout(this.treeHoldTimer); this.treeHoldTimer = null; this.treeTouch = null; return;
-    }
-    if (this.treeTouch.active && this.treeDrag) {
-      event.preventDefault();
+    const touch = event.touches[0], gesture = this.treeTouch;
+    if (!touch || !gesture) return;
+    const deltaY = touch.clientY - gesture.lastY;
+    if (!gesture.active) {
+      if (!gesture.scrolling && Math.hypot(touch.clientX - gesture.x, touch.clientY - gesture.y) > 12) {
+        gesture.scrolling = true;
+        clearTimeout(this.treeHoldTimer); this.treeHoldTimer = null;
+      }
+      if (gesture.scrolling) {
+        if (event.cancelable) event.preventDefault();
+        const tree = $('tree');
+        if (tree) tree.scrollTop -= deltaY;
+      }
+    } else if (this.treeDrag) {
+      if (event.cancelable) event.preventDefault();
       this.updateTreeDrag(touch.clientX, touch.clientY);
     }
+    gesture.lastY = touch.clientY;
   }
   treeTouchEnd(event) {
     if (!this.treeTouch) return;
