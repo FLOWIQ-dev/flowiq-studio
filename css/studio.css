@@ -736,3 +736,26 @@ body[data-screen=editor]{
     z-index:9;
   }
 }
+
+
+/* Build 1.3.3: Inspector uses the same mobile sheet visibility contract as Explorer. */
+@media(max-width:680px){
+  #screen-editor .inspector-panel{
+    display:none;
+  }
+  #screen-editor .editor-shell[data-panel="inspector"] .inspector-panel{
+    display:grid;
+    grid-template-rows:56px minmax(0,1fr);
+    position:absolute;
+    left:0;
+    right:0;
+    bottom:0;
+    z-index:9;
+    height:min(66%,520px);
+    max-height:calc(100% - 12px);
+    min-height:0;
+    overflow:hidden;
+    border-radius:16px 16px 0 0;
+    animation:sheet-in .28s cubic-bezier(.2,.75,.25,1) both;
+  }
+}
