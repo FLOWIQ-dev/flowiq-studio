@@ -115,7 +115,8 @@ export function renderInspector(container, node, { onChange, onDelete, assets = 
       input.type = type;
       if (type === 'number') { input.min = options.min ?? '0'; input.max = options.max ?? '2000'; input.step = options.step ?? '1'; }
     }
-    input.value = String(key === 'name' ? node.name : (node.props[key] ?? options.fallback ?? ''));
+    if (type === 'checkbox') input.checked = Boolean(node.props[key]);
+    else input.value = String(key === 'name' ? node.name : (node.props[key] ?? options.fallback ?? ''));
     input.addEventListener('change', () => {
       const value = type === 'number' ? Number(input.value) : type === 'checkbox' ? input.checked : input.value;
       onChange(key, value);
