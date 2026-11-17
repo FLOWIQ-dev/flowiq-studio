@@ -87,9 +87,6 @@ class FlowiqStudio {
       if (action) this.handleTreeAction(action.dataset.treeAction, action.dataset.nodeId);
     });
     $('tree').addEventListener('contextmenu', event => { event.preventDefault(); });
-    $('tree').addEventListener('pointerdown', event => { if (event.pointerType !== 'touch') this.treePointerDown(event); });
-    window.addEventListener('pointermove', event => { if (event.pointerType !== 'touch') this.treePointerMove(event); });
-    window.addEventListener('pointerup', event => { if (event.pointerType !== 'touch') this.treePointerUp(event); });
     $('add-menu-backdrop').addEventListener('click', () => this.closeAddMenu());
     $('scene').addEventListener('pointerdown', event => this.pointerDown(event));
     $('scene').addEventListener('click', event => {
