@@ -121,7 +121,7 @@ class FlowiqStudio {
     $('stop-preview').addEventListener('click', () => this.stopPreview());
     $('zoom-in').addEventListener('click', () => this.setZoom(this.zoom + 0.1));
     $('zoom-out').addEventListener('click', () => this.setZoom(this.zoom - 0.1));
-    $('zoom-fit').addEventListener('click', () => this.fitStage());
+    $('zoom-fit').addEventListener('click', () => this.fitStage(true));
     $('save-project').addEventListener('click', () => this.saveProject().catch(() => {}));
     $('add-assets').addEventListener('click', () => $('asset-upload').click());
     $('asset-upload').addEventListener('change', guarded(event => this.uploadAssets(event.target.files)));
@@ -164,7 +164,7 @@ class FlowiqStudio {
   }
 
   get zoom() { return this._zoom || 1; }
-  set zoom(value) { this._zoom = Math.max(0.05, Math.min(2, value)); }
+  set zoom(value) { this._zoom = Math.max(0.25, Math.min(2.5, value)); }
 
   showScreen(screen) {
     const names = ['home', 'editor', 'library', 'settings'];
@@ -581,7 +581,9 @@ class FlowiqStudio {
   renderEditor() {
     if (!this.project) return;
     this.renderTreePanel();
-    renderScene($('scene'), this.scene, { selectedId: this.store.state.selectedId, assets: this.assets, sceneSize: { width: this.project.settings?.width || 960, height: this.project.settings?.height || 640 } });
+    const stageSize = this.getStageSize();
+    this.applyStageBounds(stageSize);
+    renderScene($('scene'), this.scene, { selectedId: this.store.state.selectedId, assets: this.assets, sceneSize: stageSize, zoom: this.zoom });
     this.renderInspectorPanel(this.scene.get(this.store.state.selectedId));
     $('project-name').textContent = this.project.name;
     this.updateHistory(this.history.status);
@@ -652,13 +654,13 @@ class FlowiqStudio {
       const line = document.createElement('i');
       line.className = 'alignment-guide alignment-guide-x';
       line.style.left = guides.x + 'px';
-      $('scene').append(line);
+      ($('scene').querySelector('.scene-world') || $('scene')).append(line);
     }
     if (guides.y !== null) {
       const line = document.createElement('i');
       line.className = 'alignment-guide alignment-guide-y';
       line.style.top = guides.y + 'px';
-      $('scene').append(line);
+      ($('scene').querySelector('.scene-world') || $('scene')).append(line);
     }
   }
 
@@ -813,42 +815,47 @@ class FlowiqStudio {
     window.addEventListener('pointercancel', end);
   }
 
-  setZoom(value) {
-    this.zoom = value;
-    const width = Math.max(1, Number(this.project?.settings?.width) || 960);
-    const height = Math.max(1, Number(this.project?.settings?.height) || 640);
+  getStageSize() {
+    const host = $('stage-viewport');
+    const fallbackWidth = Number(this.project?.settings?.width) || 960;
+    const fallbackHeight = Number(this.project?.settings?.height) || 640;
+    return {
+      width: Math.max(1, Math.round(host?.clientWidth || fallbackWidth)),
+      height: Math.max(1, Math.round(host?.clientHeight || fallbackHeight))
+    };
+  }
+
+  applyStageBounds({ width, height }) {
     const scene = $('scene');
-    const zoomSurface = $('scene-zoom');
-    // A viewport tem limites próprios. Só a superfície de edição recebe zoom;
-    // as dimensões lógicas do projeto nunca mudam por causa da escala visual.
+    const surface = $('scene-zoom');
+    // O palco lógico acompanha a área útil real entre toolbar, painéis e dock.
+    // A resolução antiga do projeto não impõe tamanho ao editor.
     scene.style.width = width + 'px';
     scene.style.height = height + 'px';
-    scene.style.transform = 'scale(' + this.zoom + ')';
-    scene.style.transformOrigin = 'top left';
-    zoomSurface.style.width = (width * this.zoom) + 'px';
-    zoomSurface.style.height = (height * this.zoom) + 'px';
+    surface.style.width = width + 'px';
+    surface.style.height = height + 'px';
     $('scene-size').textContent = width + ' × ' + height;
     $('zoom-value').textContent = Math.round(this.zoom * 100) + '%';
   }
 
-  fitStage() {
+  setZoom(value) {
+    this.zoom = value;
+    const world = $('scene').querySelector('.scene-world');
+    if (world) world.style.transform = 'scale(' + this.zoom + ')';
+    $('zoom-value').textContent = Math.round(this.zoom * 100) + '%';
+  }
+
+  fitStage(resetZoom = false) {
     if (this.store.state.screen !== 'editor') return;
-    const host = $('stage-viewport');
-    if (!host) return;
-    const style = getComputedStyle(host);
-    const horizontalPadding = (parseFloat(style.paddingLeft) || 0) + (parseFloat(style.paddingRight) || 0);
-    const verticalPadding = (parseFloat(style.paddingTop) || 0) + (parseFloat(style.paddingBottom) || 0);
-    const availableWidth = Math.max(1, host.clientWidth - horizontalPadding - 2);
-    const availableHeight = Math.max(1, host.clientHeight - verticalPadding - 2);
-    const width = Math.max(1, Number(this.project?.settings?.width) || 960);
-    const height = Math.max(1, Number(this.project?.settings?.height) || 640);
-    const scale = Math.min(availableWidth / width, availableHeight / height, 1);
-    this.setZoom(Math.max(0.05, scale));
-    if (this.project && $('scene').clientWidth && $('scene').clientHeight) {
+    if (resetZoom) this.zoom = 1;
+    const size = this.getStageSize();
+    this.applyStageBounds(size);
+    if (this.project) {
       renderScene($('scene'), this.scene, {
         selectedId: this.store.state.selectedId,
         assets: this.assets,
-        sceneSize: { width, height }
+        sceneSize: size,
+        zoom: this.zoom
       });
     }
   }
