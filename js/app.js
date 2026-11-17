@@ -563,9 +563,14 @@ class FlowiqStudio {
       this.treeDragGhost.style.top = Math.min(window.innerHeight - 54, Math.max(8, y + 14)) + 'px';
     }
     document.querySelectorAll('.tree-drop-target,.tree-drop-before,.tree-drop-after').forEach(item => item.classList.remove('tree-drop-target','tree-drop-before','tree-drop-after'));
+    const tree = $('tree'), bounds = tree.getBoundingClientRect();
+    const insideTree = x >= bounds.left && x <= bounds.right && y >= bounds.top && y <= bounds.bottom;
     const target = document.elementFromPoint(x, y)?.closest('[data-tree-node]');
-    if (!target || target.dataset.treeNode === drag.id || this.scene.descendants(drag.id).some(item => item.id === target.dataset.treeNode)) {
-      drag.targetId = null; drag.position = 'root'; return;
+    if (!insideTree) { drag.targetId = null; drag.position = 'cancel'; tree.classList.remove('tree-root-drop'); return; }
+    if (!target) { drag.targetId = null; drag.position = 'root'; tree.classList.add('tree-root-drop'); return; }
+    tree.classList.remove('tree-root-drop');
+    if (target.dataset.treeNode === drag.id || this.scene.descendants(drag.id).some(item => item.id === target.dataset.treeNode)) {
+      drag.targetId = null; drag.position = 'cancel'; return;
     }
     const rect = target.getBoundingClientRect(), relative = (y - rect.top) / Math.max(1, rect.height);
     drag.position = relative < .24 ? 'before' : relative > .76 ? 'after' : 'inside';
@@ -581,6 +586,7 @@ class FlowiqStudio {
     const drag = this.treeDrag;
     if (!drag?.active) { this.cancelTreeDrag(); return; }
     this.updateTreeDrag(x, y);
+    if (drag.position === 'cancel') { this.cancelTreeDrag(); return; }
     try {
       this.history.checkpoint(this.historySnapshot());
       const source = this.scene.get(drag.id), targetNode = drag.targetId ? this.scene.get(drag.targetId) : null;
@@ -604,6 +610,7 @@ class FlowiqStudio {
     clearTimeout(this.treeHoldTimer); this.treeHoldTimer = null;
     this.treeDrag = null; this.treeDragGhost?.remove(); this.treeDragGhost = null;
     document.body.classList.remove('tree-dragging');
+    $('tree')?.classList.remove('tree-root-drop');
     document.querySelectorAll('.tree-drop-target,.tree-drop-before,.tree-drop-after,.tree-hold-ready').forEach(item => item.classList.remove('tree-drop-target','tree-drop-before','tree-drop-after','tree-hold-ready'));
   }
 
