@@ -51,8 +51,9 @@ class FlowiqStudio {
     $('editor-library').addEventListener('click', guarded(() => this.openLibrary()));
     $('home-settings').addEventListener('click', guarded(() => this.openSettings()));
     $('back-home').addEventListener('click', guarded(() => this.returnHome()));
-    $('add-object').addEventListener('click', () => this.toggleAddMenu());
     $('editor-shell').addEventListener('click', event => { if (event.target === $('editor-shell') && window.matchMedia('(max-width: 680px)').matches && $('editor-shell').dataset.panel !== 'stage') this.setPanel('stage'); });
+    $('close-add-menu').addEventListener('click', () => this.closeAddMenu());
+    $('object-search').addEventListener('input', event => this.filterAddMenu(event.target.value));
     $('add-menu').addEventListener('click', event => {
       const button = event.target.closest('[data-add-type]');
       if (button) this.addNode(button.dataset.addType);
@@ -105,7 +106,7 @@ class FlowiqStudio {
     $('backup-input').addEventListener('change', event => this.importBackup(event.target.files?.[0]));
     $('settings-back').addEventListener('click', guarded(() => this.returnHome()));
     $('library-back').addEventListener('click', guarded(() => this.returnHome()));
-    $('mobile-add-objects').addEventListener('click', () => { this.toggleAddMenu(); $('mobile-add-objects').setAttribute('aria-expanded', String(!$('add-menu').hidden)); });
+    $('mobile-add-objects').addEventListener('click', () => this.toggleAddMenu());
     $('mobile-tabs').addEventListener('click', event => {
       const button = event.target.closest('[data-panel]');
       if (button) this.setPanel(button.dataset.panel);
@@ -302,7 +303,7 @@ class FlowiqStudio {
     const parent = this.scene.get(this.store.state.selectedId);
     const node = this.scene.create(type, parent?.type === 'Frame' ? parent.id : null);
     this.select(node.id);
-    $('add-menu').hidden = true;
+    this.closeAddMenu();
     this.scheduleSave();
     this.renderEditor();
   }
@@ -540,14 +541,38 @@ class FlowiqStudio {
 
   toggleAddMenu() {
     const menu = $('add-menu');
-    if (window.matchMedia('(max-width: 680px)').matches) {
-      const opening = menu.hidden;
-      if (opening && $('editor-shell').dataset.panel !== 'stage') this.setPanel('stage');
-      menu.hidden = !opening;
-      if (opening) this.setPanel('stage');
-      return;
+    if (menu.hidden) {
+      if (window.matchMedia('(max-width: 680px)').matches) this.setPanel('stage');
+      menu.hidden = false;
+      $('object-search').value = '';
+      this.filterAddMenu('');
+      $('mobile-add-objects').setAttribute('aria-expanded', 'true');
+      requestAnimationFrame(() => $('object-search').focus());
+    } else this.closeAddMenu();
+  }
+
+  closeAddMenu() {
+    $('add-menu').hidden = true;
+    $('mobile-add-objects').setAttribute('aria-expanded', 'false');
+  }
+
+  filterAddMenu(query) {
+    const term = query.trim().toLocaleLowerCase('pt-BR');
+    let visible = 0;
+    document.querySelectorAll('#object-options [data-add-type]').forEach(button => {
+      const match = button.textContent.toLocaleLowerCase('pt-BR').includes(term);
+      button.hidden = !match;
+      if (match) visible++;
+    });
+    let empty = $('object-search-empty');
+    if (!empty) {
+      empty = document.createElement('p');
+      empty.id = 'object-search-empty';
+      empty.className = 'object-search-empty';
+      empty.textContent = 'Nenhum objeto encontrado.';
+      $('object-options').append(empty);
     }
-    menu.hidden = !menu.hidden;
+    empty.hidden = visible > 0;
   }
 
   play() {
@@ -655,7 +680,7 @@ class FlowiqStudio {
 
   keydown(event) {
     const editing = ['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement?.tagName);
-    if (event.key === 'Escape') { this.stopPreview(false); $('add-menu').hidden = true; this.resolveDialog(null); }
+    if (event.key === 'Escape') { this.stopPreview(false); this.closeAddMenu(); this.resolveDialog(null); }
     if (editing) return;
     if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 's') { event.preventDefault(); this.saveProject().catch(() => {}); }
     if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'z') { event.preventDefault(); event.shiftKey ? this.redo() : this.undo(); }
