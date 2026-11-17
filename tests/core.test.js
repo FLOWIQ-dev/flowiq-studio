@@ -163,6 +163,9 @@ test('Inspector property schemas are class-based and extensible', () => {
   for (const key of ['archivable','automaticSize','sizeConstraint','layoutOrder','zIndex','backgroundColor3','backgroundTransparency','borderColor3','borderSizePixel','borderMode','style','visible','clipsDescendants','active','interactable','selectable','selectionOrder']) {
     assert.ok(frameKeys.includes(key), 'Frame should expose ' + key);
   }
+  const frameFields = frame.sections.flatMap(section => section.fields);
+  assert.equal(frameFields.find(field => field.key === 'backgroundTransparency')?.type, 'slider');
+  assert.equal(frameFields.find(field => field.key === 'borderSizePixel')?.type, 'slider');
   registerPropertySchema('FutureWidget', { sections: [
     { title: 'Dados', fields: [{ key: 'value', label: 'Valor', type: 'number', min: 0, max: 10 }] }
   ]});
