@@ -99,9 +99,10 @@ export function renderTree(container, scene, selectedId, { search = '', expanded
     const marker = el('span', 'tree-marker'); marker.innerHTML = icon(node.type);
     const name = el('span', 'tree-name', node.name);
     const type = el('span', 'tree-type', node.type);
+    const drag = el('button', 'tree-drag-trigger', '⠿'); drag.type = 'button'; drag.dataset.treeDrag = id; drag.setAttribute('aria-label', 'Arrastar ' + node.name);
     const menu = el('button', 'tree-menu-trigger', '⋯'); menu.type = 'button'; menu.dataset.treeMenu = id;
     menu.setAttribute('aria-label', 'Opções de ' + node.name);
-    row.append(toggle, marker, name, type, menu);
+    row.append(toggle, marker, name, type, drag, menu);
     branch.append(row);
     if (node.children.length && isOpen) {
       const children = el('div', 'tree-children');
