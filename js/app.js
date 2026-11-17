@@ -27,6 +27,7 @@ class FlowiqStudio {
     this.treeSearch = '';
     this.treeExpanded = new Set();
     this.treeDrag = null;
+    this.treeMoveMode = null;
     this.treeHoldTimer = null;
     this.treeTouch = null;
     this.treeDragGhost = null;
@@ -69,7 +70,12 @@ class FlowiqStudio {
     $('tree-search').addEventListener('input', event => { this.treeSearch = event.target.value; this.renderTreePanel(); });
     document.addEventListener('click', event => {
       const action = event.target.closest('[data-tree-action]');
-      if (action) this.handleTreeAction(action.dataset.treeAction, action.dataset.nodeId);
+      if (action) { this.handleTreeAction(action.dataset.treeAction, action.dataset.nodeId); return; }
+      const place = event.target.closest('[data-tree-move-place]');
+      if (place) { this.finishTreeMove(place.dataset.sourceId, place.dataset.targetId, place.dataset.treeMovePlace); return; }
+      const root = event.target.closest('[data-tree-move-root]');
+      if (root) { this.finishTreeMoveRoot(root.dataset.sourceId, root.dataset.treeMoveRoot); return; }
+      if (event.target.closest('[data-tree-move-cancel]')) this.cancelTreeMoveMode();
     });
     $('tree').addEventListener('click', event => {
       const toggle = event.target.closest('[data-tree-toggle]');
@@ -77,7 +83,10 @@ class FlowiqStudio {
       const menu = event.target.closest('[data-tree-menu]');
       if (menu) { this.openTreeMenu(menu.dataset.treeMenu, menu); return; }
       const row = event.target.closest('[data-tree-node]');
-      if (row && !event.target.closest('button')) this.select(row.dataset.treeNode);
+      if (row && !event.target.closest('button')) {
+        if (this.treeMoveMode) this.openTreeMovePlacement(row.dataset.treeNode, row);
+        else this.select(row.dataset.treeNode);
+      }
       const action = event.target.closest('[data-tree-action]');
       if (action) this.handleTreeAction(action.dataset.treeAction, action.dataset.nodeId);
     });
@@ -450,12 +459,79 @@ class FlowiqStudio {
   }
 
   renderTreePanel() {
-    renderTree($('tree'), this.scene, this.store.state.selectedId, {
+    const tree = $('tree');
+    renderTree(tree, this.scene, this.store.state.selectedId, {
       search: this.treeSearch,
       expanded: this.treeExpanded,
       onSelect: id => this.select(id),
       onToggle: id => this.toggleTreeNode(id)
     });
+    if (this.treeMoveMode) {
+      const source = this.scene.get(this.treeMoveMode);
+      if (source) {
+        const banner = document.createElement('div'); banner.className = 'tree-move-banner';
+        const label = document.createElement('span'); label.textContent = 'Movendo: ' + source.name + '. Toque no destino.';
+        const rootStart = document.createElement('button'); rootStart.type = 'button'; rootStart.dataset.treeMoveRoot = 'start'; rootStart.dataset.sourceId = source.id; rootStart.textContent = 'Início da raiz';
+        const rootEnd = document.createElement('button'); rootEnd.type = 'button'; rootEnd.dataset.treeMoveRoot = 'end'; rootEnd.dataset.sourceId = source.id; rootEnd.textContent = 'Fim da raiz';
+        const cancel = document.createElement('button'); cancel.type = 'button'; cancel.dataset.treeMoveCancel = 'true'; cancel.textContent = 'Cancelar';
+        banner.append(label, rootStart, rootEnd, cancel); tree.prepend(banner); tree.classList.add('tree-move-mode-active');
+      }
+    } else tree.classList.remove('tree-move-mode-active');
+  }
+
+  startTreeMoveMode(id) {
+    if (!this.scene.get(id)) return;
+    this.cancelTreeDrag(); this.treeMoveMode = id; this.treeExpanded.add(id); this.select(id);
+    this.toast('Modo mover: role a hierarquia e toque no destino.');
+  }
+
+  cancelTreeMoveMode() {
+    this.treeMoveMode = null; document.querySelector('.tree-context-menu')?.remove(); this.renderTreePanel();
+  }
+
+  openTreeMovePlacement(targetId, anchor) {
+    const source = this.scene.get(this.treeMoveMode), target = this.scene.get(targetId);
+    if (!source || !target) return this.cancelTreeMoveMode();
+    if (source.id === target.id || this.scene.descendants(source.id).some(node => node.id === target.id)) {
+      this.toast('Não é possível mover um objeto para dentro de si mesmo ou de seus descendentes.', 'error'); return;
+    }
+    document.querySelector('.tree-context-menu')?.remove();
+    const menu = document.createElement('div'); menu.className = 'tree-context-menu tree-move-placement';
+    for (const [position, label] of [['before', 'Antes de ' + target.name], ['inside', 'Dentro de ' + target.name], ['after', 'Depois de ' + target.name]]) {
+      const button = document.createElement('button'); button.type = 'button'; button.textContent = label;
+      button.dataset.treeMovePlace = position; button.dataset.sourceId = source.id; button.dataset.targetId = target.id; menu.append(button);
+    }
+    const rect = anchor.getBoundingClientRect();
+    menu.style.left = Math.max(8, Math.min(rect.left, window.innerWidth - 220)) + 'px';
+    menu.style.top = Math.max(8, Math.min(rect.bottom, window.innerHeight - 170)) + 'px'; document.body.append(menu);
+    const close = event => { if (!menu.contains(event.target)) { menu.remove(); document.removeEventListener('pointerdown', close, true); } };
+    setTimeout(() => document.addEventListener('pointerdown', close, true), 0);
+  }
+
+  finishTreeMove(sourceId, targetId, position) {
+    const source = this.scene.get(sourceId), target = this.scene.get(targetId);
+    if (!source || !target || source.id === target.id || this.scene.descendants(sourceId).some(node => node.id === targetId)) return;
+    try {
+      this.history.checkpoint(this.historySnapshot());
+      if (position === 'inside') { this.scene.reparent(sourceId, targetId); this.treeExpanded.add(targetId); }
+      else {
+        const siblings = target.parentId ? this.scene.get(target.parentId)?.children : this.scene.roots;
+        const sourceSiblings = source.parentId ? this.scene.get(source.parentId)?.children : this.scene.roots;
+        let index = siblings.indexOf(targetId) + (position === 'after' ? 1 : 0);
+        const sourceIndex = sourceSiblings.indexOf(sourceId); if (sourceSiblings === siblings && sourceIndex >= 0 && sourceIndex < index) index--;
+        this.scene.reparent(sourceId, target.parentId, index);
+      }
+      this.treeMoveMode = null; document.querySelector('.tree-context-menu')?.remove(); this.select(sourceId); this.scheduleSave(); this.toast('Objeto movido.');
+    } catch (error) { this.toast(error.message, 'error'); }
+  }
+
+  finishTreeMoveRoot(sourceId, edge) {
+    if (!this.scene.get(sourceId)) return this.cancelTreeMoveMode();
+    try {
+      this.history.checkpoint(this.historySnapshot());
+      this.scene.reparent(sourceId, null, edge === 'start' ? 0 : this.scene.roots.length);
+      this.treeMoveMode = null; this.select(sourceId); this.scheduleSave(); this.toast('Objeto movido para a raiz.');
+    } catch (error) { this.toast(error.message, 'error'); }
   }
 
   toggleTreeNode(id) {
@@ -470,7 +546,7 @@ class FlowiqStudio {
     document.querySelector('.tree-context-menu')?.remove();
     const menu = document.createElement('div');
     menu.className = 'tree-context-menu';
-    for (const [action, label] of [['rename', 'Renomear'], ['add', 'Adicionar instância'], ['duplicate', 'Duplicar'], ['delete', 'Excluir']]) {
+    for (const [action, label] of [['move', 'Mover'], ['rename', 'Renomear'], ['add', 'Adicionar instância'], ['duplicate', 'Duplicar'], ['delete', 'Excluir']]) {
       const button = document.createElement('button');
       button.type = 'button';
       button.textContent = label;
@@ -494,6 +570,7 @@ class FlowiqStudio {
     const node = this.scene.get(id);
     if (!node) return;
     if (action === 'add') { this.openAddMenu(id); return; }
+    if (action === 'move') { this.startTreeMoveMode(id); return; }
     this.select(id);
     if (action === 'rename') {
       const name = await this.dialog({ title: 'Renomear objeto', label: 'Nome do objeto', value: node.name, confirm: 'Salvar' });
@@ -504,6 +581,7 @@ class FlowiqStudio {
 
 
   treePointerDown(event) {
+    if (this.treeMoveMode) return;
     const row = event.target.closest('[data-tree-node]');
     if (!row || event.target.closest('button') || event.button > 0) return;
     const id = row.dataset.treeNode, x = event.clientX, y = event.clientY;
@@ -524,6 +602,7 @@ class FlowiqStudio {
     this.updateTreeDrag(event.clientX, event.clientY);
   }
   treeTouchStart(event) {
+    if (this.treeMoveMode) return;
     if (event.touches.length !== 1) { this.treeTouch = null; this.cancelTreeDrag(); return; }
     const touch = event.touches[0], row = event.target.closest('[data-tree-node]');
     if (!row || event.target.closest('button')) return;
@@ -623,21 +702,16 @@ class FlowiqStudio {
     const rootStart = hit?.closest('[data-tree-root-start]');
     const target = hit?.closest('[data-tree-node]');
     if (!insideTree) { drag.targetId = null; drag.position = 'cancel'; tree.classList.remove('tree-root-drop'); return; }
-    if (rootStart) {
-      const source = this.scene.get(drag.id);
-      if (!source || source.parentId) { drag.targetId = null; drag.position = 'cancel'; return; }
-      drag.targetId = null; drag.position = 'root-start'; tree.classList.remove('tree-root-drop'); rootStart.classList.add('tree-root-start-target'); return;
-    }
-    if (!target) { drag.targetId = null; drag.position = 'cancel'; tree.classList.remove('tree-root-drop'); return; }
+    if (rootStart) { drag.targetId = null; drag.position = 'root-start'; tree.classList.remove('tree-root-drop'); rootStart.classList.add('tree-root-start-target'); return; }
+    if (!target) { drag.targetId = null; drag.position = 'root'; tree.classList.add('tree-root-drop'); return; }
     tree.classList.remove('tree-root-drop');
-    const source = this.scene.get(drag.id), targetNode = this.scene.get(target.dataset.treeNode);
-    if (!source || !targetNode || targetNode.id === drag.id || this.scene.descendants(drag.id).some(item => item.id === targetNode.id) || source.parentId !== targetNode.parentId) {
+    if (target.dataset.treeNode === drag.id || this.scene.descendants(drag.id).some(item => item.id === target.dataset.treeNode)) {
       drag.targetId = null; drag.position = 'cancel'; return;
     }
     const rect = target.getBoundingClientRect(), relative = (y - rect.top) / Math.max(1, rect.height);
-    drag.position = relative < .5 ? 'before' : 'after';
+    drag.position = relative < .24 ? 'before' : relative > .76 ? 'after' : 'inside';
     drag.targetId = target.dataset.treeNode;
-    target.classList.add(drag.position === 'before' ? 'tree-drop-before' : 'tree-drop-after');
+    target.classList.add(drag.position === 'inside' ? 'tree-drop-target' : drag.position === 'before' ? 'tree-drop-before' : 'tree-drop-after');
   }
   treePointerUp(event) {
     clearTimeout(this.treeHoldTimer); this.treeHoldTimer = null;
@@ -653,16 +727,18 @@ class FlowiqStudio {
     try {
       this.history.checkpoint(this.historySnapshot());
       const source = this.scene.get(drag.id), targetNode = drag.targetId ? this.scene.get(drag.targetId) : null;
-      const siblings = source.parentId ? this.scene.get(source.parentId)?.children : this.scene.roots;
-      if (drag.position === 'root-start' && !source.parentId) {
-        this.scene.reparent(drag.id, null, 0);
-      } else if (targetNode && targetNode.parentId === source.parentId) {
-        let index = siblings.indexOf(targetNode.id) + (drag.position === 'after' ? 1 : 0);
-        const sourceIndex = siblings.indexOf(source.id);
-        if (sourceIndex >= 0 && sourceIndex < index) index--;
-        this.scene.reparent(drag.id, source.parentId, index);
+      if (drag.position === 'root-start') this.scene.reparent(drag.id, null, 0);
+      else if (!targetNode) this.scene.reparent(drag.id, null);
+      else if (drag.position === 'inside') {
+        this.scene.reparent(drag.id, targetNode.id);
+        this.treeExpanded.add(targetNode.id);
       } else {
-        throw new Error('Só é possível mudar a posição sem alterar o nível hierárquico.');
+        const siblings = targetNode.parentId ? this.scene.get(targetNode.parentId).children : this.scene.roots;
+        let index = siblings.indexOf(targetNode.id) + (drag.position === 'after' ? 1 : 0);
+        const sourceSiblings = source.parentId ? this.scene.get(source.parentId).children : this.scene.roots;
+        const sourceIndex = sourceSiblings.indexOf(source.id);
+        if (sourceSiblings === siblings && sourceIndex >= 0 && sourceIndex < index) index--;
+        this.scene.reparent(drag.id, targetNode.parentId, index);
       }
       this.select(drag.id); this.scheduleSave();
     } catch (error) { this.toast(error.message, 'error'); }
