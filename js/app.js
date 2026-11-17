@@ -273,7 +273,12 @@ class FlowiqStudio {
       const project = await this.db.getProject(id);
       if (!project) throw new Error('O projeto não foi encontrado.');
       this.project = project;
-      this.scene = new Scene(project.scene || []);
+      const storedScene = project.scene || [];
+      const needsLayoutMigration = storedScene.some(function hasLegacyLayout(item) {
+        return !item?.props?.position || !item?.props?.size || (item.children || []).some(hasLegacyLayout);
+      });
+      this.scene = new Scene(storedScene);
+      if (needsLayoutMigration) this.project.scene = this.scene.toJSON();
       this.store.set({ project, selectedId: null, screen: 'editor', panel: 'stage' });
       this.setPanel('stage');
       this.history.clear();
@@ -283,6 +288,10 @@ class FlowiqStudio {
       $('mobile-tabs').hidden = false;
       this.renderEditor();
       this.showScreen('editor');
+      if (needsLayoutMigration) {
+        this.scheduleSave();
+        this.log('Layout antigo convertido para Position e Size compatíveis com UDim2.', 'success');
+      }
       this.log('Projeto aberto.', 'success');
     } catch (error) {
       this.toast(error.message, 'error');
@@ -363,9 +372,30 @@ class FlowiqStudio {
     if (!node) return;
     this.history.checkpoint(this.historySnapshot());
     if (key === 'name') node.name = String(value).trim().slice(0, 64) || node.type;
-    else if (['x', 'y'].includes(key)) node.props[key] = Math.max(-2000, Math.min(4000, Number(value) || 0));
-    else if (['width', 'height'].includes(key)) node.props[key] = Math.max(1, Math.min(2000, Number(value) || 1));
-    else if (key === 'opacity') node.props[key] = Math.max(0, Math.min(1, Number(value) || 0));
+    else if (key.includes('.')) {
+      const parts = key.split('.');
+      const leaf = parts.pop();
+      let target = node.props;
+      for (const part of parts) target = target[part];
+      let next = Number(value);
+      if (!Number.isFinite(next)) next = 0;
+      if (parts[0] === 'position') next = Math.max(-4000, Math.min(4000, next));
+      if (parts[0] === 'size') next = leaf === 'scale' ? Math.max(0, Math.min(10, next)) : Math.max(1, Math.min(4000, next));
+      if (parts[0] === 'anchorPoint') next = Math.max(0, Math.min(1, next));
+      target[leaf] = next;
+      if (key === 'position.x.offset') node.props.x = next;
+      if (key === 'position.y.offset') node.props.y = next;
+      if (key === 'size.x.offset') node.props.width = next;
+      if (key === 'size.y.offset') node.props.height = next;
+    } else if (['x', 'y'].includes(key)) {
+      const next = Math.max(-4000, Math.min(4000, Number(value) || 0));
+      node.props[key] = next;
+      node.props.position[key].offset = next;
+    } else if (['width', 'height'].includes(key)) {
+      const next = Math.max(1, Math.min(4000, Number(value) || 1));
+      node.props[key] = next;
+      node.props.size[key === 'width' ? 'x' : 'y'].offset = next;
+    } else if (key === 'opacity') node.props[key] = Math.max(0, Math.min(1, Number(value) || 0));
     else if (key === 'radius') node.props[key] = Math.max(0, Math.min(160, Number(value) || 0));
     else node.props[key] = value;
     this.scheduleSave();
@@ -547,7 +577,7 @@ class FlowiqStudio {
   renderEditor() {
     if (!this.project) return;
     this.renderTreePanel();
-    renderScene($('scene'), this.scene, { selectedId: this.store.state.selectedId, assets: this.assets });
+    renderScene($('scene'), this.scene, { selectedId: this.store.state.selectedId, assets: this.assets, sceneSize: { width: this.project.settings?.width || 960, height: this.project.settings?.height || 640 } });
     this.renderInspectorPanel(this.scene.get(this.store.state.selectedId));
     $('project-name').textContent = this.project.name;
     this.updateHistory(this.history.status);
@@ -671,8 +701,10 @@ class FlowiqStudio {
       historyRecorded: false,
       id: node.id, pointerId: event.pointerId, mode, direction: resize,
       startX: event.clientX, startY: event.clientY,
-      x: Number(node.props.x) || 0, y: Number(node.props.y) || 0,
-      width: Number(node.props.width) || 1, height: Number(node.props.height) || 1,
+      x: Number(node.props.position.x.offset) || 0, y: Number(node.props.position.y.offset) || 0,
+      left: target.offsetLeft, top: target.offsetTop,
+      width: target.offsetWidth || 1, height: target.offsetHeight || 1,
+      parentWidth: target.parentElement?.clientWidth || 960, parentHeight: target.parentElement?.clientHeight || 640,
       rotation: Number(node.props.rotation) || 0,
       centerX: rect.left + rect.width / 2, centerY: rect.top + rect.height / 2,
       startAngle, moved: false
@@ -697,6 +729,8 @@ class FlowiqStudio {
         nextY += snap.dy;
         current.props.x = Math.round(nextX);
         current.props.y = Math.round(nextY);
+        current.props.position.x.offset = current.props.x;
+        current.props.position.y.offset = current.props.y;
         this.showAlignmentGuides(snap.guides);
       } else if (drag.mode === 'resize') {
         this.clearAlignmentGuides();
@@ -715,10 +749,16 @@ class FlowiqStudio {
         const shiftWorldY = shiftLocalX * Math.sin(radians) + shiftLocalY * Math.cos(radians);
         const centerX = drag.x + drag.width / 2 + shiftWorldX;
         const centerY = drag.y + drag.height / 2 + shiftWorldY;
-        current.props.x = Math.round(centerX - width / 2);
-        current.props.y = Math.round(centerY - height / 2);
-        current.props.width = Math.round(width);
-        current.props.height = Math.round(height);
+        const nextLeft = Math.round(centerX - width / 2);
+        const nextTop = Math.round(centerY - height / 2);
+        current.props.position.x.offset = Math.round(nextLeft + width * current.props.anchorPoint.x - drag.parentWidth * current.props.position.x.scale);
+        current.props.position.y.offset = Math.round(nextTop + height * current.props.anchorPoint.y - drag.parentHeight * current.props.position.y.scale);
+        current.props.size.x.offset = Math.round(width - drag.parentWidth * current.props.size.x.scale);
+        current.props.size.y.offset = Math.round(height - drag.parentHeight * current.props.size.y.scale);
+        current.props.x = current.props.position.x.offset;
+        current.props.y = current.props.position.y.offset;
+        current.props.width = current.props.size.x.offset;
+        current.props.height = current.props.size.y.offset;
       } else {
         this.clearAlignmentGuides();
         const angle = Math.atan2(moveEvent.clientY - drag.centerY, moveEvent.clientX - drag.centerX);
@@ -727,11 +767,13 @@ class FlowiqStudio {
         while (angleDelta < -Math.PI) angleDelta += Math.PI * 2;
         current.props.rotation = Math.round((drag.rotation + angleDelta * 180 / Math.PI + 360) % 360);
       }
-      target.style.left = current.props.x + 'px';
-      target.style.top = current.props.y + 'px';
-      target.style.width = current.props.width + 'px';
-      target.style.height = current.props.height + 'px';
-      target.style.transform = 'rotate(' + (Number(current.props.rotation) || 0) + 'deg)';
+      const liveWidth = drag.parentWidth * current.props.size.x.scale + current.props.size.x.offset;
+      const liveHeight = drag.parentHeight * current.props.size.y.scale + current.props.size.y.offset;
+      target.style.left = (drag.parentWidth * current.props.position.x.scale + current.props.position.x.offset) + 'px';
+      target.style.top = (drag.parentHeight * current.props.position.y.scale + current.props.position.y.offset) + 'px';
+      target.style.width = liveWidth + 'px';
+      target.style.height = liveHeight + 'px';
+      target.style.transform = 'translate(' + (-current.props.anchorPoint.x * 100) + '%,' + (-current.props.anchorPoint.y * 100) + '%) rotate(' + (Number(current.props.rotation) || 0) + 'deg)';
       const rotateHandle = target.querySelector('.rotate-handle');
       if (rotateHandle) rotateHandle.style.transform = 'rotate(' + (-(Number(current.props.rotation) || 0)) + 'deg)';
     };
@@ -856,7 +898,7 @@ class FlowiqStudio {
     $('preview-screen').classList.remove('preview-visible');
     requestAnimationFrame(() => $('preview-screen').classList.add('preview-visible'));
     $('preview-name').textContent = this.project.name;
-    const renderPreview = () => renderScene($('preview-scene'), this.previewScene, { preview: true, assets: this.assets, onRun: node => { this.runtime.dispatch(node, 'click'); renderPreview(); } });
+    const renderPreview = () => renderScene($('preview-scene'), this.previewScene, { preview: true, assets: this.assets, sceneSize: { width: this.project.settings?.width || 960, height: this.project.settings?.height || 640 }, onRun: node => { this.runtime.dispatch(node, 'click'); renderPreview(); } });
     renderPreview();
   }
 
