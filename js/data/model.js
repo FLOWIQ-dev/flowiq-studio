@@ -45,7 +45,7 @@ export class Scene {
   insert(node, parentId = null, index = null) {
     if (!(node instanceof SceneNode) || this.nodes.has(node.id)) throw new Error('Objeto inválido ou duplicado.');
     const parent = parentId ? this.get(parentId) : null;
-    if (parentId && (!parent || parent.type !== 'Frame')) throw new Error('O destino precisa ser um Frame.');
+    if (parentId && !parent) throw new Error('O objeto pai não foi encontrado.');
     node.parentId = parentId;
     this.nodes.set(node.id, node);
     const list = parent ? parent.children : this.roots;
@@ -94,17 +94,19 @@ export class Scene {
     return true;
   }
 
-  reparent(id, parentId = null) {
+  reparent(id, parentId = null, index = null) {
     const node = this.get(id);
     const parent = parentId ? this.get(parentId) : null;
     if (!node) throw new Error('Objeto não encontrado.');
-    if (parentId && (!parent || parent.type !== 'Frame')) throw new Error('O destino precisa ser um Frame.');
+    if (parentId && !parent) throw new Error('O destino não foi encontrado.');
     if (id === parentId || (parentId && this.descendants(id).some(item => item.id === parentId))) throw new Error('Essa mudança criaria um ciclo.');
     const oldList = node.parentId ? this.get(node.parentId)?.children : this.roots;
     const oldIndex = oldList?.indexOf(id) ?? -1;
     if (oldIndex >= 0) oldList.splice(oldIndex, 1);
     node.parentId = parentId;
-    (parent ? parent.children : this.roots).push(id);
+    const nextList = parent ? parent.children : this.roots;
+    const at = Number.isInteger(index) ? Math.max(0, Math.min(index, nextList.length)) : nextList.length;
+    nextList.splice(at, 0, id);
   }
 
   load(data) {
@@ -126,7 +128,6 @@ export class Scene {
         this.insert(node, parentId);
         if (++count > 5000) throw new Error('A cena ultrapassa o limite de objetos.');
         const children = Array.isArray(raw.children) ? raw.children : [];
-        if (children.length && type !== 'Frame') throw new Error('Somente Frames podem conter objetos.');
         walk(children, id, depth + 1);
       }
     };
