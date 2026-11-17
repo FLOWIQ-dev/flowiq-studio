@@ -477,27 +477,34 @@ class FlowiqStudio {
         current.props.x = Math.round(drag.x + dx);
         current.props.y = Math.round(drag.y + dy);
       } else if (drag.mode === 'resize') {
-        let x = drag.x, y = drag.y, width = drag.width, height = drag.height;
+        const radians = drag.rotation * Math.PI / 180;
+        const localDx = dx * Math.cos(radians) + dy * Math.sin(radians);
+        const localDy = -dx * Math.sin(radians) + dy * Math.cos(radians);
         const dir = drag.direction;
-        if (dir.includes('e')) width += dx;
-        if (dir.includes('s')) height += dy;
-        if (dir.includes('w')) { width -= dx; x += dx; }
-        if (dir.includes('n')) { height -= dy; y += dy; }
-        width = Math.max(24, Math.min(2000, width));
-        height = Math.max(24, Math.min(2000, height));
+        const rawWidth = drag.width + (dir.includes('e') ? localDx : dir.includes('w') ? -localDx : 0);
+        const rawHeight = drag.height + (dir.includes('s') ? localDy : dir.includes('n') ? -localDy : 0);
+        const width = Math.max(24, Math.min(2000, rawWidth));
+        const height = Math.max(24, Math.min(2000, rawHeight));
+        const x = dir.includes('w') ? drag.x + drag.width - width : drag.x;
+        const y = dir.includes('n') ? drag.y + drag.height - height : drag.y;
         current.props.x = Math.round(x);
         current.props.y = Math.round(y);
         current.props.width = Math.round(width);
         current.props.height = Math.round(height);
       } else {
         const angle = Math.atan2(moveEvent.clientY - drag.centerY, moveEvent.clientX - drag.centerX);
-        current.props.rotation = Math.round((drag.rotation + (angle - drag.startAngle) * 180 / Math.PI + 360) % 360);
+        let angleDelta = angle - drag.startAngle;
+        while (angleDelta > Math.PI) angleDelta -= Math.PI * 2;
+        while (angleDelta < -Math.PI) angleDelta += Math.PI * 2;
+        current.props.rotation = Math.round((drag.rotation + angleDelta * 180 / Math.PI + 360) % 360);
       }
       target.style.left = current.props.x + 'px';
       target.style.top = current.props.y + 'px';
       target.style.width = current.props.width + 'px';
       target.style.height = current.props.height + 'px';
       target.style.transform = 'rotate(' + (Number(current.props.rotation) || 0) + 'deg)';
+      const rotateHandle = target.querySelector('.rotate-handle');
+      if (rotateHandle) rotateHandle.style.transform = 'rotate(' + (-(Number(current.props.rotation) || 0)) + 'deg)';
     };
     const end = endEvent => {
       if (!this.drag || endEvent.pointerId !== this.drag.pointerId) return;
