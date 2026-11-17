@@ -67,7 +67,7 @@ export function renderScene(container, scene, { selectedId = null, preview = fal
         const hex = match[1].length === 3 ? match[1].split('').map(char => char + char).join('') : match[1];
         item.style.backgroundColor = 'rgba(' + [0,2,4].map(index => parseInt(hex.slice(index,index+2),16)).join(',') + ',' + alpha + ')';
       }
-      item.style.overflow = p.clipsDescendants ? 'hidden' : 'visible';
+      item.dataset.clipsDescendants = String(Boolean(p.clipsDescendants));
       item.style.zIndex = String(Math.max(1, Math.min(10, Number(p.zIndex) || 1)));
       const borderSize = Math.max(0, Math.min(20, Number(p.borderSizePixel) || 0));
       const borderColor = p.borderColor3 || p.border || 'transparent';
@@ -89,6 +89,11 @@ export function renderScene(container, scene, { selectedId = null, preview = fal
     item.style.textAlign = p.textAlign || 'center';
     item.style.fontWeight = p.fontWeight || '500';
     item.textContent = node.type === 'Frame' ? '' : (p.text || (node.type === 'ImageLabel' ? '' : node.name));
+    const childContainer = el('div', 'scene-children');
+    childContainer.style.position = 'absolute';
+    childContainer.style.inset = '0';
+    childContainer.style.overflow = node.type === 'Frame' && p.clipsDescendants ? 'hidden' : 'visible';
+    item.append(childContainer);
     if (node.type === 'ImageLabel') {
       const asset = assetMap.get(p.assetId);
       if (asset?.blob) {
@@ -104,7 +109,7 @@ export function renderScene(container, scene, { selectedId = null, preview = fal
     if (selectedId === node.id && !preview) item.classList.add('is-selected');
     if (preview && node.type === 'TextButton') item.addEventListener('click', event => { event.stopPropagation(); onRun(node, 'click'); });
     parent.append(item);
-    for (const childId of node.children) build(childId, item, layout.width, layout.height);
+    for (const childId of node.children) build(childId, childContainer, layout.width, layout.height);
     if (selectedId === node.id && !preview) {
       for (const direction of ['nw','n','ne','e','se','s','sw','w']) {
         const handle = el('button', 'resize-handle handle-' + direction);
