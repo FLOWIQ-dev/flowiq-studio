@@ -30,6 +30,7 @@ class FlowiqStudio {
     this.treeHoldTimer = null;
     this.treeTouch = null;
     this.treeDragGhost = null;
+    this.treeAutoScrollFrame = 0;
     this.addParentId = null;
     this.guarded = task => (...args) => Promise.resolve(task(...args)).catch(error => this.toast(error.message || 'Ocorreu um erro inesperado.', 'error'));
     this.returnScreen = 'home';
@@ -140,7 +141,9 @@ class FlowiqStudio {
       if (button) this.setPanel(button.dataset.panel);
     });
     $('panel-close').addEventListener('click', () => this.setPanel('stage'));
-    $('explorer-close').addEventListener('click', () => this.setPanel('stage'));
+    const closeExplorer = event => { event.preventDefault(); event.stopPropagation(); this.setPanel('stage'); };
+    $('explorer-close').addEventListener('pointerup', closeExplorer);
+    $('explorer-close').addEventListener('click', closeExplorer);
     $('dialog').addEventListener('click', event => { if (event.target === $('dialog')) this.resolveDialog(null); });
     document.addEventListener('keydown', event => this.keydown(event));
     window.addEventListener('beforeunload', event => {
@@ -521,13 +524,14 @@ class FlowiqStudio {
     if (event.touches.length !== 1) { this.treeTouch = null; this.cancelTreeDrag(); return; }
     const touch = event.touches[0], row = event.target.closest('[data-tree-node]');
     if (!row || event.target.closest('button')) return;
-    this.treeTouch = { id: row.dataset.treeNode, x: touch.clientX, y: touch.clientY, active: false, cancelled: false };
+    const startX = touch.clientX, startY = touch.clientY, id = row.dataset.treeNode;
+    this.treeTouch = { id, x: startX, y: startY, active: false, cancelled: false };
     clearTimeout(this.treeHoldTimer);
     this.treeHoldTimer = setTimeout(() => {
       if (!this.treeTouch || this.treeTouch.cancelled) return;
       this.treeTouch.active = true;
-      this.beginTreeDrag(this.treeTouch.id, 'touch', touch.clientX, touch.clientY);
-    }, 430);
+      this.beginTreeDrag(id, 'touch', this.treeTouch.x, this.treeTouch.y);
+    }, 460);
   }
   treeTouchMove(event) {
     const touch = event.touches[0];
@@ -561,11 +565,36 @@ class FlowiqStudio {
     ghost.append(marker, copy); document.body.append(ghost); this.treeDragGhost = ghost;
     document.body.classList.add('tree-dragging');
     this.updateTreeDrag(x, y);
+    this.startTreeAutoScroll();
+  }
+  startTreeAutoScroll() {
+    cancelAnimationFrame(this.treeAutoScrollFrame);
+    const tick = () => {
+      const drag = this.treeDrag, tree = $('tree');
+      if (!drag || !tree) { this.treeAutoScrollFrame = 0; return; }
+      const bounds = tree.getBoundingClientRect(), edge = Math.min(64, Math.max(38, bounds.height * .16));
+      let speed = 0;
+      if (drag.y >= bounds.top && drag.y < bounds.top + edge) {
+        const intensity = 1 - Math.max(0, drag.y - bounds.top) / edge;
+        speed = -Math.max(2, Math.ceil(intensity * intensity * 22));
+      } else if (drag.y <= bounds.bottom && drag.y > bounds.bottom - edge) {
+        const intensity = 1 - Math.max(0, bounds.bottom - drag.y) / edge;
+        speed = Math.max(2, Math.ceil(intensity * intensity * 22));
+      }
+      if (speed) {
+        const before = tree.scrollTop;
+        tree.scrollTop += speed;
+        if (tree.scrollTop !== before) this.updateTreeDrag(drag.x, drag.y);
+      }
+      this.treeAutoScrollFrame = requestAnimationFrame(tick);
+    };
+    this.treeAutoScrollFrame = requestAnimationFrame(tick);
   }
   updateTreeDrag(x, y) {
     const drag = this.treeDrag;
     if (!drag) return;
     drag.active = true;
+    drag.x = x; drag.y = y;
     if (this.treeDragGhost) {
       this.treeDragGhost.style.left = Math.min(window.innerWidth - 230, Math.max(8, x + 14)) + 'px';
       this.treeDragGhost.style.top = Math.min(window.innerHeight - 54, Math.max(8, y + 14)) + 'px';
@@ -616,6 +645,7 @@ class FlowiqStudio {
     this.cancelTreeDrag();
   }
   cancelTreeDrag() {
+    cancelAnimationFrame(this.treeAutoScrollFrame); this.treeAutoScrollFrame = 0;
     clearTimeout(this.treeHoldTimer); this.treeHoldTimer = null;
     this.treeDrag = null; this._treePointerStart = null; this.treeDragGhost?.remove(); this.treeDragGhost = null;
     document.querySelectorAll('.tree-source-dragging').forEach(item => item.classList.remove('tree-source-dragging'));
