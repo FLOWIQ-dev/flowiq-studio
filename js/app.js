@@ -28,6 +28,7 @@ class FlowiqStudio {
     this.treeExpanded = new Set();
     this.treeDrag = null;
     this.treeHoldTimer = null;
+    this.addParentId = null;
     this.guarded = task => (...args) => Promise.resolve(task(...args)).catch(error => this.toast(error.message || 'Ocorreu um erro inesperado.', 'error'));
     this.returnScreen = 'home';
     this.bind();
@@ -78,12 +79,12 @@ class FlowiqStudio {
       if (action) this.handleTreeAction(action.dataset.treeAction, action.dataset.nodeId);
     });
     $('tree').addEventListener('contextmenu', event => {
-      const row = event.target.closest('[data-tree-node]');
-      if (!row) return;
       event.preventDefault();
-      this.openTreeMenu(row.dataset.treeNode, row);
+      if (this._lastTreePointerType !== 'mouse' || event.button !== 2) return;
+      const row = event.target.closest('[data-tree-node]');
+      if (row) this.openTreeMenu(row.dataset.treeNode, row);
     });
-    $('tree').addEventListener('pointerdown', event => this.treePointerDown(event));
+    $('tree').addEventListener('pointerdown', event => { this._lastTreePointerType = event.pointerType; this.treePointerDown(event); });
     window.addEventListener('pointermove', event => this.treePointerMove(event));
     window.addEventListener('pointerup', event => this.treePointerUp(event));
     window.addEventListener('pointercancel', () => this.cancelTreeDrag());
@@ -325,7 +326,8 @@ class FlowiqStudio {
   addNode(type, parentId = undefined) {
     if (!COMPONENTS.some(item => item.type === type)) return;
     this.history.checkpoint(this.historySnapshot());
-    const parent = parentId === undefined ? this.scene.get(this.store.state.selectedId) : this.scene.get(parentId);
+    const destinationId = parentId !== undefined ? parentId : this.addParentId !== null ? this.addParentId : undefined;
+    const parent = destinationId === undefined ? this.scene.get(this.store.state.selectedId) : this.scene.get(destinationId);
     const node = this.scene.create(type, parent?.id || null);
     this.select(node.id);
     this.closeAddMenu();
@@ -481,13 +483,11 @@ class FlowiqStudio {
     document.querySelector('.tree-context-menu')?.remove();
     const node = this.scene.get(id);
     if (!node) return;
+    if (action === 'add') { this.openAddMenu(id); return; }
     this.select(id);
     if (action === 'rename') {
       const name = await this.dialog({ title: 'Renomear objeto', label: 'Nome do objeto', value: node.name, confirm: 'Salvar' });
       if (name && name.trim() !== node.name) this.updateProperty('name', name);
-    } else if (action === 'add') {
-      const type = await this.dialog({ title: 'Adicionar instância', message: 'Escolha um tipo para criar dentro de ' + node.name + '.', choices: COMPONENTS.map(item => ({ value: item.type, label: item.label })).concat([{ value: 'cancel', label: 'Cancelar' }]) });
-      if (type && type !== 'cancel') this.addNode(type, id);
     } else if (action === 'duplicate') this.duplicateSelected();
     else if (action === 'delete') this.deleteSelected();
   }
@@ -757,19 +757,26 @@ class FlowiqStudio {
   }
 
   toggleAddMenu() {
-    const menu = $('add-menu');
-    if (menu.hidden) {
-      if (window.matchMedia('(max-width: 680px)').matches) this.setPanel('stage');
-      menu.hidden = false;
-      $('object-search').value = '';
-      this.filterAddMenu('');
-      $('mobile-add-objects').setAttribute('aria-expanded', 'true');
-      requestAnimationFrame(() => $('object-search').focus());
-    } else this.closeAddMenu();
+    if ($('add-menu').hidden) this.openAddMenu();
+    else this.closeAddMenu();
+  }
+  openAddMenu(parentId = null) {
+    const parent = parentId ? this.scene.get(parentId) : null;
+    this.addParentId = parent?.id ?? null;
+    if (window.matchMedia('(max-width: 680px)').matches) this.setPanel('stage');
+    $('add-menu').hidden = false;
+    $('object-search').value = '';
+    $('object-dialog-title').textContent = parent ? 'Adicionar instância' : 'Adicionar ao palco';
+    $('object-parent-note').textContent = parent ? 'Será criada dentro de ' + parent.name : 'Escolha um objeto para inserir na cena.';
+    $('object-parent-note').hidden = false;
+    this.filterAddMenu('');
+    $('mobile-add-objects').setAttribute('aria-expanded', 'true');
+    requestAnimationFrame(() => $('object-search').focus());
   }
 
   closeAddMenu() {
     $('add-menu').hidden = true;
+    this.addParentId = null;
     $('mobile-add-objects').setAttribute('aria-expanded', 'false');
   }
 
