@@ -323,3 +323,5 @@ body[data-screen=editor]{height:100dvh;min-height:0;overflow:hidden}
  .tree-row{touch-action:pan-y}
  .tree-drag-ghost{max-width:min(230px,calc(100vw - 24px))}
 }
+
+.tree-root-drop{outline:2px dashed rgba(92,224,195,.65);outline-offset:-5px;background:rgba(48,190,158,.06)}
