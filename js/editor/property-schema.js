@@ -104,24 +104,15 @@ registerPropertySchema('*', { sections: [
 ]});
 
 registerPropertySchema('Frame', { sections: [
-  { title: 'Instance', fields: [
-    text('name', 'Name'),
-    checkbox('archivable', 'Archivable')
-  ]},
+  { title: 'Instance', fields: [text('name', 'Name')] },
   ...layout,
   { title: 'Data', fields: [
-    select('automaticSize', 'AutomaticSize', [
-      { value: 'None', label: 'None' }, { value: 'X', label: 'X' },
-      { value: 'Y', label: 'Y' }, { value: 'XY', label: 'XY' }
-    ]),
     select('sizeConstraint', 'SizeConstraint', [
       { value: 'RelativeXY', label: 'RelativeXY' },
       { value: 'RelativeXX', label: 'RelativeXX' },
       { value: 'RelativeYY', label: 'RelativeYY' }
     ]),
-    number('layoutOrder', 'LayoutOrder', -32768, 32767),
-    number('zIndex', 'ZIndex', 1, 10),
-    number('selectionOrder', 'SelectionOrder', 0, 32767)
+    number('zIndex', 'ZIndex', 1, 10)
   ]},
   { title: 'Appearance', fields: [
     color('backgroundColor3', 'BackgroundColor3'),
@@ -133,21 +124,11 @@ registerPropertySchema('Frame', { sections: [
       { value: 'Middle', label: 'Middle' },
       { value: 'Inset', label: 'Inset' }
     ]),
-    select('style', 'Style', [
-      { value: 'Custom', label: 'Custom' },
-      { value: 'ChatBlue', label: 'ChatBlue' },
-      { value: 'ChatGreen', label: 'ChatGreen' },
-      { value: 'ChatRed', label: 'ChatRed' },
-      { value: 'DropShadow', label: 'DropShadow' }
-    ]),
     number('rotation', 'Rotation', -360, 360)
   ]},
   { title: 'Behavior', fields: [
     checkbox('visible', 'Visible'),
-    checkbox('clipsDescendants', 'ClipsDescendants'),
-    checkbox('active', 'Active'),
-    checkbox('interactable', 'Interactable'),
-    checkbox('selectable', 'Selectable')
+    checkbox('clipsDescendants', 'ClipsDescendants')
   ]}
 ]});
 
