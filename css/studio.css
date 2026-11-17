@@ -759,3 +759,64 @@ body[data-screen=editor]{
     animation:sheet-in .28s cubic-bezier(.2,.75,.25,1) both;
   }
 }
+
+
+/* Frame Inspector: compact Roblox-like property rows and always-visible quick actions. */
+.inspector-heading{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  padding:12px 12px 13px;
+  border-bottom:1px solid var(--line-soft);
+  background:var(--surface);
+}
+.inspector-identity{display:grid;gap:3px;min-width:0}
+.inspector-identity strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px}
+.inspector-quick-actions{display:flex;align-items:center;gap:6px;flex:none}
+.inspector-quick-button{
+  width:auto;
+  min-width:0;
+  min-height:32px;
+  height:32px;
+  padding:0 9px;
+  border:1px solid var(--line);
+  border-radius:7px;
+  background:var(--surface-2);
+  color:var(--text);
+  font-size:11px;
+  font-weight:650;
+  white-space:nowrap;
+}
+.inspector-quick-button.danger-text{color:#ff8585}
+.property-field:has(input[type="range"]){
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  align-items:center;
+  column-gap:10px;
+}
+.property-field:has(input[type="range"])>span{grid-column:1/-1}
+.property-field input[type="range"]{
+  width:100%;
+  min-width:0;
+  height:24px;
+  padding:0;
+  accent-color:var(--accent);
+  background:transparent;
+  border:0;
+  box-shadow:none;
+}
+.property-slider-value{
+  min-width:42px;
+  padding:3px 6px;
+  border:1px solid var(--line);
+  border-radius:6px;
+  background:var(--surface-2);
+  color:var(--text);
+  text-align:center;
+  font:11px ui-monospace,monospace;
+}
+@media(max-width:680px){
+  .inspector-heading{padding:10px 12px}
+  .inspector-quick-button{min-height:34px;height:34px;padding:0 8px}
+}
