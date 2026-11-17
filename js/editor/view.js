@@ -69,25 +69,80 @@ export function renderScene(container, scene, { selectedId = null, preview = fal
   for (const id of scene.roots) build(id, container);
 }
 
-export function renderTree(container, scene, selectedId, onSelect) {
+export function renderTree(container, scene, selectedId, { search = '', expanded = new Set(), onSelect = () => {}, onToggle = () => {} } = {}) {
   container.replaceChildren();
   const list = el('div', 'tree-list');
+  const query = search.trim().toLocaleLowerCase('pt-BR');
+  const matches = new Set();
+  const include = id => {
+    const node = scene.get(id);
+    if (!node) return false;
+    const own = !query || (node.name + ' ' + node.type).toLocaleLowerCase('pt-BR').includes(query);
+    let childMatch = false;
+    node.children.forEach(childId => { if (include(childId)) childMatch = true; });
+    if (own || childMatch) matches.add(id);
+    return own || childMatch;
+  };
+  scene.roots.forEach(include);
   const add = (id, depth) => {
     const node = scene.get(id);
-    if (!node) return;
-    const row = el('button', 'tree-row' + (node.id === selectedId ? ' is-active' : ''));
-    row.type = 'button';
+    if (!node || !matches.has(id)) return;
+    const branch = el('div', 'tree-branch');
+    const row = el('div', 'tree-row' + (node.id === selectedId ? ' is-active' : ''));
+    row.dataset.treeNode = node.id;
     row.style.setProperty('--depth', depth);
+    const toggle = el('button', 'tree-disclosure', node.children.length ? (expanded.has(id) || query ? '⌄' : '›') : '');
+    toggle.type = 'button'; toggle.dataset.treeToggle = id;
+    toggle.setAttribute('aria-label', expanded.has(id) ? 'Recolher' : 'Expandir');
+    toggle.disabled = !node.children.length;
     const marker = el('span', 'tree-marker'); marker.innerHTML = icon(node.type);
     const name = el('span', 'tree-name', node.name);
     const type = el('span', 'tree-type', node.type);
-    row.append(marker, name, type);
-    row.addEventListener('click', () => onSelect(node.id));
-    list.append(row);
-    node.children.forEach(childId => add(childId, depth + 1));
+    const menu = el('button', 'tree-menu-trigger', '⋯');
+    menu.type = 'button'; menu.dataset.treeMenu = id; menu.setAttribute('aria-label', 'Opções de ' + node.name);
+    row.append(toggle, marker, name, type, menu);
+    row.addEventListener('click', event => { if (!event.target.closest('button')) onSelect(id); });
+    branch.append(row);
+    if (node.children.length && (expanded.has(id) || query)) {
+      const children = el('div', 'tree-children');
+      node.children.forEach(childId => add(childId, depth + 1));
+      // Reparent only the branches belonging to this node into its child group.
+      const nested = [...list.querySelectorAll(':scope > .tree-branch')].filter(item => item.dataset.parentId === id);
+      nested.forEach(item => children.append(item));
+      if (children.childElementCount) branch.append(children);
+    }
+    branch.dataset.parentId = node.parentId || '';
+    list.append(branch);
   };
-  scene.roots.forEach(id => add(id, 0));
-  if (!scene.roots.length) list.append(el('p', 'empty-inline', 'Seu projeto ainda não tem objetos.'));
+  // Build a recursive tree directly, preserving the scene's sibling order.
+  const build = (id, depth) => {
+    const node = scene.get(id);
+    if (!node || !matches.has(id)) return null;
+    const branch = el('div', 'tree-branch');
+    const row = el('div', 'tree-row' + (node.id === selectedId ? ' is-active' : ''));
+    row.dataset.treeNode = node.id;
+    row.style.setProperty('--depth', depth);
+    const isOpen = expanded.has(id) || Boolean(query);
+    const toggle = el('button', 'tree-disclosure', node.children.length ? (isOpen ? '⌄' : '›') : '');
+    toggle.type = 'button'; toggle.dataset.treeToggle = id; toggle.disabled = !node.children.length;
+    toggle.setAttribute('aria-label', isOpen ? 'Recolher' : 'Expandir');
+    const marker = el('span', 'tree-marker'); marker.innerHTML = icon(node.type);
+    const name = el('span', 'tree-name', node.name);
+    const type = el('span', 'tree-type', node.type);
+    const menu = el('button', 'tree-menu-trigger', '⋯'); menu.type = 'button'; menu.dataset.treeMenu = id;
+    menu.setAttribute('aria-label', 'Opções de ' + node.name);
+    row.append(toggle, marker, name, type, menu);
+    row.addEventListener('click', event => { if (!event.target.closest('button')) onSelect(id); });
+    branch.append(row);
+    if (node.children.length && isOpen) {
+      const children = el('div', 'tree-children');
+      node.children.forEach(childId => { const child = build(childId, depth + 1); if (child) children.append(child); });
+      branch.append(children);
+    }
+    return branch;
+  };
+  scene.roots.forEach(id => { const branch = build(id, 0); if (branch) list.append(branch); });
+  if (!list.childElementCount) list.append(el('p', 'empty-inline', query ? 'Nenhum objeto encontrado.' : 'Seu projeto ainda não tem objetos.'));
   container.append(list);
 }
 
