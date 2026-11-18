@@ -155,7 +155,7 @@ test('service worker precaches every module used by the new application', async 
 
 
 test('Inspector property schemas are class-based and extensible', () => {
-  assert.equal(PROPERTY_SCHEMA_VERSION, 6);
+  assert.equal(PROPERTY_SCHEMA_VERSION, 7);
   const frame = getPropertySchema('Frame');
   assert.ok(frame.sections.some(section => section.title === 'Data'));
   const frameKeys = frame.sections.flatMap(section => section.fields.map(field => field.key));
