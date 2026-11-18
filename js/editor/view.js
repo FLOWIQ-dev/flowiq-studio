@@ -241,8 +241,8 @@ export function renderScene(container, scene, { selectedId = null, preview = fal
       else content.textContent = textValue;
       content.style.fontFamily = fontFamily;
       const featureText = String(p.openTypeFeatures || '').trim();
-      if (/^[a-z0-9]{4}(?:\\s+(?:on|off|[0-9]+))?(?:\\s*,\\s*[a-z0-9]{4}(?:\\s+(?:on|off|[0-9]+))?)*$/i.test(featureText)) {
-        content.style.fontFeatureSettings = featureText.split(',').map(entry => { const parts = entry.trim().split(/\\s+/); return '\"' + parts[0] + '\"' + (parts[1] ? ' ' + (parts[1] === 'on' ? 1 : parts[1] === 'off' ? 0 : parts[1]) : ''); }).join(', ');
+      if (/^[a-z0-9]{4}(?:\s+(?:on|off|[0-9]+))?(?:\s*,\s*[a-z0-9]{4}(?:\s+(?:on|off|[0-9]+))?)*$/i.test(featureText)) {
+        content.style.fontFeatureSettings = featureText.split(',').map(entry => { const parts = entry.trim().split(/\s+/); return '\"' + parts[0] + '\"' + (parts[1] ? ' ' + (parts[1] === 'on' ? 1 : parts[1] === 'off' ? 0 : parts[1]) : ''); }).join(', ');
       }
       content.style.fontWeight = String(weight);
       content.style.fontSize = resolvedSize + 'px';
@@ -531,7 +531,7 @@ export function renderInspector(container, node, { onChange, onDelete, onDuplica
       input.value = tuple(propertyValue);
       input.classList.add('udim2-input');
       const parse = raw => {
-        const parts = raw.trim().split(/[;,\\s]+/).filter(Boolean);
+        const parts = raw.trim().split(/[;,\s]+/).filter(Boolean);
         const expected = type === 'udim2' ? 4 : 2;
         if (parts.length !== expected || parts.some(part => !Number.isFinite(Number(part)))) return null;
         return type === 'udim2' ? { x: { scale: Number(parts[0]), offset: Number(parts[1]) }, y: { scale: Number(parts[2]), offset: Number(parts[3]) } } : { x: Number(parts[0]), y: Number(parts[1]) };
