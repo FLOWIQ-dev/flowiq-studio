@@ -897,7 +897,7 @@ class FlowiqStudio {
     this.cameraTrackFrame = requestAnimationFrame(() => {
       this.cameraTrackFrame = 0;
       const viewport = $('stage-viewport');
-      const panel = $('screen-editor .inspector-panel');
+      const panel = document.querySelector('#screen-editor .inspector-panel');
       const target = $('scene').querySelector('[data-node-id="' + CSS.escape(this.store.state.selectedId) + '"]');
       if (!viewport || !target || this.store.state.panel !== 'inspector') return;
       const stageRect = viewport.getBoundingClientRect();
