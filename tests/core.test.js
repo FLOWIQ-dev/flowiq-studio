@@ -419,3 +419,29 @@ test('LiquidGlass uses a distinct low-blur layered surface with touch-responsive
   assert.match(view, /--glass-x/);
   assert.match(view, /--glass-y/);
 });
+
+
+test('Frame and ImageLabel share the exact same UDim2 and AnchorPoint layout controls', () => {
+  const frame = getPropertySchema('Frame');
+  const image = getPropertySchema('ImageLabel');
+  const layoutOf = current => current.sections.find(section => section.title === 'Layout');
+  const fields = current => layoutOf(current).fields.map(({ key, type, subgroup, components }) => ({ key, type, subgroup, components }));
+  assert.deepEqual(fields(frame), fields(image));
+  assert.deepEqual(fields(frame), [
+    { key: 'position', type: 'udim2', subgroup: 'Position', components: 4 },
+    { key: 'size', type: 'udim2', subgroup: 'Size', components: 4 },
+    { key: 'anchorPoint', type: 'vector2', subgroup: 'AnchorPoint', components: 2 }
+  ]);
+  for (const type of ['Frame', 'TextButton', 'TextLabel', 'ImageLabel']) {
+    const current = getPropertySchema(type);
+    assert.equal(current.sections[0].title, 'Instance');
+    assert.ok(current.sections.some(section => section.title === 'Layout'));
+  }
+});
+
+test('ImageLabel does not clip its own selection handles', async () => {
+  const css = await readFile(new URL('../css/studio.css', import.meta.url), 'utf8');
+  assert.match(css, /scene-node\\.scene-imagelabel\\{overflow:visible!important/);
+  assert.doesNotMatch(css, /\\.scene-imagelabel\\{[^}]*overflow:hidden/);
+  assert.match(css, /scene-image-content\\{[^}]*border-radius:inherit/);
+});
