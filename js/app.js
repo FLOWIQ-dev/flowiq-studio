@@ -734,7 +734,7 @@ class FlowiqStudio {
 
   pointerDown(event) {
     if (this.runtime.running || event.button > 0) return;
-    const target = event.target.closest('.scene-node');
+    let target = event.target.closest('.scene-node');
     if (!target) return;
     const node = this.scene.get(target.dataset.nodeId);
     if (!node) return;
@@ -769,6 +769,7 @@ class FlowiqStudio {
     const move = moveEvent => {
       const drag = this.drag;
       if (!drag || moveEvent.pointerId !== drag.pointerId) return;
+      target = $('scene').querySelector('[data-node-id="' + CSS.escape(drag.id) + '"]') || target;
       const delta = this.screenDeltaToParent(target, moveEvent.clientX - drag.startX, moveEvent.clientY - drag.startY);
       const dx = delta.x;
       const dy = delta.y;
