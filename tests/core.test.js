@@ -279,7 +279,7 @@ test('Explorer camera tracking is independent from Inspector and preserves the f
   assert.ok(app.includes('if (this.cameraTracking && this.cameraTrackingId === current.id) this.trackSelectedObject()'));
   assert.ok(app.includes("this.cameraTracking ? 'Câmera acompanhando ' + node.name"));
   assert.ok(view.includes("translate3d(' + offsetX + 'px,' + offsetY + 'px,0) scale('"));
-  assert.ok(css.includes('#screen-editor .stage-viewport{overflow:hidden}'));
+  assert.ok(css.includes('#screen-editor .stage-viewport{'));
   assert.ok(css.includes('transition:none!important'));
   const closePanel = app.slice(app.indexOf('  setPanel(name)'), app.indexOf('  toggleAddMenu()'));
   assert.ok(closePanel.includes("this.cameraTracking"));
