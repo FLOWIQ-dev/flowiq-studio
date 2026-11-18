@@ -397,16 +397,14 @@ test('UIBackdrop can only exist once as a leaf child of a Frame', () => {
 });
 
 
-test('Frame materials render as clipped overlays above the Frame surface', async () => {
+test('Blur is clipped to the Frame surface', async () => {
   const view = await readFile(new URL('../js/editor/view.js', import.meta.url), 'utf8');
   const css = await readFile(new URL('../css/studio.css', import.meta.url), 'utf8');
   assert.match(view, /item\.style\.backgroundColor = fillColor/);
-  assert.match(view, /scene-effect-surface/);
-  
-  assert.match(view, /item\.style\.webkitBackdropFilter = item\.style\.backdropFilter/);
-  assert.match(css, /pointer-events:none/);
+  assert.match(view, /item\.style\.backdropFilter = backdropVisible/);
+    assert.match(view, /item\.style\.webkitBackdropFilter = item\.style\.backdropFilter/);
   assert.match(css, /Blur is rendered directly on its owning Frame/);
-  assert.doesNotMatch(view, /scene-effect-surface|feDisplacementMap|feTurbulence|fractalNoise/);
+  assert.doesNotMatch(view, /scene-effect-surface|scene-effect-prism|scene-effect-emboss|scene-effect-holographic|feDisplacementMap|feTurbulence|fractalNoise/);
 });
 
 test('ImageLabel reuses object URLs and DOM nodes across scene renders', async () => {
