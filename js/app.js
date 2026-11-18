@@ -24,6 +24,7 @@ class FlowiqStudio {
     this.cameraOffset = { x: 0, y: 0 };
     this.cameraTracking = false;
     this.cameraTrackingId = null;
+    this.cameraEscaped = false;
     this.inspectorCameraSnapshot = null;
     this.cameraTrackFrame = 0;
     this.previewScene = null;
@@ -134,6 +135,7 @@ class FlowiqStudio {
     $('zoom-in').addEventListener('click', () => this.setZoom(this.zoom + 0.1));
     $('zoom-out').addEventListener('click', () => this.setZoom(this.zoom - 0.1));
     $('zoom-fit').addEventListener('click', () => this.fitStage(true));
+    $('camera-reset').addEventListener('click', () => this.resetCamera());
     $('save-project').addEventListener('click', () => this.saveProject().catch(() => {}));
     $('add-assets').addEventListener('click', () => $('asset-upload').click());
     $('asset-upload').addEventListener('change', guarded(event => this.uploadAssets(event.target.files)));
@@ -782,6 +784,8 @@ class FlowiqStudio {
       historyRecorded: false,
       id: node.id, pointerId: event.pointerId, mode, direction: resize,
       startX: event.clientX, startY: event.clientY,
+      pointerBasisX: this.screenDeltaToParent(target, 1, 0),
+      pointerBasisY: this.screenDeltaToParent(target, 0, 1),
       x: Number(node.props.position.x.offset) || 0, y: Number(node.props.position.y.offset) || 0,
       left: target.offsetLeft - (target.offsetWidth * node.props.anchorPoint.x), top: target.offsetTop - (target.offsetHeight * node.props.anchorPoint.y),
       width: target.offsetWidth || 1, height: target.offsetHeight || 1,
@@ -791,13 +795,17 @@ class FlowiqStudio {
       startAngle, moved: false
     };
     target.setPointerCapture?.(event.pointerId);
+    $('scene').classList.add('is-camera-interacting');
     const move = moveEvent => {
       const drag = this.drag;
       if (!drag || moveEvent.pointerId !== drag.pointerId) return;
       target = $('scene').querySelector('[data-node-id="' + CSS.escape(drag.id) + '"]') || target;
-      const delta = this.screenDeltaToParent(target, moveEvent.clientX - drag.startX, moveEvent.clientY - drag.startY);
-      const dx = delta.x;
-      const dy = delta.y;
+      const screenDx = moveEvent.clientX - drag.startX;
+      const screenDy = moveEvent.clientY - drag.startY;
+      // A base de conversão fica congelada no início do gesto. O rastreamento
+      // pode mover/zoomar a câmera sem alterar a escala do arraste em andamento.
+      const dx = drag.pointerBasisX.x * screenDx + drag.pointerBasisY.x * screenDy;
+      const dy = drag.pointerBasisX.y * screenDx + drag.pointerBasisY.y * screenDy;
       if (Math.abs(dx) + Math.abs(dy) > 2) drag.moved = true;
       if (!drag.moved) return;
       if (!drag.historyRecorded) { this.history.checkpoint(this.historySnapshot()); drag.historyRecorded = true; }
@@ -864,6 +872,7 @@ class FlowiqStudio {
       window.removeEventListener('pointercancel', end);
       const changed = this.drag.moved;
       this.drag = null;
+      $('scene').classList.remove('is-camera-interacting');
       this.clearAlignmentGuides();
       if (changed) this.scheduleSave();
       this.renderEditor();
@@ -905,9 +914,25 @@ class FlowiqStudio {
 
   applyCameraOffset() {
     const world = $('scene').querySelector('.scene-world');
-    if (!world) return;
-    world.style.transformOrigin = '50% 50%';
-    world.style.transform = 'translate3d(' + this.cameraOffset.x + 'px,' + this.cameraOffset.y + 'px,0) scale(' + this.zoom + ')';
+    if (world) {
+      world.style.transformOrigin = '50% 50%';
+      world.style.transform = 'translate3d(' + this.cameraOffset.x + 'px,' + this.cameraOffset.y + 'px,0) scale(' + this.zoom + ')';
+    }
+    const reset = $('camera-reset');
+    if (reset) reset.hidden = !this.cameraEscaped && Math.abs(this.cameraOffset.x) < 1 && Math.abs(this.cameraOffset.y) < 1 && Math.abs(this.zoom - 1) < 0.01;
+  }
+
+  resetCamera() {
+    this.cameraTracking = false;
+    this.cameraTrackingId = null;
+    this.cameraEscaped = false;
+    this.inspectorCameraSnapshot = null;
+    this.cameraOffset = { x: 0, y: 0 };
+    this.zoom = 1;
+    $('scene').classList.remove('is-camera-tracking');
+    this.applyCameraOffset();
+    this.renderTreePanel();
+    $('zoom-value').textContent = '100%';
   }
 
   trackSelectedObject() {
@@ -918,31 +943,54 @@ class FlowiqStudio {
     this.cameraTrackFrame = requestAnimationFrame(() => {
       this.cameraTrackFrame = 0;
       const viewport = $('stage-viewport');
-      const panel = this.store.state.panel === 'inspector'
-        ? document.querySelector('#screen-editor .inspector-panel')
-        : this.store.state.panel === 'explorer' ? document.querySelector('#screen-editor .explorer-panel') : null;
       const target = $('scene').querySelector('[data-node-id="' + CSS.escape(targetId) + '"]');
       if (!viewport || !target || (!this.cameraTracking && !(this.store.state.panel === 'inspector' && this.inspectorCameraSnapshot)) || (this.cameraTracking && this.cameraTrackingId !== targetId)) return;
-      const stageRect = viewport.getBoundingClientRect();
-      const visible = { left: stageRect.left + 10, right: stageRect.right - 10, top: stageRect.top + 10, bottom: stageRect.bottom - 10 };
-      if (panel) {
-        const panelRect = panel.getBoundingClientRect();
-        const overlapsStage = panelRect.left < stageRect.right && panelRect.right > stageRect.left && panelRect.top < stageRect.bottom && panelRect.bottom > stageRect.top;
-        if (overlapsStage) visible.bottom = Math.min(visible.bottom, panelRect.top - 10);
+
+      const stage = viewport.getBoundingClientRect();
+      const visible = { left: stage.left + 12, right: stage.right - 12, top: stage.top + 12, bottom: stage.bottom - 12 };
+      if (this.store.state.panel === 'inspector') {
+        const panel = document.querySelector('#screen-editor .inspector-panel');
+        const panelRect = panel?.getBoundingClientRect();
+        if (panelRect && panelRect.left < stage.right && panelRect.right > stage.left && panelRect.top < stage.bottom && panelRect.bottom > stage.top) {
+          visible.bottom = Math.min(visible.bottom, panelRect.top - 10);
+        }
       }
+
+      let rect = target.getBoundingClientRect();
       const availableWidth = Math.max(1, visible.right - visible.left);
       const availableHeight = Math.max(1, visible.bottom - visible.top);
-      if (availableHeight < 40) return;
-      let rect = target.getBoundingClientRect();
+      if (availableWidth < 40 || availableHeight < 40) return;
+
+      // Objetos maiores que a área útil recebem zoom-out, sem alterar seu layout lógico.
       const fit = Math.min(1, (availableWidth - 24) / Math.max(1, rect.width), (availableHeight - 24) / Math.max(1, rect.height));
       if (fit < 0.995 && this.zoom > 0.25) {
         this.setZoom(Math.max(0.25, this.zoom * fit));
         rect = target.getBoundingClientRect();
       }
-      const centerX = (visible.left + visible.right) / 2;
-      const centerY = (visible.top + visible.bottom) / 2;
-      this.cameraOffset.x += centerX - (rect.left + rect.right) / 2;
-      this.cameraOffset.y += centerY - (rect.top + rect.bottom) / 2;
+
+      const outsideX = Math.max(0, visible.left - rect.left) + Math.max(0, rect.right - visible.right);
+      const outsideY = Math.max(0, visible.top - rect.top) + Math.max(0, rect.bottom - visible.bottom);
+      const outsideRatio = Math.max(outsideX / Math.max(1, rect.width), outsideY / Math.max(1, rect.height));
+      let dx = 0, dy = 0;
+      if (rect.left < visible.left) dx = visible.left - rect.left;
+      else if (rect.right > visible.right) dx = visible.right - rect.right;
+      if (rect.top < visible.top) dy = visible.top - rect.top;
+      else if (rect.bottom > visible.bottom) dy = visible.bottom - rect.bottom;
+      if (!dx && !dy) return;
+
+      const limitX = Math.max(0, (visible.right - visible.left) * 0.3);
+      const limitY = Math.max(0, (visible.bottom - visible.top) * 0.3);
+      const nextX = this.cameraOffset.x + dx;
+      const nextY = this.cameraOffset.y + dy;
+      const exceedsSafeFrame = Math.abs(nextX) > limitX || Math.abs(nextY) > limitY;
+      if (exceedsSafeFrame && outsideRatio <= 0.3) {
+        this.cameraOffset.x = Math.max(-limitX, Math.min(limitX, nextX));
+        this.cameraOffset.y = Math.max(-limitY, Math.min(limitY, nextY));
+      } else {
+        this.cameraOffset.x = nextX;
+        this.cameraOffset.y = nextY;
+        if (exceedsSafeFrame && outsideRatio > 0.3) this.cameraEscaped = true;
+      }
       this.applyCameraOffset();
     });
   }
@@ -952,6 +1000,7 @@ class FlowiqStudio {
     if (resetZoom) {
       this.zoom = 1;
       this.cameraOffset = { x: 0, y: 0 };
+      this.cameraEscaped = false;
       this.applyCameraOffset();
     }
     const size = this.getStageSize();
