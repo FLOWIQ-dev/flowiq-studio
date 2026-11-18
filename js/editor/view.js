@@ -184,8 +184,8 @@ export function renderTree(container, scene, selectedId, { search = '', expanded
 export function renderInspector(container, node, { onChange, onDelete, onDuplicate, assets = [], onAsset, events = [], nodes = [], onEventSave } = {}) {
   const previousScrollTop = container.scrollTop;
   container.replaceChildren();
-  const toolbar = container.closest('.inspector-panel')?.querySelector('.inspector-toolbar-actions');
-  if (toolbar) { toolbar.replaceChildren(); toolbar.hidden = true; }
+  const toolbarHost = container.closest('.inspector-panel')?.querySelector('.inspector-toolbar-actions');
+  if (toolbarHost) { toolbarHost.replaceChildren(); toolbarHost.hidden = true; }
   if (!node) {
     container.append(el('p', 'inspector-empty', 'Selecione um objeto no palco ou na hierarquia para editar suas propriedades.'));
     return;
