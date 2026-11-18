@@ -378,3 +378,21 @@ test('UIBackdrop can only exist once as a leaf child of a Frame', () => {
   const label = scene.create('TextLabel');
   assert.throws(() => scene.reparent(modifier.id, label.id), /filho de um Frame/);
 });
+
+
+test('Frame backdrop filtering is applied to the translucent Frame surface, not an isolated child layer', async () => {
+  const view = await readFile(new URL('../js/editor/view.js', import.meta.url), 'utf8');
+  assert.match(view, /item\.style\.backdropFilter = backdropVisible/);
+  assert.match(view, /item\.style\.backgroundColor = fillColor/);
+  assert.match(view, /item\.style\.backgroundImage = 'linear-gradient/);
+  assert.doesNotMatch(view, /el\('div', 'scene-backdrop-layer/);
+});
+
+test('ImageLabel reuses object URLs and DOM nodes across scene renders', async () => {
+  const view = await readFile(new URL('../js/editor/view.js', import.meta.url), 'utf8');
+  assert.match(view, /container\._assetObjectUrls/);
+  assert.match(view, /cached\.blob !== asset\.blob/);
+  assert.match(view, /existingNodes\.get\(node\.id\)/);
+  assert.match(view, /existing \? existing/);
+  assert.doesNotMatch(view, /for \(const url of container\._objectUrls/);
+});
