@@ -587,7 +587,7 @@ test('TextLabel typography is focused: useful fonts and independent weights, no 
   assert.ok(!('textStrokeColor3' in label.props));
   assert.ok(!('textStrokeTransparency' in label.props));
   const view = await readFile(new URL('../js/editor/view.js', import.meta.url), 'utf8');
-  assert.match(view, /fontWeight = \[400, 500, 600, 700\]/);
+  assert.match(view, /weight = \[400, 500, 600, 700\]/);
   assert.match(view, /content\.style\.fontWeight = String\(weight\)/);
   assert.doesNotMatch(view, /webkitTextStroke|textStrokeTransparency|FONT_WEIGHT/);
 });
