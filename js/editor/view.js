@@ -133,6 +133,47 @@ export function renderScene(container, scene, { selectedId = null, preview = fal
   for (const id of scene.roots) build(id, world, rootWidth, rootHeight);
 }
 
+export function updateSceneLayout(container, scene, sceneSize = { width: 960, height: 640 }) {
+  const rootWidth = Math.max(1, Number(sceneSize.width) || 960);
+  const rootHeight = Math.max(1, Number(sceneSize.height) || 640);
+  const measure = (node, parentWidth, parentHeight) => {
+    const layout = resolveNodeLayout(node, parentWidth, parentHeight);
+    const automatic = node.props.automaticSize || 'None';
+    if (automatic !== 'None' && node.children.length) {
+      for (let pass = 0; pass < 4; pass++) {
+        let contentWidth = 0, contentHeight = 0;
+        for (const childId of node.children) {
+          const child = scene.get(childId);
+          if (!child) continue;
+          const bounds = measure(child, layout.width, layout.height);
+          contentWidth = Math.max(contentWidth, bounds.x + bounds.width);
+          contentHeight = Math.max(contentHeight, bounds.y + bounds.height);
+        }
+        if (automatic === 'X' || automatic === 'XY') layout.width = Math.max(1, contentWidth);
+        if (automatic === 'Y' || automatic === 'XY') layout.height = Math.max(1, contentHeight);
+        layout.x = parentWidth * node.props.position.x.scale + node.props.position.x.offset - layout.width * node.props.anchorPoint.x;
+        layout.y = parentHeight * node.props.position.y.scale + node.props.position.y.offset - layout.height * node.props.anchorPoint.y;
+      }
+    }
+    return layout;
+  };
+  const visit = (id, parentElement, parentWidth, parentHeight) => {
+    const node = scene.get(id);
+    const element = parentElement.querySelector(':scope > [data-node-id="' + CSS.escape(id) + '"]');
+    if (!node || !element) return;
+    const layout = measure(node, parentWidth, parentHeight);
+    const p = node.props;
+    element.style.left = (layout.x + layout.width * p.anchorPoint.x) + 'px';
+    element.style.top = (layout.y + layout.height * p.anchorPoint.y) + 'px';
+    element.style.width = layout.width + 'px';
+    element.style.height = layout.height + 'px';
+    element.style.transform = 'translate(' + (-p.anchorPoint.x * 100) + '%,' + (-p.anchorPoint.y * 100) + '%) rotate(' + (Number(p.rotation) || 0) + 'deg)';
+    const children = element.querySelector(':scope > .scene-children');
+    if (children) for (const childId of node.children) visit(childId, children, layout.width, layout.height);
+  };
+  for (const id of scene.roots) visit(id, container.querySelector('.scene-world'), rootWidth, rootHeight);
+}
+
 export function renderTree(container, scene, selectedId, { search = '', expanded = new Set(), onSelect = () => {}, onToggle = () => {} } = {}) {
   container.replaceChildren();
   const list = el('div', 'tree-list');
