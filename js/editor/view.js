@@ -122,7 +122,8 @@ export function renderScene(container, scene, { selectedId = null, preview = fal
         if (effect === 'Blur') {
           if (backdropVisible && tintAlpha > 0) item.style.backgroundImage = 'linear-gradient(rgba(' + tintRgb + ',' + tintAlpha + '),rgba(' + tintRgb + ',' + tintAlpha + '))';
         } else {
-          glassSurface = el('div', 'scene-effect-surface scene-effect-' + effect.toLowerCase());
+          const effectClass = effect === 'Prism' ? 'scene-effect-prism' : effect === 'Emboss' ? 'scene-effect-emboss' : 'scene-effect-holographic';
+          glassSurface = el('div', 'scene-effect-surface ' + effectClass);
           glassSurface.setAttribute('aria-hidden', 'true');
           glassSurface.style.borderRadius = frameRadius + 'px';
           const intensityKey = effect === 'Prism' ? 'prismIntensity' : effect === 'Emboss' ? 'embossDepth' : 'holographicIntensity';
