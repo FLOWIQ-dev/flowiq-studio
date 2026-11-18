@@ -155,7 +155,7 @@ test('service worker precaches every module used by the new application', async 
 
 
 test('Inspector property schemas are class-based and extensible', () => {
-  assert.equal(PROPERTY_SCHEMA_VERSION, 9);
+  assert.equal(PROPERTY_SCHEMA_VERSION, 10);
   const frame = getPropertySchema('Frame');
   assert.ok(frame.sections.some(section => section.title === 'Data'));
   const frameKeys = frame.sections.flatMap(section => section.fields.map(field => field.key));
@@ -356,6 +356,7 @@ test('UIBackdrop is a child pseudo-instance with effect settings and renders thr
   assert.ok(schema.includes('LiquidGlass'));
   assert.ok(schema.includes("{ value: 'Blur', label: 'Blur' }"));
   assert.ok(!schema.includes("value: 'FrostedGlass'"));
+  assert.ok(!schema.includes("value: 'Acrylic'"));
   assert.ok(view.includes("child?.type === 'UIBackdrop'"));
   assert.ok(view.includes('backdropVisible'));
   assert.ok(view.includes('item.style.backdropFilter'));
@@ -366,25 +367,24 @@ test('UIBackdrop is a child pseudo-instance with effect settings and renders thr
 });
 
 
-test('UIBackdrop has unique effects, full LiquidGlass blur, and a parent-shaped refraction map', async () => {
+test('UIBackdrop exposes only Blur and LiquidGlass with a safe parent-clipped renderer', async () => {
   const model = await readFile(new URL('../js/data/model.js', import.meta.url), 'utf8');
   const schema = await readFile(new URL('../js/editor/property-schema.js', import.meta.url), 'utf8');
   const view = await readFile(new URL('../js/editor/view.js', import.meta.url), 'utf8');
-  const html = await readFile(new URL('../index.html', import.meta.url), 'utf8');
   const effectBlock = schema.slice(schema.indexOf("registerPropertySchema('UIBackdrop'"));
   assert.equal((effectBlock.match(/\{ value: 'Blur', label: 'Blur' \}/g) || []).length, 1);
+  assert.equal((effectBlock.match(/\{ value: 'LiquidGlass', label: 'LiquidGlass' \}/g) || []).length, 1);
+  assert.doesNotMatch(effectBlock, /Acrylic/);
   assert.match(effectBlock, /slider\('blur', 'Blur', 0, 40, 0\.5\)/);
   assert.match(model, /effect: 'Blur', blur: 14/);
-  assert.match(model, /radius: 0/);
-  assert.match(view, /function createLensMapDataUrl\(width, height, radius\)/);
-  assert.match(view, /feDisplacementMap/);
-  assert.match(view, /appendLensFilter\(filterDefs, node\.id, layout\.width, layout\.height, frameRadius, backdrop\.refraction\)/);
-  assert.match(view, /item\.style\.borderRadius = frameRadius \+ 'px'/);
-  assert.match(view, /'blur\(' \+ blur \+ 'px\)'/);
-  assert.match(view, /new ResizeObserver\(refreshLensMap\)/);
-  assert.doesNotMatch(view, /feTurbulence|fractalNoise/);
-  assert.match(html, /2026\.11\.18\.134/);
+  assert.match(view, /item\.style\.backdropFilter = backdropVisible/);
+  assert.match(view, /item\.style\.boxShadow = 'none'/);
+  assert.match(view, /scene-glass-surface/);
+  assert.match(view, /lensIntensity/);
+  assert.doesNotMatch(view, /feDisplacementMap|feImage|createLensMapDataUrl|appendLensFilter/);
+  assert.doesNotMatch(view, /0 5px 16px/);
 });
+
 
 test('UIBackdrop can only exist once as a leaf child of a Frame', () => {
   const scene = new Scene();
@@ -404,7 +404,7 @@ test('Frame backdrop filtering is applied to the translucent Frame surface, not 
   assert.match(view, /item\.style\.backdropFilter = backdropVisible/);
   assert.match(view, /item\.style\.backgroundColor = fillColor/);
   assert.match(view, /scene-glass-surface/);
-  assert.match(view, /feDisplacementMap/);
+  assert.doesNotMatch(view, /feDisplacementMap/);
   assert.doesNotMatch(view, /feTurbulence|fractalNoise/);
   assert.doesNotMatch(view, /el\('div', 'scene-backdrop-layer/);
 });
@@ -433,12 +433,12 @@ test('Opening the mobile Inspector does not dim the editable stage', async () =>
   assert.match(css, /editor-shell\[data-panel="inspector"\]::before\{opacity:0;pointer-events:none\}/);
 });
 
-test('LiquidGlass uses a shape-aware lens map and full blur range', async () => {
+test('LiquidGlass stays inside the parent shape and keeps the full blur range', async () => {
   const view = await readFile(new URL('../js/editor/view.js', import.meta.url), 'utf8');
   assert.match(view, /scene-glass-surface/);
   assert.match(view, /'blur\(' \+ blur \+ 'px\)'/);
-  assert.match(view, /createLensMapDataUrl/);
-  assert.match(view, /--glass-refraction/);
+  assert.doesNotMatch(view, /createLensMapDataUrl/);
+  assert.match(view, /lensIntensity/);
   assert.match(view, /item\.style\.borderRadius = frameRadius \+ 'px'/);
 });
 
