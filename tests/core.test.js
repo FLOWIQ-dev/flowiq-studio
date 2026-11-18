@@ -341,3 +341,21 @@ test('Frame AnchorPoint uses a compact editable two-value tuple and sliders have
   assert.match(app, /key === 'anchorPoint' && value && typeof value === 'object'/);
   assert.match(view, /type !== 'udim2' && type !== 'vector2'/);
 });
+
+
+test('Frame UIBackdrop pseudo-instance has independent effect settings and preserves the Frame background layer order', async () => {
+  const model = await readFile(new URL('../js/data/model.js', import.meta.url), 'utf8');
+  const schema = await readFile(new URL('../js/editor/property-schema.js', import.meta.url), 'utf8');
+  const view = await readFile(new URL('../js/editor/view.js', import.meta.url), 'utf8');
+  assert.match(model, /uiBackdrop: \{ enabled: false, effect: 'Blur'/);
+  assert.match(model, /key === 'uiBackdrop'/);
+  assert.match(schema, /title: 'UIBackdrop'/);
+  assert.match(schema, /LiquidGlass/);
+  assert.match(schema, /FrostedGlass/);
+  assert.match(view, /scene-backdrop-layer/);
+  assert.match(view, /scene-frame-fill/);
+  assert.match(view, /layer\.style\.backdropFilter/);
+  assert.match(view, /layer\.style\.webkitBackdropFilter/);
+  assert.ok(view.indexOf("item.append(layer)") < view.indexOf("item.append(fillLayer)"));
+  assert.match(view, /item\.append\(childContainer\)/);
+});
