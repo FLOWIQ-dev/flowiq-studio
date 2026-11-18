@@ -1342,3 +1342,5 @@ body[data-screen=editor]{
 .image-picker-card span{overflow:hidden;font-size:10px;text-overflow:ellipsis;white-space:nowrap}
 .image-picker-dialog>footer{justify-content:flex-end}
 @media(max-width:680px){.image-picker-dialog{max-height:86dvh;padding:12px}.image-picker-grid{grid-template-columns:repeat(auto-fill,minmax(92px,1fr))}.image-picker-card img{height:78px}}
+
+.image-picker-none-preview{display:grid;place-items:center;width:100%;height:92px;border-radius:3px;background:#0d1725;color:#8fa4bf;font-size:30px}
