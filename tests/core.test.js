@@ -244,6 +244,26 @@ test('editor recalculates nested descendants during live parent transforms', asy
 });
 
 
+
+test('camera tracking keeps drag coordinates stable while the camera moves', async () => {
+  const app = await readFile(new URL('../js/app.js', import.meta.url), 'utf8');
+  assert.match(app, /pointerBasisX: this\.screenDeltaToParent\(target, 1, 0\)/);
+  assert.match(app, /pointerBasisY: this\.screenDeltaToParent\(target, 0, 1\)/);
+  assert.match(app, /const dx = drag\.pointerBasisX\.x \* screenDx/);
+  assert.match(app, /is-camera-interacting/);
+});
+
+test('camera tracking respects stage bounds and exposes a reset action after overflow', async () => {
+  const app = await readFile(new URL('../js/app.js', import.meta.url), 'utf8');
+  const html = await readFile(new URL('../index.html', import.meta.url), 'utf8');
+  const css = await readFile(new URL('../css/studio.css', import.meta.url), 'utf8');
+  assert.match(app, /outsideRatio > 0\.3/);
+  assert.match(app, /\* 0\.3/);
+  assert.match(app, /resetCamera\(\)/);
+  assert.match(app, /this\.cameraEscaped = true/);
+  assert.match(html, /id="camera-reset"/);
+  assert.match(css, /camera-reset-button/);
+});
 test('Explorer camera tracking is independent from Inspector and preserves the final framing', async () => {
   const app = await readFile(new URL('../js/app.js', import.meta.url), 'utf8');
   const view = await readFile(new URL('../js/editor/view.js', import.meta.url), 'utf8');
