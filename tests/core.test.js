@@ -257,10 +257,10 @@ test('camera tracking respects stage bounds and exposes a reset action after ove
   const app = await readFile(new URL('../js/app.js', import.meta.url), 'utf8');
   const html = await readFile(new URL('../index.html', import.meta.url), 'utf8');
   const css = await readFile(new URL('../css/studio.css', import.meta.url), 'utf8');
-  assert.match(app, /outsideRatio > 0\.3/);
-  assert.match(app, /\* 0\.3/);
+  assert.match(app, /this\.cameraEscaped = Math\.abs\(this\.cameraOffset\.x\) > stageWidth \* 0\.3/);
+  assert.match(app, /if \(!this\.drag\)/);
   assert.match(app, /resetCamera\(\)/);
-  assert.match(app, /this\.cameraEscaped = true/);
+  assert.match(app, /this\.cameraEscaped = Math\.abs\(this\.cameraOffset\.x\)/);
   assert.match(html, /id="camera-reset"/);
   assert.match(css, /camera-reset-button/);
 });
@@ -280,11 +280,24 @@ test('Explorer camera tracking is independent from Inspector and preserves the f
   assert.ok(app.includes("this.cameraTracking ? 'Câmera acompanhando ' + node.name"));
   assert.ok(view.includes("translate3d(' + offsetX + 'px,' + offsetY + 'px,0) scale('"));
   assert.ok(css.includes('#screen-editor .stage-viewport{overflow:hidden}'));
-  assert.ok(css.includes('transition:transform 120ms linear'));
+  assert.ok(css.includes('transition:none!important'));
   const closePanel = app.slice(app.indexOf('  setPanel(name)'), app.indexOf('  toggleAddMenu()'));
   assert.ok(closePanel.includes("this.cameraTracking"));
   assert.ok(closePanel.includes('this.cameraOffset = { ...this.inspectorCameraSnapshot.offset }'));
   assert.ok(!closePanel.includes("this.cameraTracking = false"));
   const reset = app.slice(app.indexOf('  fitStage(resetZoom'), app.indexOf('  setPanel(name)'));
   assert.ok(reset.includes('cameraOffset = { x: 0, y: 0 }'));
+});
+
+
+test('camera tracking keeps the stage fixed and freezes zoom during object transforms', async () => {
+  const app = await readFile(new URL('../js/app.js', import.meta.url), 'utf8');
+  const css = await readFile(new URL('../css/studio.css', import.meta.url), 'utf8');
+  const tracking = app.slice(app.indexOf('  trackSelectedObject()'), app.indexOf('  fitStage(resetZoom'));
+  assert.match(tracking, /if \(!this\.drag\)/);
+  assert.match(tracking, /this\.cameraOffset = \{ x: this\.cameraOffset\.x \+ dx, y: this\.cameraOffset\.y \+ dy \}/);
+  assert.doesNotMatch(tracking, /stage\.style\.(?:width|height|transform)/);
+  assert.match(css, /stage-viewport\{[\s\S]*?overflow:hidden/);
+  assert.match(css, /#screen-editor #scene\{[\s\S]*?overflow:hidden;contain:layout paint/);
+  assert.match(css, /scene-world\{[\s\S]*?transition:none!important/);
 });
