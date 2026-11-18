@@ -106,7 +106,7 @@ export function renderScene(container, scene, { selectedId = null, preview = fal
       const effectEnabled = Boolean(backdrop.enabled) && backdropNode?.props.visible !== false;
       const backdropVisible = effectEnabled && alpha < 1 && effect === 'Blur';
       const blur = Math.max(0, Math.min(40, Number(backdrop.blur) || 0));
-      const saturation = Math.max(0, Math.min(3, Number(backdrop.saturation) || 1));
+      const saturation = Math.max(0, Math.min(3, Number(backdrop.saturation ?? 1)));
       const tint = String(backdrop.tintColor || '#dbeafe');
       const tintMatch = tint.match(/^#([0-9a-f]{6})$/i);
       const tintHex = tintMatch ? tintMatch[1] : 'dbeafe';
