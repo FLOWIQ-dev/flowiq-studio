@@ -214,7 +214,6 @@ export function renderScene(container, scene, { selectedId = null, preview = fal
     else if (node.type !== 'ImageLabel') item.textContent = node.type === 'Frame' ? '' : (p.text || node.name);
     const childContainer = existingChildContainer || el('div', 'scene-children');
     childContainer.replaceChildren();
-    if (preservedImageLayer) childContainer.append(preservedImageLayer);
     childContainer.style.position = 'absolute';
     childContainer.style.inset = '0';
     childContainer.style.overflow = node.type === 'Frame' && p.clipsDescendants ? 'hidden' : 'visible';
@@ -333,7 +332,7 @@ export function renderScene(container, scene, { selectedId = null, preview = fal
           tint.style.backgroundSize = '100% 100%';
         }
         layer.append(image, tint);
-        childContainer.prepend(layer);
+        item.insertBefore(layer, childContainer);
         item.dataset.assetId = asset.id;
       } else {
         childContainer.style.backgroundImage = 'none';
