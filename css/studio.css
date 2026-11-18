@@ -946,3 +946,36 @@ body[data-screen=editor]{
 }
 #screen-editor .scene-node>.rotate-handle svg{width:13px;height:13px}
 #screen-editor .scene-node>.rotate-handle:after{top:20px;left:9px;height:9px;background:rgba(112,178,255,.5)}
+
+
+/* Build 1.4.5: Roblox-like Properties hierarchy and centered title-bar actions. */
+.inspector-panel-title{display:grid;grid-template-columns:minmax(0,1fr) auto auto;align-items:center;gap:10px}
+.inspector-panel-title .panel-title-identity{min-width:0}
+.inspector-panel-title .panel-title-identity h2{margin:3px 0 0}
+.inspector-toolbar-actions{display:flex;align-items:center;justify-content:center;gap:6px}
+.inspector-toolbar-button{display:grid;place-items:center;width:34px;height:34px;min-width:34px;min-height:34px;padding:0;border:1px solid var(--line);border-radius:7px;background:var(--surface-2);color:var(--text)}
+.inspector-toolbar-button svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.inspector-toolbar-button.danger-text{color:#ff8585}
+.inspector-heading{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 0;border-bottom:1px solid var(--line-soft)}
+.inspector-heading .eyebrow{font-size:9px;color:#91a9c8}
+.inspector-heading strong{font-size:13px;font-weight:650}
+.inspector-filter{position:sticky;top:0;z-index:1;display:flex;align-items:center;gap:8px;margin:10px 0;padding:0 10px;height:36px;border:1px solid var(--line);border-radius:7px;background:var(--surface)}
+.inspector-filter svg{width:15px;height:15px;flex:none;fill:none;stroke:#91a9c8;stroke-width:1.7;stroke-linecap:round}
+.inspector-filter input{width:100%;min-width:0;border:0;outline:0;background:transparent;color:var(--text);font:12px Inter,ui-sans-serif,sans-serif}
+.property-group{display:block;padding:0;border-bottom:1px solid var(--line-soft)}
+.property-group-toggle{display:flex;align-items:center;gap:8px;width:100%;min-height:38px;padding:0 2px;border:0;background:transparent;color:#c4d2e4;text-align:left;font:650 11px Inter,ui-sans-serif,sans-serif}
+.property-group-toggle svg{width:13px;height:13px;fill:none;stroke:#91a9c8;stroke-width:1.7;transition:transform .16s}
+.property-group-toggle[aria-expanded="false"] svg{transform:rotate(-90deg)}
+.property-group-body{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px;padding:5px 0 13px}
+.property-group-body[hidden]{display:none}
+.property-group-body .property-field{min-width:0}
+.property-group-body .property-field[hidden]{display:none}
+.property-group-body .property-field:has(input[type="text"]){grid-column:1/-1}
+.property-group-body .property-field:has(input[type="range"]){grid-column:1/-1}
+.inspector-content>.property-group:first-of-type{margin-top:2px}
+.inspector-toolbar-actions[hidden]{display:none}
+@media(max-width:680px){
+ .inspector-panel-title{grid-template-columns:minmax(0,1fr) auto auto;gap:7px;padding:10px 9px}
+ .inspector-toolbar-button{width:32px;height:32px;min-width:32px;min-height:32px}
+ .inspector-filter{margin:8px 0}
+}
