@@ -174,7 +174,7 @@ export function renderScene(container, scene, { selectedId = null, preview = fal
         image.style.opacity = String(imageAlpha);
         const tint = el('div', 'scene-image-tint');
         tint.style.backgroundColor = p.imageColor3 || '#ffffff';
-        tint.style.opacity = String(imageAlpha);
+        tint.style.opacity = '1';
         tint.style.maskImage = 'url("' + cached.url + '")';
         tint.style.webkitMaskImage = tint.style.maskImage;
         if (p.fit === 'tile') {
