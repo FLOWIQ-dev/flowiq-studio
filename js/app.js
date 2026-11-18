@@ -418,7 +418,17 @@ class FlowiqStudio {
     if (!node) return;
     if (checkpoint) this.history.checkpoint(this.historySnapshot());
     if (key === 'name') node.name = String(value).trim().slice(0, 64) || node.type;
-    else if (key.includes('.')) {
+    else if (['position', 'size'].includes(key) && value && typeof value === 'object') {
+      const target = node.props[key];
+      for (const axis of ['x', 'y']) {
+        target[axis].scale = Math.max(key === 'size' ? 0 : -10, Math.min(10, Number(value[axis]?.scale) || 0));
+        target[axis].offset = key === 'size'
+          ? Math.max(1, Math.min(4000, Number(value[axis]?.offset) || 1))
+          : Math.max(-4000, Math.min(4000, Number(value[axis]?.offset) || 0));
+      }
+      if (key === 'position') { node.props.x = target.x.offset; node.props.y = target.y.offset; }
+      else { node.props.width = target.x.offset; node.props.height = target.y.offset; }
+    } else if (key.includes('.')) {
       const parts = key.split('.');
       const leaf = parts.pop();
       let target = node.props;
