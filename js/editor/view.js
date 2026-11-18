@@ -184,27 +184,31 @@ export function renderTree(container, scene, selectedId, { search = '', expanded
 export function renderInspector(container, node, { onChange, onDelete, onDuplicate, assets = [], onAsset, events = [], nodes = [], onEventSave } = {}) {
   const previousScrollTop = container.scrollTop;
   container.replaceChildren();
+  const toolbar = container.closest('.inspector-panel')?.querySelector('.inspector-toolbar-actions');
+  if (toolbar) { toolbar.replaceChildren(); toolbar.hidden = true; }
   if (!node) {
     container.append(el('p', 'inspector-empty', 'Selecione um objeto no palco ou na hierarquia para editar suas propriedades.'));
     return;
   }
   const heading = el('div', 'inspector-heading');
-  const identity = el('div', 'inspector-identity');
-  identity.append(el('span', 'eyebrow', node.type.toUpperCase()), el('strong', '', node.name));
-  const quickActions = el('div', 'inspector-quick-actions');
-  const duplicate = el('button', 'icon-button inspector-quick-button', 'Duplicar');
-  duplicate.type = 'button';
-  duplicate.title = 'Duplicar instância';
-  duplicate.setAttribute('aria-label', 'Duplicar instância');
-  duplicate.addEventListener('click', () => onDuplicate?.());
-  const removeQuick = el('button', 'icon-button inspector-quick-button danger-text', 'Excluir');
-  removeQuick.type = 'button';
-  removeQuick.title = 'Excluir instância';
-  removeQuick.setAttribute('aria-label', 'Excluir instância');
-  removeQuick.addEventListener('click', () => onDelete?.());
-  quickActions.append(duplicate, removeQuick);
-  heading.append(identity, quickActions);
+  heading.append(el('span', 'eyebrow', node.type.toUpperCase()), el('strong', '', node.name));
   container.append(heading);
+  const toolbar = container.closest('.inspector-panel')?.querySelector('.inspector-toolbar-actions');
+  if (toolbar) {
+    toolbar.replaceChildren();
+    const makeAction = (label, path, callback, danger = false) => {
+      const button = el('button', 'icon-button inspector-toolbar-button' + (danger ? ' danger-text' : ''));
+      button.type = 'button';
+      button.title = label;
+      button.setAttribute('aria-label', label);
+      button.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true">' + path + '</svg>';
+      button.addEventListener('click', () => callback?.());
+      toolbar.append(button);
+    };
+    makeAction('Duplicar instância', '<rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3"/>', onDuplicate);
+    makeAction('Excluir instância', '<path d="M4 7h16M10 11v6m4-6v6M6 7l1 13h10l1-13M9 7V4h6v3"/>', onDelete, true);
+    toolbar.hidden = false;
+  }
 
   const readValue = key => key.split('.').reduce((value, part) => value?.[part], key === 'name' ? { name: node.name } : node.props);
   const field = descriptor => {
@@ -250,13 +254,50 @@ export function renderInspector(container, node, { onChange, onDelete, onDuplica
     return wrap;
   };
 
+  const filterWrap = el('label', 'inspector-filter');
+  filterWrap.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 4.5 4.5"/></svg>';
+  const filter = el('input');
+  filter.type = 'search';
+  filter.placeholder = 'Filtrar propriedades';
+  filter.setAttribute('aria-label', 'Filtrar propriedades');
+  filterWrap.append(filter);
+  container.append(filterWrap);
   const schema = getPropertySchema(node.type);
+  const groups = [];
   schema.sections.forEach(definition => {
     const group = el('section', 'property-group');
     group.dataset.propertyCategory = definition.title;
-    group.append(el('h3', '', definition.title));
-    definition.fields.forEach(descriptor => group.append(field(descriptor)));
+    const toggle = el('button', 'property-group-toggle');
+    toggle.type = 'button';
+    toggle.setAttribute('aria-expanded', 'true');
+    toggle.innerHTML = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="m4 6 4 4 4-4"/></svg><span>' + definition.title + '</span>';
+    const body = el('div', 'property-group-body');
+    definition.fields.forEach(descriptor => {
+      const control = field(descriptor);
+      control.dataset.propertySearch = (descriptor.label + ' ' + descriptor.key + ' ' + definition.title).toLocaleLowerCase('pt-BR');
+      body.append(control);
+    });
+    toggle.addEventListener('click', () => {
+      const expanded = toggle.getAttribute('aria-expanded') === 'true';
+      toggle.setAttribute('aria-expanded', String(!expanded));
+      body.hidden = expanded;
+    });
+    group.append(toggle, body);
     container.append(group);
+    groups.push({ group, body, toggle });
+  });
+  filter.addEventListener('input', () => {
+    const term = filter.value.trim().toLocaleLowerCase('pt-BR');
+    groups.forEach(({ group, body, toggle }) => {
+      let matches = 0;
+      body.querySelectorAll('[data-property-search]').forEach(control => {
+        const visible = !term || control.dataset.propertySearch.includes(term);
+        control.hidden = !visible;
+        if (visible) matches++;
+      });
+      group.hidden = matches === 0;
+      if (term) { body.hidden = false; toggle.setAttribute('aria-expanded', 'true'); }
+    });
   });
 
   if (node.type === 'TextButton') {
