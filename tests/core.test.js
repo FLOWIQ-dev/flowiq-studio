@@ -182,6 +182,8 @@ test('ZIndex follows Roblox Sibling semantics with signed 32-bit integers', asyn
   const css = await readFile(new URL('../css/studio.css', import.meta.url), 'utf8');
   assert.match(app, /key === 'zIndex'\) node\.props\.zIndex = normalizeZIndex\(value\)/);
   assert.match(view, /item\.style\.zIndex = String\(normalizeZIndex\(p\.zIndex\)\)/);
+  assert.match(view, /item\.insertBefore\(layer, childContainer\)/);
+  assert.doesNotMatch(view, /childContainer\.prepend\(layer\)/);
   assert.match(css, /\.scene-node\{isolation:isolate\}/);
   assert.doesNotMatch(css, /\.scene-node\.scene-frame\{isolation:auto/);
   assert.match(view, /for \(const childId of node\.children\) build\(childId, childContainer/);
