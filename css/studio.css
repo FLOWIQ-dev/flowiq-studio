@@ -1359,3 +1359,6 @@ body[data-screen=editor]{
 /* Every GuiObject is its own stacking context: child ZIndex values cannot escape their parent. */
 .scene-node{isolation:isolate}
 .scene-node>.scene-children{z-index:2}
+
+#screen-editor .property-field textarea.property-textarea{width:100%;min-height:64px;resize:vertical;padding:7px 8px;border:1px solid rgba(145,160,181,.14);border-radius:4px;background:#0d1929;color:#dce8f6;font:inherit;font-size:11px;line-height:1.45;outline:none}
+#screen-editor .property-field textarea.property-textarea:focus{border-color:rgba(91,157,232,.55)}
