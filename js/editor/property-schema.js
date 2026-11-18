@@ -106,7 +106,7 @@ registerPropertySchema('*', { sections: [
 registerPropertySchema('Frame', { sections: [
   { title: 'Instance', fields: [text('name', 'Name')] },
   { title: 'Data', fields: [
-    ...layout,
+    ...layout.flatMap(section => section.fields),
     select('automaticSize', 'AutomaticSize', [
       { value: 'None', label: 'None' }, { value: 'X', label: 'X' },
       { value: 'Y', label: 'Y' }, { value: 'XY', label: 'XY' }
