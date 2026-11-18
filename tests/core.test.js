@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
-import { Scene, UDim2, resolveNodeLayout, COMPONENTS } from '../js/data/model.js';
+import { Scene, UDim2, resolveNodeLayout, COMPONENTS, normalizeZIndex } from '../js/data/model.js';
 import { History } from '../js/core/history.js';
 import { Store } from '../js/core/store.js';
 import { Runtime } from '../js/runtime/runtime.js';
@@ -154,8 +154,41 @@ test('service worker precaches every module used by the new application', async 
 });
 
 
+test('ZIndex follows Roblox Sibling semantics with signed 32-bit integers', async () => {
+  assert.equal(normalizeZIndex(1), 1);
+  assert.equal(normalizeZIndex(0), 0);
+  assert.equal(normalizeZIndex(-25), -25);
+  assert.equal(normalizeZIndex(4.7), 5);
+  assert.equal(normalizeZIndex(-4.7), -5);
+  assert.equal(normalizeZIndex(9e20), 2147483647);
+  assert.equal(normalizeZIndex(-9e20), -2147483648);
+  const scene = new Scene([
+    { id: 'parent', type: 'Frame', props: { zIndex: -50 }, children: [
+      { id: 'low', type: 'TextLabel', props: { zIndex: -100 } },
+      { id: 'high', type: 'ImageLabel', props: { zIndex: 100 } }
+    ] },
+    { id: 'button', type: 'TextButton', props: { zIndex: 0.2 } }
+  ]);
+  assert.equal(scene.get('parent').props.zIndex, -50);
+  assert.equal(scene.get('low').props.zIndex, -100);
+  assert.equal(scene.get('high').props.zIndex, 100);
+  assert.equal(scene.get('button').props.zIndex, 0);
+  const schema = ['Frame', 'TextButton', 'TextLabel', 'ImageLabel'].map(type =>
+    getPropertySchema(type).sections.flatMap(section => section.fields).find(field => field.key === 'zIndex')
+  );
+  assert.ok(schema.every(field => field?.min === -2147483648 && field?.max === 2147483647));
+  const app = await readFile(new URL('../js/app.js', import.meta.url), 'utf8');
+  const view = await readFile(new URL('../js/editor/view.js', import.meta.url), 'utf8');
+  const css = await readFile(new URL('../css/studio.css', import.meta.url), 'utf8');
+  assert.match(app, /key === 'zIndex'\) node\.props\.zIndex = normalizeZIndex\(value\)/);
+  assert.match(view, /item\.style\.zIndex = String\(normalizeZIndex\(p\.zIndex\)\)/);
+  assert.match(css, /\.scene-node\{isolation:isolate\}/);
+  assert.doesNotMatch(css, /\.scene-node\.scene-frame\{isolation:auto/);
+  assert.match(view, /for \(const childId of node\.children\) build\(childId, childContainer/);
+});
+
 test('Inspector property schemas are class-based and extensible', () => {
-  assert.equal(PROPERTY_SCHEMA_VERSION, 15);
+  assert.equal(PROPERTY_SCHEMA_VERSION, 16);
   const frame = getPropertySchema('Frame');
   assert.ok(frame.sections.some(section => section.title === 'Data'));
   const frameKeys = frame.sections.flatMap(section => section.fields.map(field => field.key));
