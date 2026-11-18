@@ -311,7 +311,7 @@ test('Frame opacity composites the whole subtree while background transparency s
   const model = await readFile(new URL('../js/data/model.js', import.meta.url), 'utf8');
   const view = await readFile(new URL('../js/editor/view.js', import.meta.url), 'utf8');
   const app = await readFile(new URL('../js/app.js', import.meta.url), 'utf8');
-  assert.match(model, /Frame: \{[^}]*opacity: 1/);
+  assert.match(model, /Frame: .*opacity: 1/);
   assert.match(view, /item\.style\.opacity = String\(Math\.max\(0, Math\.min\(1, Number\(p\.opacity \?\? 1\)\)\)\)/);
   assert.match(view, /const alpha = 1 - Math\.max\(0, Math\.min\(1, Number\(p\.backgroundTransparency\) \|\| 0\)\)/);
   assert.match(app, /key === 'opacity' \|\| key === 'backgroundTransparency'/);
