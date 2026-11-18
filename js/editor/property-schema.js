@@ -52,7 +52,7 @@ const textAppearance = [
   ])
 ];
 
-export const PROPERTY_SCHEMA_VERSION = 16;
+export const PROPERTY_SCHEMA_VERSION = 17;
 
 export function registerPropertySchema(className, schema, { replace = false } = {}) {
   if (typeof className !== 'string' || (className !== '*' && !/^[A-Z][A-Za-z0-9]*$/.test(className))) {
@@ -144,15 +144,20 @@ registerPropertySchema('TextLabel', { sections: [
     textarea('text', 'Text'),
     color('textColor3', 'TextColor3'),
     slider('textTransparency', 'TextTransparency', 0, 1, 0.01),
-    select('fontFace', 'FontFace', [
-      { value: 'Arial', label: 'Arial' }, { value: 'ArialBold', label: 'Arial Bold' },
-      { value: 'SourceSans', label: 'Source Sans' }, { value: 'SourceSansBold', label: 'Source Sans Bold' },
-      { value: 'Gotham', label: 'Gotham' }, { value: 'GothamMedium', label: 'Gotham Medium' },
-      { value: 'GothamBold', label: 'Gotham Bold' }, { value: 'Roboto', label: 'Roboto' },
-      { value: 'RobotoMono', label: 'Roboto Mono' }, { value: 'Ubuntu', label: 'Ubuntu' },
-      { value: 'Code', label: 'Code' }
+    select('fontFace', 'Fonte', [
+      { value: 'Arial', label: 'Arial' },
+      { value: 'Inter', label: 'Inter' },
+      { value: 'Roboto', label: 'Roboto' },
+      { value: 'Georgia', label: 'Georgia' },
+      { value: 'Monospace', label: 'Monoespaçada' }
     ]),
-    number('textSize', 'TextSize', 1, 100),
+    select('fontWeight', 'Espessura', [
+      { value: '400', label: 'Regular' },
+      { value: '500', label: 'Média' },
+      { value: '600', label: 'Seminegrito' },
+      { value: '700', label: 'Negrito' }
+    ]),
+    number('textSize', 'Tamanho', 1, 100),
     checkbox('textScaled', 'TextScaled'),
     checkbox('textWrapped', 'TextWrapped'),
     select('textXAlignment', 'TextXAlignment', [
@@ -162,17 +167,7 @@ registerPropertySchema('TextLabel', { sections: [
       { value: 'Top', label: 'Top' }, { value: 'Center', label: 'Center' }, { value: 'Bottom', label: 'Bottom' }
     ]),
     checkbox('richText', 'RichText'),
-    text('openTypeFeatures', 'OpenTypeFeatures'),
-    color('textStrokeColor3', 'TextStrokeColor3'),
-    slider('textStrokeTransparency', 'TextStrokeTransparency', 0, 1, 0.01),
-    slider('lineHeight', 'LineHeight', 1, 3, 0.05),
-    number('maxVisibleGraphemes', 'MaxVisibleGraphemes', -1, 10000),
-    select('textTruncate', 'TextTruncate', [
-      { value: 'None', label: 'None' }, { value: 'AtEnd', label: 'AtEnd' }, { value: 'SplitWord', label: 'SplitWord' }
-    ]),
-    select('textDirection', 'TextDirection', [
-      { value: 'Auto', label: 'Auto' }, { value: 'LeftToRight', label: 'LeftToRight' }, { value: 'RightToLeft', label: 'RightToLeft' }
-    ])
+    slider('lineHeight', 'Altura da linha', 1, 2, 0.05)
   ]},
   { title: 'Data', fields: [text('name', 'Name'), number('zIndex', 'ZIndex', -2147483648, 2147483647)] },
   ...layout
