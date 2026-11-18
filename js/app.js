@@ -941,6 +941,7 @@ class FlowiqStudio {
         zoom: this.zoom,
         cameraOffset: this.cameraOffset
       });
+      if (this.store.state.panel === 'inspector') this.trackSelectedObject();
     }
   }
 
