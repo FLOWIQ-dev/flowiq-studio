@@ -73,6 +73,7 @@ export function renderScene(container, scene, { selectedId = null, preview = fal
     item.style.transform = 'translate(' + (-p.anchorPoint.x * 100) + '%,' + (-p.anchorPoint.y * 100) + '%) rotate(' + (Number(p.rotation) || 0) + 'deg)';
     const isFrame = node.type === 'Frame';
     const backdropNode = isFrame ? node.children.map(childId => scene.get(childId)).find(child => child?.type === 'UIBackdrop') : null;
+    let glassSurface = null;
     item.style.background = isFrame ? 'transparent' : (p.background || 'transparent');
     item.style.opacity = String(Math.max(0, Math.min(1, Number(p.opacity ?? 1))));
     if (isFrame) {
@@ -96,28 +97,61 @@ export function renderScene(container, scene, { selectedId = null, preview = fal
       item.style.boxShadow = p.style === 'DropShadow' ? '0 5px 14px rgba(0,0,0,.28)' : 'none';
       const backdrop = backdropNode?.props || {};
       const backdropVisible = Boolean(backdrop.enabled) && backdropNode?.props.visible !== false && alpha < 1;
+      const liquidGlass = backdrop.effect === 'LiquidGlass';
+      const blurStrength = liquidGlass
+        ? Math.max(0, Math.min(12, Number(backdrop.blur) || 0)) * 0.32
+        : Math.max(0, Math.min(40, Number(backdrop.blur) || 0));
       item.style.backdropFilter = backdropVisible
-        ? 'blur(' + Math.max(0, Math.min(40, Number(backdrop.blur) || 0)) + 'px) saturate(' + Math.max(0, Math.min(3, Number(backdrop.saturation) || 0)) + ') brightness(' + Math.max(0.5, Math.min(1.5, Number(backdrop.brightness) || 1)) + ') contrast(' + Math.max(0.5, Math.min(1.5, Number(backdrop.contrast) || 1)) + ')'
+        ? 'blur(' + blurStrength + 'px) saturate(' + Math.max(0, Math.min(3, Number(backdrop.saturation) || 0)) + ') brightness(' + Math.max(0.5, Math.min(1.5, Number(backdrop.brightness) || 1)) + ') contrast(' + Math.max(0.5, Math.min(1.5, Number(backdrop.contrast) || 1)) + ')'
         : 'none';
       item.style.webkitBackdropFilter = item.style.backdropFilter;
+      item.style.backgroundImage = 'none';
       if (backdropVisible) {
         const tint = String(backdrop.tintColor || '#dbeafe');
         const tintMatch = tint.match(/^#([0-9a-f]{6})$/i);
         const tintHex = tintMatch ? tintMatch[1] : 'dbeafe';
         const tintRgb = [0,2,4].map(index => parseInt(tintHex.slice(index,index+2),16)).join(',');
         const tintAlpha = Math.max(0, Math.min(1, Number(backdrop.tintOpacity) || 0));
-        if (backdrop.effect === 'LiquidGlass') {
+        if (liquidGlass) {
           const shine = Math.max(0, Math.min(1, Number(backdrop.highlight) || 0));
           const refract = Math.max(0, Math.min(1, Number(backdrop.refraction) || 0));
-          item.style.backgroundImage = 'linear-gradient(145deg,rgba(255,255,255,' + (0.12 + shine * 0.2) + '),rgba(' + tintRgb + ',' + tintAlpha + ') 42%,rgba(255,255,255,' + (0.025 + refract * 0.07) + '))';
-          item.style.boxShadow = (p.style === 'DropShadow' ? '0 5px 14px rgba(0,0,0,.28),' : '') + 'inset 0 1px 0 rgba(255,255,255,' + (0.25 + shine * 0.45) + '),inset 0 -1px 0 rgba(255,255,255,' + (0.08 + refract * 0.12) + ')';
-        } else if (backdrop.effect === 'FrostedGlass') {
-          item.style.backgroundImage = 'linear-gradient(rgba(' + tintRgb + ',' + Math.max(tintAlpha, 0.16) + '),rgba(' + tintRgb + ',' + Math.max(tintAlpha, 0.16) + '))';
-        } else if (backdrop.effect === 'Acrylic') {
-          item.style.backgroundImage = 'linear-gradient(135deg,rgba(255,255,255,.09),rgba(' + tintRgb + ',' + tintAlpha + '))';
-        } else if (tintAlpha > 0) {
-          item.style.backgroundImage = 'linear-gradient(rgba(' + tintRgb + ',' + tintAlpha + '),rgba(' + tintRgb + ',' + tintAlpha + '))';
+          glassSurface = el('div', 'scene-glass-surface');
+          glassSurface.setAttribute('aria-hidden', 'true');
+          glassSurface.style.setProperty('--glass-tint', 'rgba(' + tintRgb + ',' + Math.max(0.035, tintAlpha * 0.42) + ')');
+          glassSurface.style.setProperty('--glass-shine', String(shine));
+          glassSurface.style.setProperty('--glass-refraction', String(refract));
+          glassSurface.style.backgroundImage = [
+            'radial-gradient(125% 90% at var(--glass-x, 18%) var(--glass-y, 0%), rgba(255,255,255,' + (0.16 + shine * 0.34) + '), transparent 48%)',
+            'radial-gradient(85% 70% at 100% 100%, rgba(255,255,255,' + (0.06 + refract * 0.15) + '), transparent 62%)',
+            'linear-gradient(132deg, rgba(255,255,255,' + (0.18 + shine * 0.12) + ') 0%, var(--glass-tint) 38%, rgba(255,255,255,' + (0.015 + refract * 0.055) + ') 68%, rgba(255,255,255,' + (0.12 + shine * 0.12) + ') 100%)'
+          ].join(',');
+          glassSurface.style.border = '1px solid rgba(255,255,255,' + (0.24 + shine * 0.24) + ')';
+          glassSurface.style.boxShadow = 'inset 0 1px 1px rgba(255,255,255,' + (0.42 + shine * 0.28) + '), inset 0 -1px 2px rgba(255,255,255,' + (0.10 + refract * 0.16) + '), inset 1px 0 1px rgba(255,255,255,.14), 0 8px 22px rgba(8,18,32,.12)';
+          item.style.boxShadow = (p.style === 'DropShadow' ? '0 5px 14px rgba(0,0,0,.28),' : '') + '0 10px 26px rgba(10,24,42,.12)';
+          item.onpointermove = event => {
+            const rect = item.getBoundingClientRect();
+            if (!rect.width || !rect.height) return;
+            glassSurface.style.setProperty('--glass-x', ((event.clientX - rect.left) / rect.width * 100).toFixed(1) + '%');
+            glassSurface.style.setProperty('--glass-y', ((event.clientY - rect.top) / rect.height * 100).toFixed(1) + '%');
+          };
+          item.onpointerleave = () => {
+            glassSurface.style.setProperty('--glass-x', '18%');
+            glassSurface.style.setProperty('--glass-y', '0%');
+          };
+        } else {
+          item.onpointermove = null;
+          item.onpointerleave = null;
+          if (backdrop.effect === 'FrostedGlass') {
+            item.style.backgroundImage = 'linear-gradient(rgba(' + tintRgb + ',' + Math.max(tintAlpha, 0.16) + '),rgba(' + tintRgb + ',' + Math.max(tintAlpha, 0.16) + '))';
+          } else if (backdrop.effect === 'Acrylic') {
+            item.style.backgroundImage = 'linear-gradient(135deg,rgba(255,255,255,.09),rgba(' + tintRgb + ',' + tintAlpha + '))';
+          } else if (tintAlpha > 0) {
+            item.style.backgroundImage = 'linear-gradient(rgba(' + tintRgb + ',' + tintAlpha + '),rgba(' + tintRgb + ',' + tintAlpha + '))';
+          }
         }
+      } else {
+        item.onpointermove = null;
+        item.onpointerleave = null;
       }
     } else {
       item.style.borderRadius = Math.max(0, Number(p.radius) || 0) + 'px';
@@ -127,17 +161,22 @@ export function renderScene(container, scene, { selectedId = null, preview = fal
     item.style.fontSize = Math.max(8, Number(p.fontSize) || 16) + 'px';
     item.style.textAlign = p.textAlign || 'center';
     item.style.fontWeight = p.fontWeight || '500';
-    item.textContent = node.type === 'Frame' ? '' : (p.text || (node.type === 'ImageLabel' ? '' : node.name));
-    const childContainer = item.querySelector(':scope > .scene-children') || el('div', 'scene-children');
+    const existingChildContainer = item.querySelector(':scope > .scene-children');
+    const preservedImage = node.type === 'ImageLabel' ? existingChildContainer?.querySelector(':scope > .scene-image-content') : null;
+    if (node.type !== 'ImageLabel') item.textContent = node.type === 'Frame' ? '' : (p.text || node.name);
+    const childContainer = existingChildContainer || el('div', 'scene-children');
     childContainer.replaceChildren();
+    if (preservedImage) childContainer.append(preservedImage);
     childContainer.style.position = 'absolute';
     childContainer.style.inset = '0';
     childContainer.style.overflow = node.type === 'Frame' && p.clipsDescendants ? 'hidden' : 'visible';
     if (isFrame) childContainer.style.zIndex = '2';
     for (const child of Array.from(item.children)) if (child !== childContainer) child.remove();
+    if (glassSurface) item.append(glassSurface);
     item.append(childContainer);
     if (node.type === 'ImageLabel') {
       const asset = assetMap.get(p.assetId);
+      item.style.backgroundImage = 'none';
       if (asset?.blob) {
         usedAssetIds.add(asset.id);
         let cached = assetUrls.get(asset.id);
@@ -146,17 +185,17 @@ export function renderScene(container, scene, { selectedId = null, preview = fal
           cached = { blob: asset.blob, url: URL.createObjectURL(asset.blob) };
           assetUrls.set(asset.id, cached);
         }
-        const imageUrl = 'url("' + cached.url + '")';
-        if (item.dataset.imageUrl !== cached.url) {
-          item.style.backgroundImage = imageUrl;
-          item.dataset.imageUrl = cached.url;
+        const image = preservedImage || el('img', 'scene-image-content');
+        if (image.dataset.assetUrl !== cached.url) {
+          image.src = cached.url;
+          image.dataset.assetUrl = cached.url;
         }
-        item.style.backgroundSize = p.fit || 'cover';
-        item.style.backgroundPosition = 'center';
-        item.style.backgroundRepeat = 'no-repeat';
+        image.alt = node.name;
+        image.draggable = false;
+        image.style.objectFit = p.fit || 'cover';
+        childContainer.prepend(image);
         item.dataset.assetId = asset.id;
       } else {
-        item.style.backgroundImage = 'none';
         delete item.dataset.assetId;
         delete item.dataset.imageUrl;
       }
