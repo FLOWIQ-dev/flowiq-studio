@@ -4,12 +4,12 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#101827">
-  <meta name="flowiq-build" content="2026.11.18.137">
+  <meta name="flowiq-build" content="2026.11.18.138">
   <meta name="description" content="Flowiq Studio, editor mobile-first de interfaces 2D.">
   <title>Flowiq Studio</title>
   <link rel="manifest" href="./manifest.json">
   <link rel="icon" href="./assets/icon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="./css/studio.css?v=2026.11.18.137">
+  <link rel="stylesheet" href="./css/studio.css?v=2026.11.18.138">
 </head>
 <body>
   <main id="screen-home" class="screen home-screen">
@@ -80,6 +80,13 @@
     </nav>
     <section class="console-dock"><div class="console-heading"><strong>Console</strong><span>Saída do Studio</span></div><div id="console-log" class="console-log"><p class="log-line">Studio pronto.</p></div></section>
     <input id="image-picker" type="file" accept="image/*" hidden>
+    <div id="image-picker-modal" class="image-picker-modal" hidden>
+      <section class="image-picker-dialog" role="dialog" aria-modal="true" aria-labelledby="image-picker-title">
+        <header><div><span class="eyebrow">BIBLIOTECA</span><h2 id="image-picker-title">Escolher imagem</h2></div><button class="icon-button" type="button" data-close-image-picker aria-label="Fechar">×</button></header>
+        <div id="image-picker-grid" class="image-picker-grid"></div>
+        <footer><button class="button subtle" type="button" data-upload-image-picker>Adicionar imagem</button><button class="button subtle" type="button" data-close-image-picker>Cancelar</button></footer>
+      </section>
+    </div>
   </main>
 
   <main id="screen-library" class="screen secondary-screen" hidden>
@@ -109,12 +116,12 @@
       });
       window.addEventListener('load', async () => {
         try {
-          const registration = await navigator.serviceWorker.register('./sw.js?v=2026.11.18.137', { updateViaCache: 'none' });
+          const registration = await navigator.serviceWorker.register('./sw.js?v=2026.11.18.138', { updateViaCache: 'none' });
           await registration.update();
         } catch (error) { console.warn('Flowiq: cache offline indisponível.', error); }
       });
     }
   </script>
-  <script type="module" src="./js/app.js?v=2026.11.18.137"></script>
+  <script type="module" src="./js/app.js?v=2026.11.18.138"></script>
 </body>
 </html>
