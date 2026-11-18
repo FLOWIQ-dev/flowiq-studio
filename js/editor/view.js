@@ -16,6 +16,100 @@ const el = (tag, className, text) => {
   return node;
 };
 
+
+const lensMapCache = new Map();
+const SVG_NS = 'http://www.w3.org/2000/svg';
+const canUseSvgBackdropRefraction = (() => {
+  const ua = typeof navigator === 'undefined' ? '' : navigator.userAgent || '';
+  const chromium = /(?:Chrome|Chromium|EdgA|SamsungBrowser|OPR)/.test(ua) && !/(?:CriOS|EdgiOS|iPhone|iPad|iPod)/.test(ua);
+  return chromium && typeof CSS !== 'undefined' && CSS.supports?.('backdrop-filter', 'url(#flowiq-glass-test)');
+})();
+
+function createLensMapDataUrl(width, height, radius) {
+  const safeWidth = Math.max(1, Number(width) || 1);
+  const safeHeight = Math.max(1, Number(height) || 1);
+  const aspect = safeWidth / safeHeight;
+  const mapWidth = Math.max(128, Math.min(512, Math.round(256 * Math.sqrt(aspect))));
+  const mapHeight = Math.max(128, Math.min(512, Math.round(256 / Math.sqrt(aspect))));
+  const radiusRatio = Math.max(0, Math.min(0.5, (Number(radius) || 0) / Math.min(safeWidth, safeHeight)));
+  const key = [aspect.toFixed(3), radiusRatio.toFixed(3)].join(':');
+  if (lensMapCache.has(key)) return lensMapCache.get(key);
+  const canvas = document.createElement('canvas');
+  canvas.width = mapWidth;
+  canvas.height = mapHeight;
+  const context = canvas.getContext('2d', { willReadFrequently: true });
+  if (!context) return '';
+  const image = context.createImageData(mapWidth, mapHeight);
+  const pixels = image.data;
+  const unit = Math.min(mapWidth, mapHeight);
+  const halfWidth = mapWidth / 2;
+  const halfHeight = mapHeight / 2;
+  const corner = radiusRatio * unit;
+  const edgeDepth = Math.max(5, unit * 0.105);
+  for (let y = 0; y < mapHeight; y++) {
+    for (let x = 0; x < mapWidth; x++) {
+      const px = x + 0.5 - halfWidth;
+      const py = y + 0.5 - halfHeight;
+      const qx = Math.abs(px) - (halfWidth - corner);
+      const qy = Math.abs(py) - (halfHeight - corner);
+      const ox = Math.max(0, qx);
+      const oy = Math.max(0, qy);
+      const outsideLength = Math.hypot(ox, oy);
+      const signedDistance = outsideLength + Math.min(Math.max(qx, qy), 0) - corner;
+      let nx = 0, ny = 0, edge = 0;
+      if (signedDistance <= 0) {
+        if (ox > 0 && oy > 0 && outsideLength > 0) {
+          nx = Math.sign(px) * ox / outsideLength;
+          ny = Math.sign(py) * oy / outsideLength;
+        } else if (qx > qy) nx = Math.sign(px);
+        else ny = Math.sign(py);
+        edge = Math.exp(Math.max(-18, signedDistance) / edgeDepth);
+      }
+      const index = (y * mapWidth + x) * 4;
+      pixels[index] = Math.max(0, Math.min(255, Math.round(128 - nx * edge * 118)));
+      pixels[index + 1] = Math.max(0, Math.min(255, Math.round(128 - ny * edge * 118)));
+      pixels[index + 2] = Math.round(edge * 255);
+      pixels[index + 3] = 255;
+    }
+  }
+  context.putImageData(image, 0, 0);
+  const url = canvas.toDataURL('image/png');
+  lensMapCache.set(key, url);
+  if (lensMapCache.size > 48) lensMapCache.delete(lensMapCache.keys().next().value);
+  return url;
+}
+
+function appendLensFilter(defs, nodeId, width, height, radius, refraction) {
+  const safeId = String(nodeId).replace(/[^a-zA-Z0-9_-]/g, '');
+  const filterId = 'flowiq-liquid-lens-' + safeId;
+  const filter = document.createElementNS(SVG_NS, 'filter');
+  filter.setAttribute('id', filterId);
+  filter.setAttribute('filterUnits', 'objectBoundingBox');
+  filter.setAttribute('primitiveUnits', 'objectBoundingBox');
+  filter.setAttribute('x', '-0.12');
+  filter.setAttribute('y', '-0.12');
+  filter.setAttribute('width', '1.24');
+  filter.setAttribute('height', '1.24');
+  filter.setAttribute('color-interpolation-filters', 'sRGB');
+  const map = document.createElementNS(SVG_NS, 'feImage');
+  map.setAttribute('x', '0');
+  map.setAttribute('y', '0');
+  map.setAttribute('width', '1');
+  map.setAttribute('height', '1');
+  map.setAttribute('preserveAspectRatio', 'none');
+  map.setAttribute('result', 'lensMap');
+  map.setAttribute('href', createLensMapDataUrl(width, height, radius));
+  const displacement = document.createElementNS(SVG_NS, 'feDisplacementMap');
+  displacement.setAttribute('in', 'SourceGraphic');
+  displacement.setAttribute('in2', 'lensMap');
+  displacement.setAttribute('scale', String(Math.max(0, Math.min(0.12, Number(refraction) * 0.12))));
+  displacement.setAttribute('xChannelSelector', 'R');
+  displacement.setAttribute('yChannelSelector', 'G');
+  filter.append(map, displacement);
+  defs.append(filter);
+  return { id: filterId, map };
+}
+
 export function renderScene(container, scene, { selectedId = null, preview = false, assets = [], onRun = () => {}, sceneSize = { width: 960, height: 640 }, zoom = 1, cameraOffset = { x: 0, y: 0 } } = {}) {
   const existingNodes = new Map(Array.from(container.querySelectorAll('.scene-world [data-node-id]')).map(item => [item.dataset.nodeId, item]));
   const assetUrls = container._assetObjectUrls || (container._assetObjectUrls = new Map());
@@ -33,7 +127,14 @@ export function renderScene(container, scene, { selectedId = null, preview = fal
   const offsetX = preview ? 0 : Number(cameraOffset?.x) || 0;
   const offsetY = preview ? 0 : Number(cameraOffset?.y) || 0;
   world.style.transform = preview ? 'scale(' + safeZoom + ')' : 'translate3d(' + offsetX + 'px,' + offsetY + 'px,0) scale(' + safeZoom + ')';
+  const filterSvg = document.createElementNS(SVG_NS, 'svg');
+  filterSvg.setAttribute('aria-hidden', 'true');
+  filterSvg.style.cssText = 'position:absolute;width:0;height:0;overflow:hidden;pointer-events:none';
+  const filterDefs = document.createElementNS(SVG_NS, 'defs');
+  filterSvg.append(filterDefs);
+  world.append(filterSvg);
   container.append(world);
+  const renderedNodeIds = new Set();
   const assetMap = new Map(assets.map(asset => [asset.id, asset]));
   const measureLayout = (node, parentWidth, parentHeight) => {
     const layout = resolveNodeLayout(node, parentWidth, parentHeight);
@@ -66,6 +167,7 @@ export function renderScene(container, scene, { selectedId = null, preview = fal
       : el(node.type === 'TextButton' && preview ? 'button' : 'div', 'scene-node scene-' + node.type.toLowerCase());
     item.className = 'scene-node scene-' + node.type.toLowerCase();
     item.dataset.nodeId = node.id;
+    renderedNodeIds.add(node.id);
     const layout = measureLayout(node, parentWidth, parentHeight);
     item.style.left = (layout.x + layout.width * p.anchorPoint.x) + 'px';
     item.style.top = (layout.y + layout.height * p.anchorPoint.y) + 'px';
@@ -93,6 +195,8 @@ export function renderScene(container, scene, { selectedId = null, preview = fal
       item.style.zIndex = String(Math.max(1, Math.min(10, Number(p.zIndex) || 1)));
       item.style.border = '0';
       item.style.outline = 'none';
+      const frameRadius = Math.max(0, Math.min(400, Number(p.radius) || 0));
+      item.style.borderRadius = frameRadius + 'px';
       item.style.backgroundColor = fillColor;
       item.style.backgroundImage = 'none';
       item.style.boxShadow = p.style === 'DropShadow' ? '0 5px 14px rgba(0,0,0,.28)' : 'none';
@@ -109,9 +213,37 @@ export function renderScene(container, scene, { selectedId = null, preview = fal
       const tintHex = tintMatch ? tintMatch[1] : 'dbeafe';
       const tintRgb = [0,2,4].map(index => parseInt(tintHex.slice(index,index+2),16)).join(',');
       const tintAlpha = Math.max(0, Math.min(1, Number(backdrop.tintOpacity) || 0));
-      item.style.backdropFilter = backdropVisible
-        ? 'blur(' + (liquidGlass ? Math.min(3.5, blur * 0.12) : blur) + 'px) saturate(' + saturation + ') brightness(' + brightness + ') contrast(' + contrast + ')'
-        : 'none';
+      let lensFilter = null;
+      if (backdropVisible && liquidGlass && canUseSvgBackdropRefraction && Number(backdrop.refraction) > 0) {
+        lensFilter = appendLensFilter(filterDefs, node.id, layout.width, layout.height, frameRadius, backdrop.refraction);
+        item._liquidGlassMapImage = lensFilter.map;
+        const refreshLensMap = () => {
+          const width = item.offsetWidth || layout.width;
+          const height = item.offsetHeight || layout.height;
+          const radius = Math.max(0, parseFloat(item.style.borderRadius) || 0);
+          const url = createLensMapDataUrl(width, height, radius);
+          if (url && item._liquidGlassMapImage) item._liquidGlassMapImage.setAttribute('href', url);
+        };
+        refreshLensMap();
+        if (typeof ResizeObserver !== 'undefined') {
+          if (!item._liquidGlassResizeObserver) {
+            item._liquidGlassResizeObserver = new ResizeObserver(refreshLensMap);
+            item._liquidGlassResizeObserver.observe(item);
+          }
+        }
+      } else {
+        item._liquidGlassMapImage = null;
+        item._liquidGlassResizeObserver?.disconnect();
+        item._liquidGlassResizeObserver = null;
+      }
+      const filterList = [
+        lensFilter ? 'url(#' + lensFilter.id + ')' : '',
+        'blur(' + blur + 'px)',
+        'saturate(' + saturation + ')',
+        'brightness(' + brightness + ')',
+        'contrast(' + contrast + ')'
+      ].filter(Boolean).join(' ');
+      item.style.backdropFilter = backdropVisible ? filterList : 'none';
       item.style.webkitBackdropFilter = item.style.backdropFilter;
       item.style.backgroundImage = 'none';
       if (backdropVisible) {
@@ -120,36 +252,28 @@ export function renderScene(container, scene, { selectedId = null, preview = fal
           const refraction = Math.max(0, Math.min(1, Number(backdrop.refraction) || 0));
           glassSurface = el('div', 'scene-glass-surface');
           glassSurface.setAttribute('aria-hidden', 'true');
-          glassSurface.style.setProperty('--glass-tint', 'rgba(' + tintRgb + ',' + Math.max(0.025, tintAlpha * 0.28) + ')');
+          glassSurface.style.borderRadius = frameRadius + 'px';
+          glassSurface.style.setProperty('--glass-tint', 'rgba(' + tintRgb + ',' + (tintAlpha * 0.28) + ')');
           glassSurface.style.setProperty('--glass-highlight', String(shine));
           glassSurface.style.setProperty('--glass-refraction', String(refraction));
           glassSurface.style.backgroundImage = [
-            'radial-gradient(ellipse 78% 42% at var(--glass-x, 22%) var(--glass-y, 0%), rgba(255,255,255,' + (0.035 + shine * 0.16) + '), transparent 72%)',
-            'linear-gradient(155deg, rgba(255,255,255,' + (0.07 + shine * 0.12) + ') 0%, rgba(255,255,255,0) 27%, var(--glass-tint) 58%, rgba(255,255,255,0.018) 100%)'
+            'radial-gradient(ellipse 82% 52% at 50% 0%, rgba(255,255,255,' + (shine * 0.18) + '), transparent 72%)',
+            'linear-gradient(155deg, rgba(255,255,255,' + (0.035 + shine * 0.10) + ') 0%, rgba(255,255,255,0) 32%, var(--glass-tint) 72%, rgba(255,255,255,0.012) 100%)'
           ].join(',');
-          const rim = 0.10 + refraction * 0.16 + shine * 0.08;
+          const rim = 0.055 + refraction * 0.10 + shine * 0.045;
           glassSurface.style.border = '1px solid rgba(255,255,255,' + rim + ')';
           glassSurface.style.boxShadow = [
-            'inset 0 1px 0 rgba(255,255,255,' + (0.16 + shine * 0.22) + ')',
-            'inset 0 -1px 0 rgba(12,24,42,' + (0.035 + refraction * 0.045) + ')',
-            'inset 1px 0 0 rgba(255,255,255,' + (0.035 + refraction * 0.07) + ')',
-            '0 7px 20px rgba(8,18,32,0.09)'
+            'inset 0 1px 0 rgba(255,255,255,' + (0.10 + shine * 0.18) + ')',
+            'inset 0 -1px 0 rgba(12,24,42,' + (0.025 + refraction * 0.035) + ')',
+            '0 5px 16px rgba(8,18,32,0.075)'
           ].join(',');
-          item.style.boxShadow = (p.style === 'DropShadow' ? '0 5px 14px rgba(0,0,0,.28),' : '') + '0 7px 20px rgba(8,18,32,.09)';
-          item.onpointermove = event => {
-            const rect = item.getBoundingClientRect();
-            if (!rect.width || !rect.height) return;
-            glassSurface.style.setProperty('--glass-x', ((event.clientX - rect.left) / rect.width * 100).toFixed(1) + '%');
-            glassSurface.style.setProperty('--glass-y', ((event.clientY - rect.top) / rect.height * 100).toFixed(1) + '%');
-          };
-          item.onpointerleave = () => {
-            glassSurface.style.setProperty('--glass-x', '22%');
-            glassSurface.style.setProperty('--glass-y', '0%');
-          };
+          item.style.boxShadow = (p.style === 'DropShadow' ? '0 5px 14px rgba(0,0,0,.28),' : '') + '0 5px 16px rgba(8,18,32,.075)';
+          item.onpointermove = null;
+          item.onpointerleave = null;
         } else {
           item.onpointermove = null;
           item.onpointerleave = null;
-          const overlayAlpha = effect === 'Blur' ? Math.max(tintAlpha, 0.16) : tintAlpha;
+          const overlayAlpha = tintAlpha;
           if (overlayAlpha > 0) {
             item.style.backgroundImage = 'linear-gradient(rgba(' + tintRgb + ',' + overlayAlpha + '),rgba(' + tintRgb + ',' + overlayAlpha + '))';
           }
@@ -227,6 +351,13 @@ export function renderScene(container, scene, { selectedId = null, preview = fal
     }
   };
   for (const id of scene.roots) build(id, world, rootWidth, rootHeight);
+  for (const [id, oldNode] of existingNodes) {
+    if (!renderedNodeIds.has(id)) {
+      oldNode._liquidGlassResizeObserver?.disconnect();
+      oldNode._liquidGlassResizeObserver = null;
+      oldNode._liquidGlassMapImage = null;
+    }
+  }
   for (const [assetId, cached] of assetUrls) {
     if (!usedAssetIds.has(assetId)) {
       URL.revokeObjectURL(cached.url);
