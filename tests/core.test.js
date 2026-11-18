@@ -155,7 +155,7 @@ test('service worker precaches every module used by the new application', async 
 
 
 test('Inspector property schemas are class-based and extensible', () => {
-  assert.equal(PROPERTY_SCHEMA_VERSION, 8);
+  assert.equal(PROPERTY_SCHEMA_VERSION, 9);
   const frame = getPropertySchema('Frame');
   assert.ok(frame.sections.some(section => section.title === 'Data'));
   const frameKeys = frame.sections.flatMap(section => section.fields.map(field => field.key));
@@ -366,17 +366,24 @@ test('UIBackdrop is a child pseudo-instance with effect settings and renders thr
 });
 
 
-test('UIBackdrop renames FrostedGlass to Blur and uses the former FrostedGlass material settings', async () => {
+test('UIBackdrop has unique effects, full LiquidGlass blur, and a parent-shaped refraction map', async () => {
   const model = await readFile(new URL('../js/data/model.js', import.meta.url), 'utf8');
   const schema = await readFile(new URL('../js/editor/property-schema.js', import.meta.url), 'utf8');
   const view = await readFile(new URL('../js/editor/view.js', import.meta.url), 'utf8');
   const html = await readFile(new URL('../index.html', import.meta.url), 'utf8');
-  assert.match(model, /merged\.effect === 'FrostedGlass'\) merged\.effect = 'Blur'/);
-  assert.match(schema, /value: 'Blur', label: 'Blur'/);
-  assert.match(schema, /effectOnly: \['LiquidGlass', 'Blur', 'Acrylic'\]/);
-  assert.match(view, /effect === 'Blur' \? Math\.max\(tintAlpha, 0\.16\)/);
-  assert.match(view, /UIBackdrop: '<path d="M12 2\.8/);
-  assert.match(html, /data-add-type="UIBackdrop"><b><svg viewBox="0 0 24 24"><path d="M12 2\.8/);
+  const effectBlock = schema.slice(schema.indexOf("registerPropertySchema('UIBackdrop'"));
+  assert.equal((effectBlock.match(/\{ value: 'Blur', label: 'Blur' \}/g) || []).length, 1);
+  assert.match(effectBlock, /slider\('blur', 'Blur', 0, 40, 0\.5\)/);
+  assert.match(model, /UIBackdrop: \{[^}]*effect: 'Blur'/);
+  assert.match(model, /radius: 0/);
+  assert.match(view, /function createLensMapDataUrl\(width, height, radius\)/);
+  assert.match(view, /feDisplacementMap/);
+  assert.match(view, /appendLensFilter\(filterDefs, node\.id, layout\.width, layout\.height, frameRadius, backdrop\.refraction\)/);
+  assert.match(view, /item\.style\.borderRadius = frameRadius \+ 'px'/);
+  assert.match(view, /'blur\(' \+ blur \+ 'px\)'/);
+  assert.match(view, /new ResizeObserver\(refreshLensMap\)/);
+  assert.doesNotMatch(view, /feTurbulence|fractalNoise/);
+  assert.match(html, /2026\.11\.18\.134/);
 });
 
 test('UIBackdrop can only exist once as a leaf child of a Frame', () => {
@@ -428,7 +435,7 @@ test('Opening the mobile Inspector does not dim the editable stage', async () =>
 test('LiquidGlass uses a distinct low-blur layered surface with touch-responsive highlights', async () => {
   const view = await readFile(new URL('../js/editor/view.js', import.meta.url), 'utf8');
   assert.match(view, /scene-glass-surface/);
-  assert.match(view, /Math\.min\(3\.5, blur \* 0\.12\)/);
+  assert.match(view, /'blur\(' \+ blur \+ 'px\)'/);
   assert.match(view, /item\.onpointermove/);
   assert.match(view, /--glass-x/);
   assert.match(view, /--glass-y/);
