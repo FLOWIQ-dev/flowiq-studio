@@ -52,7 +52,7 @@ const textAppearance = [
   ])
 ];
 
-export const PROPERTY_SCHEMA_VERSION = 7;
+export const PROPERTY_SCHEMA_VERSION = 8;
 
 export function registerPropertySchema(className, schema, { replace = false } = {}) {
   if (typeof className !== 'string' || (className !== '*' && !/^[A-Z][A-Za-z0-9]*$/.test(className))) {
@@ -166,15 +166,15 @@ registerPropertySchema('UIBackdrop', { sections: [
     { ...select('effect', 'Effect', [
       { value: 'Blur', label: 'Blur' },
       { value: 'LiquidGlass', label: 'LiquidGlass' },
-      { value: 'FrostedGlass', label: 'FrostedGlass' },
+      { value: 'Blur', label: 'Blur' },
       { value: 'Acrylic', label: 'Acrylic' }
     ]), enabledOnly: true },
     { ...slider('blur', 'Strength', 0, 40, 0.5), enabledOnly: true },
-    { ...slider('saturation', 'Saturation', 0, 3, 0.01), enabledOnly: true, effectOnly: ['LiquidGlass', 'FrostedGlass', 'Acrylic'] },
+    { ...slider('saturation', 'Saturation', 0, 3, 0.01), enabledOnly: true, effectOnly: ['LiquidGlass', 'Blur', 'Acrylic'] },
     { ...slider('brightness', 'Brightness', 0.5, 1.5, 0.01), enabledOnly: true, effectOnly: ['LiquidGlass', 'Acrylic'] },
-    { ...slider('contrast', 'Contrast', 0.5, 1.5, 0.01), enabledOnly: true, effectOnly: ['LiquidGlass', 'FrostedGlass', 'Acrylic'] },
-    { ...color('tintColor', 'TintColor3'), enabledOnly: true, effectOnly: ['LiquidGlass', 'FrostedGlass', 'Acrylic'] },
-    { ...slider('tintOpacity', 'TintTransparency', 0, 1, 0.01), enabledOnly: true, effectOnly: ['LiquidGlass', 'FrostedGlass', 'Acrylic'] },
+    { ...slider('contrast', 'Contrast', 0.5, 1.5, 0.01), enabledOnly: true, effectOnly: ['LiquidGlass', 'Blur', 'Acrylic'] },
+    { ...color('tintColor', 'TintColor3'), enabledOnly: true, effectOnly: ['LiquidGlass', 'Blur', 'Acrylic'] },
+    { ...slider('tintOpacity', 'TintTransparency', 0, 1, 0.01), enabledOnly: true, effectOnly: ['LiquidGlass', 'Blur', 'Acrylic'] },
     { ...slider('refraction', 'Refraction', 0, 1, 0.01), enabledOnly: true, effectOnly: ['LiquidGlass'] },
     { ...slider('highlight', 'Highlight', 0, 1, 0.01), enabledOnly: true, effectOnly: ['LiquidGlass'] }
   ]}
