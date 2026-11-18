@@ -462,3 +462,31 @@ test('ImageLabel does not clip its own selection handles', async () => {
   assert.ok(css.includes('.scene-node.scene-imagelabel{overflow:visible!important;contain:none}'));
   assert.ok(css.includes('border-radius:inherit'));
 });
+
+
+test('ImageLabel exposes a Frame-like background and practical image controls', async () => {
+  const schema = getPropertySchema('ImageLabel');
+  const image = schema.sections.find(section => section.title === 'Image').fields;
+  const appearance = schema.sections.find(section => section.title === 'Appearance').fields;
+  assert.ok(image.some(field => field.key === 'assetId' && field.type === 'asset'));
+  assert.deepEqual(image.find(field => field.key === 'fit').values.map(item => item.value), ['fill','contain','cover','tile']);
+  assert.ok(image.some(field => field.key === 'imageTransparency'));
+  assert.ok(appearance.some(field => field.key === 'backgroundColor3'));
+  assert.ok(appearance.some(field => field.key === 'backgroundTransparency'));
+});
+
+test('Asset rename preserves the existing blob record', async () => {
+  const database = await readFile(new URL('../js/data/database.js', import.meta.url), 'utf8');
+  assert.match(database, /async renameAsset\(id, name\)/);
+  assert.match(database, /store\.put\(\{ \.\.\.request\.result, name:/);
+});
+
+test('Image picker is visual and asset library supports rename and thumbnails', async () => {
+  const app = await readFile(new URL('../js/app.js', import.meta.url), 'utf8');
+  const html = await readFile(new URL('../index.html', import.meta.url), 'utf8');
+  assert.match(app, /openImagePicker\(\)/);
+  assert.match(app, /data-choose-asset/);
+  assert.match(app, /data-rename-asset/);
+  assert.match(app, /asset-preview/);
+  assert.match(html, /image-picker-grid/);
+});
