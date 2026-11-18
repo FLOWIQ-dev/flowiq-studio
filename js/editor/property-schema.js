@@ -5,7 +5,8 @@ const registry = new Map();
 
 const number = (key, label, min, max, step = 1) => ({ key, label, type: 'number', min, max, step });
 const slider = (key, label, min, max, step = 0.01) => ({ key, label, type: 'slider', min, max, step });
-const udim2 = (key, label, subgroup) => ({ key, label, type: 'udim2', subgroup });
+const udim2 = (key, label, subgroup) => ({ key, label, type: 'udim2', subgroup, components: 4 });
+const vector2 = (key, label, subgroup) => ({ key, label, type: 'vector2', subgroup, components: 2 });
 const text = (key, label) => ({ key, label, type: 'text' });
 const color = (key, label) => ({ key, label, type: 'color' });
 const select = (key, label, values) => ({ key, label, type: 'select', values });
@@ -77,7 +78,7 @@ export function registerPropertySchema(className, schema, { replace = false } = 
           if (!field || typeof field.key !== 'string' || typeof field.label !== 'string') {
             throw new TypeError('Campo de propriedade inválido.');
           }
-          if (!['text', 'number', 'slider', 'color', 'select', 'checkbox', 'asset', 'udim2'].includes(field.type)) {
+          if (!['text', 'number', 'slider', 'color', 'select', 'checkbox', 'asset', 'udim2', 'vector2'].includes(field.type)) {
             throw new TypeError('Tipo de campo não suportado: ' + field.type);
           }
           return { ...field, values: field.values?.map(item => ({ ...item })) };
@@ -101,8 +102,7 @@ export function listPropertySchemas() {
 const frameLayout = [
   udim2('position', 'Position', 'Position'),
   udim2('size', 'Size', 'Size'),
-  { ...number('anchorPoint.x', 'X', 0, 1, 0.01), subgroup: 'AnchorPoint' },
-  { ...number('anchorPoint.y', 'Y', 0, 1, 0.01), subgroup: 'AnchorPoint' }
+  vector2('anchorPoint', 'AnchorPoint', 'AnchorPoint')
 ];
 
 registerPropertySchema('*', { sections: [
