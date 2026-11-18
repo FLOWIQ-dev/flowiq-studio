@@ -1,4 +1,4 @@
-import { resolveNodeLayout } from '../data/model.js';
+import { resolveNodeLayout, normalizeZIndex } from '../data/model.js';
 import { getPropertySchema } from './property-schema.js';
 const $ = id => document.getElementById(id);
 const ICONS = {
@@ -144,7 +144,7 @@ export function renderScene(container, scene, { selectedId = null, preview = fal
     item.style.top = (layout.y + layout.height * p.anchorPoint.y) + 'px';
     item.style.width = layout.width + 'px';
     item.style.height = layout.height + 'px';
-    item.style.zIndex = String(Math.max(1, Math.min(10, Math.round(Number(p.zIndex) || 1))));
+    item.style.zIndex = String(normalizeZIndex(p.zIndex));
     item.style.transform = 'translate(' + (-p.anchorPoint.x * 100) + '%,' + (-p.anchorPoint.y * 100) + '%) rotate(' + (Number(p.rotation) || 0) + 'deg)';
     const isFrame = node.type === 'Frame';
     const backdropNode = isFrame ? node.children.map(childId => scene.get(childId)).find(child => child?.type === 'UIBackdrop') : null;
