@@ -58,7 +58,7 @@ const textAppearance = [
   ])
 ];
 
-export const PROPERTY_SCHEMA_VERSION = 4;
+export const PROPERTY_SCHEMA_VERSION = 5;
 
 export function registerPropertySchema(className, schema, { replace = false } = {}) {
   if (typeof className !== 'string' || (className !== '*' && !/^[A-Z][A-Za-z0-9]*$/.test(className))) {
@@ -133,6 +133,23 @@ registerPropertySchema('Frame', { sections: [
     slider('backgroundTransparency', 'BackgroundTransparency', 0, 1, 0.01),
     slider('opacity', 'Opacity', 0, 1, 0.01),
     slider('rotation', 'Rotation', -360, 360, 1)
+  ]},
+  { title: 'UIBackdrop', fields: [
+    { ...checkbox('uiBackdrop.enabled', 'Enabled'), backdropSetting: 'enabled' },
+    { ...select('uiBackdrop.effect', 'Effect', [
+      { value: 'Blur', label: 'Blur' },
+      { value: 'LiquidGlass', label: 'LiquidGlass' },
+      { value: 'FrostedGlass', label: 'FrostedGlass' },
+      { value: 'Acrylic', label: 'Acrylic' }
+    ]), backdropSetting: 'effect' },
+    { ...slider('uiBackdrop.blur', 'Blur strength', 0, 40, 0.5), backdropSetting: 'effect', effectOnly: ['Blur', 'LiquidGlass', 'FrostedGlass', 'Acrylic'] },
+    { ...slider('uiBackdrop.saturation', 'Saturation', 0, 3, 0.01), backdropSetting: 'effect', effectOnly: ['LiquidGlass', 'FrostedGlass', 'Acrylic'] },
+    { ...slider('uiBackdrop.brightness', 'Brightness', 0.5, 1.5, 0.01), backdropSetting: 'effect', effectOnly: ['LiquidGlass', 'Acrylic'] },
+    { ...slider('uiBackdrop.contrast', 'Contrast', 0.5, 1.5, 0.01), backdropSetting: 'effect', effectOnly: ['LiquidGlass', 'FrostedGlass', 'Acrylic'] },
+    { ...color('uiBackdrop.tintColor', 'Tint color'), backdropSetting: 'effect', effectOnly: ['LiquidGlass', 'FrostedGlass', 'Acrylic'] },
+    { ...slider('uiBackdrop.tintOpacity', 'Tint opacity', 0, 1, 0.01), backdropSetting: 'effect', effectOnly: ['LiquidGlass', 'FrostedGlass', 'Acrylic'] },
+    { ...slider('uiBackdrop.refraction', 'Refraction feel', 0, 1, 0.01), backdropSetting: 'effect', effectOnly: ['LiquidGlass'] },
+    { ...slider('uiBackdrop.highlight', 'Edge highlight', 0, 1, 0.01), backdropSetting: 'effect', effectOnly: ['LiquidGlass'] }
   ]},
   { title: 'Behavior', fields: [
     checkbox('visible', 'Visible'),
