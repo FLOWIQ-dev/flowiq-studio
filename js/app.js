@@ -390,7 +390,7 @@ class FlowiqStudio {
   previewProperty(key, value) {
     this.updateProperty(key, value, { checkpoint: false, render: false, save: false });
     const stageSize = this.getStageSize();
-    renderScene($('scene'), this.scene, { selectedId: this.store.state.selectedId, assets: this.assets, sceneSize: stageSize, zoom: this.zoom });
+    renderScene($('scene'), this.scene, { selectedId: this.store.state.selectedId, assets: this.assets, sceneSize: stageSize, zoom: this.zoom, cameraOffset: this.cameraOffset });
     this.trackSelectedObject();
   }
 
@@ -402,7 +402,7 @@ class FlowiqStudio {
     this.activePropertyEdit = null;
     this.updateProperty(key, value, { checkpoint: false, render: false, save: true });
     const stageSize = this.getStageSize();
-    renderScene($('scene'), this.scene, { selectedId: this.store.state.selectedId, assets: this.assets, sceneSize: stageSize, zoom: this.zoom });
+    renderScene($('scene'), this.scene, { selectedId: this.store.state.selectedId, assets: this.assets, sceneSize: stageSize, zoom: this.zoom, cameraOffset: this.cameraOffset });
     this.trackSelectedObject();
   }
 
@@ -621,7 +621,7 @@ class FlowiqStudio {
     this.renderTreePanel();
     const stageSize = this.getStageSize();
     this.applyStageBounds(stageSize);
-    renderScene($('scene'), this.scene, { selectedId: this.store.state.selectedId, assets: this.assets, sceneSize: stageSize, zoom: this.zoom });
+    renderScene($('scene'), this.scene, { selectedId: this.store.state.selectedId, assets: this.assets, sceneSize: stageSize, zoom: this.zoom, cameraOffset: this.cameraOffset });
     this.renderInspectorPanel(this.scene.get(this.store.state.selectedId));
     $('project-name').textContent = this.project.name;
     this.updateHistory(this.history.status);
@@ -880,15 +880,15 @@ class FlowiqStudio {
   setZoom(value) {
     this.zoom = value;
     const world = $('scene').querySelector('.scene-world');
-    if (world) world.style.transform = 'scale(' + this.zoom + ')';
+    this.applyCameraOffset();
     $('zoom-value').textContent = Math.round(this.zoom * 100) + '%';
   }
 
   applyCameraOffset() {
-    const surface = $('scene-zoom');
-    if (!surface) return;
-    surface.style.transformOrigin = 'top left';
-    surface.style.transform = 'translate3d(' + this.cameraOffset.x + 'px,' + this.cameraOffset.y + 'px,0)';
+    const world = $('scene').querySelector('.scene-world');
+    if (!world) return;
+    world.style.transformOrigin = '50% 50%';
+    world.style.transform = 'translate3d(' + this.cameraOffset.x + 'px,' + this.cameraOffset.y + 'px,0) scale(' + this.zoom + ')';
   }
 
   trackSelectedObject() {
@@ -938,7 +938,8 @@ class FlowiqStudio {
         selectedId: this.store.state.selectedId,
         assets: this.assets,
         sceneSize: size,
-        zoom: this.zoom
+        zoom: this.zoom,
+        cameraOffset: this.cameraOffset
       });
     }
   }
@@ -950,6 +951,7 @@ class FlowiqStudio {
     if (!['stage', 'explorer', 'inspector'].includes(name)) return;
     this.store.set({ panel: next });
     shell.dataset.panel = next;
+    $('scene').classList.toggle('is-camera-tracking', next === 'inspector');
     document.querySelectorAll('[data-panel]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.panel === next)));
     $('panel-close')?.setAttribute('aria-expanded', String(next === 'inspector'));
     $('explorer-close')?.setAttribute('aria-expanded', String(next === 'explorer'));
