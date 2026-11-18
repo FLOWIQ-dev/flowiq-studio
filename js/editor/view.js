@@ -24,14 +24,6 @@ const FONT_CSS = Object.freeze({
   Monospace: 'ui-monospace, SFMono-Regular, Consolas, monospace'
 });
 
-function rgbaColor(value, alpha = 1) {
-  const match = String(value || '#000000').match(/^#([0-9a-f]{3}|[0-9a-f]{6})$/i);
-  if (!match) return value || 'rgba(0,0,0,' + alpha + ')';
-  const hex = match[1].length === 3 ? match[1].split('').map(char => char + char).join('') : match[1];
-  const rgb = [0, 2, 4].map(index => parseInt(hex.slice(index, index + 2), 16));
-  return 'rgba(' + rgb.join(',') + ',' + Math.max(0, Math.min(1, alpha)) + ')';
-}
-
 function richTextFragment(source) {
   const parsed = new DOMParser().parseFromString(String(source ?? ''), 'text/html');
   const fragment = document.createDocumentFragment();
