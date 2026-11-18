@@ -252,7 +252,10 @@ test('Explorer camera tracking is independent from Inspector and preserves the f
   assert.ok(app.includes("['track-camera', trackingLabel]"));
   assert.ok(app.includes("if (action === 'track-camera')"));
   assert.ok(app.includes("this.cameraTrackingId = stop ? null : id"));
-  assert.ok(app.includes("if (!this.cameraTracking || this.store.state.screen !== 'editor'"));
+  assert.ok(app.includes('const temporary = !this.cameraTracking && this.store.state.panel === \'inspector\''));
+  assert.ok(app.includes('this.inspectorCameraSnapshot = { offset: { ...this.cameraOffset }, zoom: this.zoom }'));
+  assert.ok(app.includes('this.cameraOffset = { ...this.inspectorCameraSnapshot.offset }'));
+  assert.ok(app.includes('this.inspectorCameraSnapshot = null'));
   assert.ok(app.includes('if (this.cameraTracking && this.cameraTrackingId === current.id) this.trackSelectedObject()'));
   assert.ok(app.includes("this.cameraTracking ? 'Câmera acompanhando ' + node.name"));
   assert.ok(view.includes("translate3d(' + offsetX + 'px,' + offsetY + 'px,0) scale('"));
@@ -260,6 +263,7 @@ test('Explorer camera tracking is independent from Inspector and preserves the f
   assert.ok(css.includes('transition:transform 120ms linear'));
   const closePanel = app.slice(app.indexOf('  setPanel(name)'), app.indexOf('  toggleAddMenu()'));
   assert.ok(closePanel.includes("this.cameraTracking"));
+  assert.ok(closePanel.includes('this.cameraOffset = { ...this.inspectorCameraSnapshot.offset }'));
   assert.ok(!closePanel.includes("this.cameraTracking = false"));
   const reset = app.slice(app.indexOf('  fitStage(resetZoom'), app.indexOf('  setPanel(name)'));
   assert.ok(reset.includes('cameraOffset = { x: 0, y: 0 }'));
