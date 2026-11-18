@@ -223,7 +223,7 @@ export function renderScene(container, scene, { selectedId = null, preview = fal
     for (const child of Array.from(item.children)) if (child !== childContainer && !(node.type === 'TextLabel' && child.classList.contains('scene-text-content'))) child.remove();
     if (node.type === 'TextLabel') {
       const content = el('span', 'scene-text-content');
-      const fontKey = p.font || 'Arial';
+      const fontKey = p.fontFace || p.font || 'Arial';
       const fontFamily = FONT_CSS[fontKey] || 'Arial, sans-serif';
       const weight = FONT_WEIGHT[fontKey] || 400;
       let textValue = String(p.text ?? '');
@@ -240,6 +240,10 @@ export function renderScene(container, scene, { selectedId = null, preview = fal
       if (p.richText) content.append(richTextFragment(textValue));
       else content.textContent = textValue;
       content.style.fontFamily = fontFamily;
+      const featureText = String(p.openTypeFeatures || '').trim();
+      if (/^[a-z0-9]{4}(?:\\s+(?:on|off|[0-9]+))?(?:\\s*,\\s*[a-z0-9]{4}(?:\\s+(?:on|off|[0-9]+))?)*$/i.test(featureText)) {
+        content.style.fontFeatureSettings = featureText.split(',').map(entry => { const parts = entry.trim().split(/\\s+/); return '\"' + parts[0] + '\"' + (parts[1] ? ' ' + (parts[1] === 'on' ? 1 : parts[1] === 'off' ? 0 : parts[1]) : ''); }).join(', ');
+      }
       content.style.fontWeight = String(weight);
       content.style.fontSize = resolvedSize + 'px';
       content.style.lineHeight = String(Math.max(1, Math.min(3, Number(p.lineHeight) || 1)));
