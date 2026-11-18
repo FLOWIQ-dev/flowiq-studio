@@ -1,6 +1,6 @@
 import { Store } from './core/store.js';
 import { History } from './core/history.js';
-import { Scene, COMPONENTS, resolveNodeLayout } from './data/model.js';
+import { Scene, COMPONENTS, resolveNodeLayout, normalizeZIndex } from './data/model.js';
 import { Database } from './data/database.js';
 import { renderScene, renderTree, renderInspector, updateSceneLayout } from './editor/view.js';
 import { Runtime } from './runtime/runtime.js';
@@ -449,7 +449,7 @@ class FlowiqStudio {
     } else if (key === 'anchorPoint' && value && typeof value === 'object') {
       node.props.anchorPoint.x = Math.max(0, Math.min(1, Number(value.x) || 0));
       node.props.anchorPoint.y = Math.max(0, Math.min(1, Number(value.y) || 0));
-    } else if (key === 'zIndex') node.props.zIndex = Math.max(1, Math.min(10, Math.round(Number(value) || 1)));
+    } else if (key === 'zIndex') node.props.zIndex = normalizeZIndex(value);
     else if (key.includes('.')) {
       const parts = key.split('.');
       const leaf = parts.pop();

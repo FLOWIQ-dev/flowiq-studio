@@ -52,7 +52,7 @@ const textAppearance = [
   ])
 ];
 
-export const PROPERTY_SCHEMA_VERSION = 15;
+export const PROPERTY_SCHEMA_VERSION = 16;
 
 export function registerPropertySchema(className, schema, { replace = false } = {}) {
   if (typeof className !== 'string' || (className !== '*' && !/^[A-Z][A-Za-z0-9]*$/.test(className))) {
@@ -117,7 +117,7 @@ registerPropertySchema('Frame', { sections: [
       { value: 'RelativeXY', label: 'RelativeXY' }, { value: 'RelativeXX', label: 'RelativeXX' },
       { value: 'RelativeYY', label: 'RelativeYY' }
     ]),
-    number('layoutOrder', 'LayoutOrder', -1000, 1000), number('zIndex', 'ZIndex', 1, 10),
+    number('layoutOrder', 'LayoutOrder', -1000, 1000), number('zIndex', 'ZIndex', -2147483648, 2147483647),
     number('selectionOrder', 'SelectionOrder', 0, 1000)
   ]},
   { title: 'Behavior', fields: [
@@ -130,7 +130,7 @@ registerPropertySchema('Frame', { sections: [
 registerPropertySchema('TextButton', { sections: [
   { title: 'Appearance', fields: [color('background', 'BackgroundColor3'), color('border', 'BorderColor3'), number('borderWidth', 'BorderSizePixel', 0, 30), ...commonAppearance] },
   { title: 'Text', fields: [...textAppearance] },
-  { title: 'Data', fields: [text('name', 'Name'), number('zIndex', 'ZIndex', 1, 10)] },
+  { title: 'Data', fields: [text('name', 'Name'), number('zIndex', 'ZIndex', -2147483648, 2147483647)] },
   ...layout
 ]});
 
@@ -174,7 +174,7 @@ registerPropertySchema('TextLabel', { sections: [
       { value: 'Auto', label: 'Auto' }, { value: 'LeftToRight', label: 'LeftToRight' }, { value: 'RightToLeft', label: 'RightToLeft' }
     ])
   ]},
-  { title: 'Data', fields: [text('name', 'Name'), number('zIndex', 'ZIndex', 1, 10)] },
+  { title: 'Data', fields: [text('name', 'Name'), number('zIndex', 'ZIndex', -2147483648, 2147483647)] },
   ...layout
 ]});
 
@@ -184,7 +184,7 @@ registerPropertySchema('ImageLabel', { sections: [
     slider('backgroundTransparency', 'BackgroundTransparency', 0, 1, 0.01),
     color('border', 'BorderColor3'), number('borderWidth', 'BorderSizePixel', 0, 30), ...commonAppearance
   ]},
-  { title: 'Data', fields: [text('name', 'Name'), number('zIndex', 'ZIndex', 1, 10)] },
+  { title: 'Data', fields: [text('name', 'Name'), number('zIndex', 'ZIndex', -2147483648, 2147483647)] },
   { title: 'Image', fields: [
     { key: 'assetId', label: 'Image', type: 'asset', accept: 'image/*' },
     color('imageColor3', 'ImageColor3'),

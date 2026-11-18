@@ -1,6 +1,7 @@
 const ID = () => globalThis.crypto?.randomUUID?.() || 'node_' + Date.now().toString(36) + Math.random().toString(36).slice(2);
 const TYPES = new Set(['Frame', 'TextButton', 'TextLabel', 'ImageLabel', 'UIBackdrop']);
 const finite = (value, fallback = 0) => Number.isFinite(Number(value)) ? Number(value) : fallback;
+export const normalizeZIndex = value => Math.max(-2147483648, Math.min(2147483647, Math.round(finite(value, 1))));
 export const UDim = (scale = 0, offset = 0) => ({ scale: finite(scale), offset: finite(offset) });
 export const UDim2 = (xScale = 0, xOffset = 0, yScale = 0, yOffset = 0) => ({
   x: UDim(xScale, xOffset),
@@ -81,6 +82,7 @@ export class SceneNode {
     const merged = { rotation: 0, ...DEFAULTS[type], ...clean };
     // Blur is the only supported material. Older effect values migrate safely.
     if (type === 'UIBackdrop') merged.effect = 'Blur';
+    else merged.zIndex = normalizeZIndex(merged.zIndex);
     if (!Object.hasOwn(clean, 'position')) merged.position = {
       x: { scale: 0, offset: finite(clean.x, DEFAULTS[type].x) },
       y: { scale: 0, offset: finite(clean.y, DEFAULTS[type].y) }

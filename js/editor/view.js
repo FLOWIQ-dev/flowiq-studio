@@ -1,4 +1,4 @@
-import { resolveNodeLayout } from '../data/model.js';
+import { resolveNodeLayout, normalizeZIndex } from '../data/model.js';
 import { getPropertySchema } from './property-schema.js';
 const $ = id => document.getElementById(id);
 const ICONS = {
@@ -144,7 +144,7 @@ export function renderScene(container, scene, { selectedId = null, preview = fal
     item.style.top = (layout.y + layout.height * p.anchorPoint.y) + 'px';
     item.style.width = layout.width + 'px';
     item.style.height = layout.height + 'px';
-    item.style.zIndex = String(Math.max(1, Math.min(10, Math.round(Number(p.zIndex) || 1))));
+    item.style.zIndex = String(normalizeZIndex(p.zIndex));
     item.style.transform = 'translate(' + (-p.anchorPoint.x * 100) + '%,' + (-p.anchorPoint.y * 100) + '%) rotate(' + (Number(p.rotation) || 0) + 'deg)';
     const isFrame = node.type === 'Frame';
     const backdropNode = isFrame ? node.children.map(childId => scene.get(childId)).find(child => child?.type === 'UIBackdrop') : null;
@@ -209,18 +209,17 @@ export function renderScene(container, scene, { selectedId = null, preview = fal
     item.style.textAlign = p.textAlign || 'center';
     item.style.fontWeight = p.fontWeight || '500';
     const existingChildContainer = item.querySelector(':scope > .scene-children');
-    const preservedImageLayer = node.type === 'ImageLabel' ? existingChildContainer?.querySelector(':scope > .scene-image-layer') : null;
+    const preservedImageLayer = node.type === 'ImageLabel' ? item.querySelector(':scope > .scene-image-layer') : null;
     if (node.type === 'TextLabel') item.replaceChildren();
     else if (node.type !== 'ImageLabel') item.textContent = node.type === 'Frame' ? '' : (p.text || node.name);
     const childContainer = existingChildContainer || el('div', 'scene-children');
     childContainer.replaceChildren();
-    if (preservedImageLayer) childContainer.append(preservedImageLayer);
     childContainer.style.position = 'absolute';
     childContainer.style.inset = '0';
     childContainer.style.overflow = node.type === 'Frame' && p.clipsDescendants ? 'hidden' : 'visible';
     if (node.type === 'ImageLabel') childContainer.style.borderRadius = 'inherit';
     childContainer.style.zIndex = '2';
-    for (const child of Array.from(item.children)) if (child !== childContainer && !(node.type === 'TextLabel' && child.classList.contains('scene-text-content'))) child.remove();
+    for (const child of Array.from(item.children)) if (child !== childContainer && child !== preservedImageLayer && !(node.type === 'TextLabel' && child.classList.contains('scene-text-content'))) child.remove();
     if (node.type === 'TextLabel') {
       const content = el('span', 'scene-text-content');
       const fontKey = p.fontFace || p.font || 'Arial';
@@ -333,7 +332,7 @@ export function renderScene(container, scene, { selectedId = null, preview = fal
           tint.style.backgroundSize = '100% 100%';
         }
         layer.append(image, tint);
-        childContainer.prepend(layer);
+        item.insertBefore(layer, childContainer);
         item.dataset.assetId = asset.id;
       } else {
         childContainer.style.backgroundImage = 'none';
