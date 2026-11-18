@@ -1200,7 +1200,10 @@ class FlowiqStudio {
     const modal = $('image-picker-modal'), list = $('image-picker-grid');
     list.replaceChildren();
     const images = this.assets.filter(asset => asset.mime?.startsWith('image/'));
-    if (!images.length) list.append(this.empty('Nenhuma imagem na Biblioteca. Adicione uma imagem para começar.'));
+    const none = document.createElement('button'); none.type = 'button'; none.className = 'image-picker-card image-picker-none'; none.dataset.chooseAsset = '';
+    const nonePreview = document.createElement('span'); nonePreview.className = 'image-picker-none-preview'; nonePreview.textContent = '∅';
+    const noneName = document.createElement('span'); noneName.textContent = 'Nenhuma imagem';
+    none.append(nonePreview, noneName); list.append(none);
     for (const asset of images) {
       const card = document.createElement('button'); card.type = 'button'; card.className = 'image-picker-card'; card.dataset.chooseAsset = asset.id;
       const image = document.createElement('img'); const url = URL.createObjectURL(asset.blob);
