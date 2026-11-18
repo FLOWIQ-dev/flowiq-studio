@@ -410,9 +410,6 @@ export function renderInspector(container, node, { onChange, onDelete, onDuplica
   filterWrap.append(filter);
   container.append(filterWrap);
   const schema = getPropertySchema(node.type);
-  if (node.type === 'UIBackdrop') {
-    const effectSelect = null;
-  }
   const groups = [];
   schema.sections.forEach(definition => {
     const group = el('section', 'property-group');
@@ -426,6 +423,12 @@ export function renderInspector(container, node, { onChange, onDelete, onDuplica
     definition.fields.forEach(descriptor => {
       const control = field(descriptor);
       control.dataset.propertySearch = (descriptor.label + ' ' + descriptor.key + ' ' + definition.title + ' ' + (descriptor.subgroup || '')).toLocaleLowerCase('pt-BR');
+      if (descriptor.enabledOnly || descriptor.effectOnly) {
+        control.dataset.effectOnly = (descriptor.effectOnly || []).join(',');
+        const enabled = Boolean(node.props.enabled);
+        const effect = node.props.effect || 'Blur';
+        control.hidden = (descriptor.enabledOnly && !enabled) || (descriptor.effectOnly && !descriptor.effectOnly.includes(effect));
+      }
       if (descriptor.subgroup) {
         let subgroup = subgroups.get(descriptor.subgroup);
         if (!subgroup) {
