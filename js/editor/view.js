@@ -77,8 +77,7 @@ export function renderScene(container, scene, { selectedId = null, preview = fal
     item.style.transform = 'translate(' + (-p.anchorPoint.x * 100) + '%,' + (-p.anchorPoint.y * 100) + '%) rotate(' + (Number(p.rotation) || 0) + 'deg)';
     const isFrame = node.type === 'Frame';
     const backdropNode = isFrame ? node.children.map(childId => scene.get(childId)).find(child => child?.type === 'UIBackdrop') : null;
-    let glassSurface = null;
-    item.style.background = isFrame ? 'transparent' : (p.background || 'transparent');
+      item.style.background = isFrame ? 'transparent' : (p.background || 'transparent');
     item.style.opacity = String(Math.max(0, Math.min(1, Number(p.opacity ?? 1))));
     if (isFrame) {
       const bg = String(p.backgroundColor3 || p.background || 'transparent');
@@ -102,26 +101,27 @@ export function renderScene(container, scene, { selectedId = null, preview = fal
       item.style.backgroundImage = 'none';
       item.style.boxShadow = p.style === 'DropShadow' ? '0 5px 14px rgba(0,0,0,.28)' : 'none';
       const backdrop = backdropNode?.props || {};
-      const effect = ['FrostedGlass', 'Acrylic', 'LiquidGlass'].includes(backdrop.effect) ? 'Blur' : (backdrop.effect || 'Blur');
       const effectEnabled = Boolean(backdrop.enabled) && backdropNode?.props.visible !== false;
-      const backdropVisible = effectEnabled && alpha < 1 && effect === 'Blur';
-      const blur = Math.max(0, Math.min(40, Number(backdrop.blur) || 0));
-      const saturation = Math.max(0, Math.min(3, Number(backdrop.saturation ?? 1)));
+      const backdropVisible = effectEnabled && alpha < 1;
+      const blur = Math.max(0, Math.min(64, Number(backdrop.blur) || 0));
+      const saturation = Math.max(0, Math.min(2.5, Number(backdrop.saturation ?? 1.2)));
+      const brightness = Math.max(0.5, Math.min(1.5, Number(backdrop.brightness ?? 1.08)));
+      const contrast = Math.max(0.5, Math.min(1.5, Number(backdrop.contrast ?? 1.08)));
       const tint = String(backdrop.tintColor || '#dbeafe');
       const tintMatch = tint.match(/^#([0-9a-f]{6})$/i);
       const tintHex = tintMatch ? tintMatch[1] : 'dbeafe';
       const tintRgb = [0,2,4].map(index => parseInt(tintHex.slice(index,index+2),16)).join(',');
-      const tintAlpha = Math.max(0, Math.min(1, Number(backdrop.tintOpacity) || 0));
-      item.style.backdropFilter = backdropVisible ? 'blur(' + blur + 'px) saturate(' + saturation + ')' : 'none';
+      const tintAlpha = Math.max(0, Math.min(0.5, Number(backdrop.tintOpacity) || 0));
+      const filter = 'blur(' + blur + 'px) saturate(' + saturation + ') brightness(' + brightness + ') contrast(' + contrast + ')';
+      item.style.backdropFilter = backdropVisible ? filter : 'none';
       item.style.webkitBackdropFilter = item.style.backdropFilter;
-      item.style.backgroundImage = 'none';
+      item.style.backgroundImage = backdropVisible && tintAlpha > 0
+        ? 'linear-gradient(rgba(' + tintRgb + ',' + tintAlpha + '),rgba(' + tintRgb + ',' + tintAlpha + '))'
+        : 'none';
       item.onpointermove = null;
       item.onpointerleave = null;
-      if (effectEnabled) {
-        item.style.boxShadow = 'none';
-        if (effect === 'Blur') {
-          if (backdropVisible && tintAlpha > 0) item.style.backgroundImage = 'linear-gradient(rgba(' + tintRgb + ',' + tintAlpha + '),rgba(' + tintRgb + ',' + tintAlpha + '))';
-        } else {
+      if (effectEnabled) item.style.boxShadow = 'none';
+    } else {
           const effectClass = effect === 'Prism' ? 'scene-effect-prism' : effect === 'Emboss' ? 'scene-effect-emboss' : 'scene-effect-holographic';
           glassSurface = el('div', 'scene-effect-surface ' + effectClass);
           glassSurface.setAttribute('aria-hidden', 'true');
@@ -175,7 +175,6 @@ export function renderScene(container, scene, { selectedId = null, preview = fal
     childContainer.style.overflow = node.type === 'Frame' && p.clipsDescendants ? 'hidden' : 'visible';
     if (isFrame) childContainer.style.zIndex = '2';
     for (const child of Array.from(item.children)) if (child !== childContainer) child.remove();
-    if (glassSurface) item.append(glassSurface);
     item.append(childContainer);
     if (node.type === 'ImageLabel') {
       const asset = assetMap.get(p.assetId);
