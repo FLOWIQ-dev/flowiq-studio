@@ -155,18 +155,22 @@ test('service worker precaches every module used by the new application', async 
 
 
 test('Inspector property schemas are class-based and extensible', () => {
-  assert.equal(PROPERTY_SCHEMA_VERSION, 2);
+  assert.equal(PROPERTY_SCHEMA_VERSION, 3);
   const frame = getPropertySchema('Frame');
   assert.ok(frame.sections.some(section => section.title === 'Data'));
   const frameKeys = frame.sections.flatMap(section => section.fields.map(field => field.key));
-  for (const key of ['sizeConstraint','zIndex','backgroundColor3','backgroundTransparency','borderColor3','borderSizePixel','borderMode','visible','clipsDescendants']) {
+  for (const key of ['sizeConstraint','zIndex','backgroundColor3','backgroundTransparency','opacity','visible','clipsDescendants']) {
     assert.ok(frameKeys.includes(key), 'Frame should expose ' + key);
   }
   const frameFields = frame.sections.flatMap(section => section.fields);
   for (const useful of ['automaticSize','layoutOrder','active','interactable','selectable','selectionOrder']) assert.ok(frameKeys.includes(useful), useful + ' should be available on Frame');
   assert.equal(frameFields.find(field => field.key === 'backgroundTransparency')?.type, 'slider');
-  assert.equal(frameFields.find(field => field.key === 'borderSizePixel')?.type, 'slider');
   assert.equal(frameFields.find(field => field.key === 'rotation')?.type, 'slider');
+  assert.equal(frameFields.find(field => field.key === 'opacity')?.type, 'slider');
+  assert.equal(frameFields.find(field => field.key === 'backgroundTransparency')?.type, 'slider');
+  assert.ok(frameFields.some(field => field.key === 'position' && field.type === 'udim2'));
+  assert.ok(frameFields.some(field => field.key === 'size' && field.type === 'udim2'));
+  assert.ok(!frameFields.some(field => /border/i.test(field.key)), 'Frame border properties are intentionally omitted');
   registerPropertySchema('FutureWidget', { sections: [
     { title: 'Dados', fields: [{ key: 'value', label: 'Valor', type: 'number', min: 0, max: 10 }] }
   ]});
@@ -300,4 +304,26 @@ test('camera tracking keeps the stage fixed and freezes zoom during object trans
   assert.match(css, /stage-viewport\{[\s\S]*?overflow:hidden/);
   assert.match(css, /#screen-editor #scene\{[\s\S]*?overflow:hidden;contain:layout paint/);
   assert.match(css, /scene-world\{[\s\S]*?transition:none!important/);
+});
+
+
+test('Frame opacity composites the whole subtree while background transparency stays local', async () => {
+  const model = await readFile(new URL('../js/data/model.js', import.meta.url), 'utf8');
+  const view = await readFile(new URL('../js/editor/view.js', import.meta.url), 'utf8');
+  const app = await readFile(new URL('../js/app.js', import.meta.url), 'utf8');
+  assert.match(model, /Frame: \{[^}]*opacity: 1/);
+  assert.match(view, /item\.style\.opacity = String\(Math\.max\(0, Math\.min\(1, Number\(p\.opacity \?\? 1\)\)\)\)/);
+  assert.match(view, /const alpha = 1 - Math\.max\(0, Math\.min\(1, Number\(p\.backgroundTransparency\) \|\| 0\)\)/);
+  assert.match(app, /key === 'opacity' \|\| key === 'backgroundTransparency'/);
+});
+
+test('Frame Position and Size use editable four-value UDim2 tuples', async () => {
+  const schema = await readFile(new URL('../js/editor/property-schema.js', import.meta.url), 'utf8');
+  const view = await readFile(new URL('../js/editor/view.js', import.meta.url), 'utf8');
+  const app = await readFile(new URL('../js/app.js', import.meta.url), 'utf8');
+  assert.match(schema, /udim2\('position', 'Position'/);
+  assert.match(schema, /udim2\('size', 'Size'/);
+  assert.match(view, /0, 30, 0, 20/);
+  assert.match(view, /parts\.length !== 4/);
+  assert.match(app, /\['position', 'size'\]\.includes\(key\)/);
 });
