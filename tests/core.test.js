@@ -374,7 +374,7 @@ test('UIBackdrop has unique effects, full LiquidGlass blur, and a parent-shaped 
   const effectBlock = schema.slice(schema.indexOf("registerPropertySchema('UIBackdrop'"));
   assert.equal((effectBlock.match(/\{ value: 'Blur', label: 'Blur' \}/g) || []).length, 1);
   assert.match(effectBlock, /slider\('blur', 'Blur', 0, 40, 0\.5\)/);
-  assert.match(model, /UIBackdrop: \{[^}]*effect: 'Blur'/);
+  assert.match(model, /effect: 'Blur', blur: 14/);
   assert.match(model, /radius: 0/);
   assert.match(view, /function createLensMapDataUrl\(width, height, radius\)/);
   assert.match(view, /feDisplacementMap/);
@@ -404,7 +404,8 @@ test('Frame backdrop filtering is applied to the translucent Frame surface, not 
   assert.match(view, /item\.style\.backdropFilter = backdropVisible/);
   assert.match(view, /item\.style\.backgroundColor = fillColor/);
   assert.match(view, /scene-glass-surface/);
-  assert.doesNotMatch(view, /feDisplacementMap|feTurbulence|refractiveFilter/);
+  assert.match(view, /feDisplacementMap/);
+  assert.doesNotMatch(view, /feTurbulence|fractalNoise/);
   assert.doesNotMatch(view, /el\('div', 'scene-backdrop-layer/);
 });
 
@@ -432,13 +433,13 @@ test('Opening the mobile Inspector does not dim the editable stage', async () =>
   assert.match(css, /editor-shell\[data-panel="inspector"\]::before\{opacity:0;pointer-events:none\}/);
 });
 
-test('LiquidGlass uses a distinct low-blur layered surface with touch-responsive highlights', async () => {
+test('LiquidGlass uses a shape-aware lens map and full blur range', async () => {
   const view = await readFile(new URL('../js/editor/view.js', import.meta.url), 'utf8');
   assert.match(view, /scene-glass-surface/);
   assert.match(view, /'blur\(' \+ blur \+ 'px\)'/);
-  assert.match(view, /item\.onpointermove/);
-  assert.match(view, /--glass-x/);
-  assert.match(view, /--glass-y/);
+  assert.match(view, /createLensMapDataUrl/);
+  assert.match(view, /--glass-refraction/);
+  assert.match(view, /item\.style\.borderRadius = frameRadius \+ 'px'/);
 });
 
 
