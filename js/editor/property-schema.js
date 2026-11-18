@@ -8,6 +8,7 @@ const slider = (key, label, min, max, step = 0.01) => ({ key, label, type: 'slid
 const udim2 = (key, label, subgroup) => ({ key, label, type: 'udim2', subgroup, components: 4 });
 const vector2 = (key, label, subgroup) => ({ key, label, type: 'vector2', subgroup, components: 2 });
 const text = (key, label) => ({ key, label, type: 'text' });
+const textarea = (key, label) => ({ key, label, type: 'textarea' });
 const color = (key, label) => ({ key, label, type: 'color' });
 const select = (key, label, values) => ({ key, label, type: 'select', values });
 const checkbox = (key, label) => ({ key, label, type: 'checkbox' });
@@ -51,7 +52,7 @@ const textAppearance = [
   ])
 ];
 
-export const PROPERTY_SCHEMA_VERSION = 14;
+export const PROPERTY_SCHEMA_VERSION = 15;
 
 export function registerPropertySchema(className, schema, { replace = false } = {}) {
   if (typeof className !== 'string' || (className !== '*' && !/^[A-Z][A-Za-z0-9]*$/.test(className))) {
@@ -71,7 +72,7 @@ export function registerPropertySchema(className, schema, { replace = false } = 
           if (!field || typeof field.key !== 'string' || typeof field.label !== 'string') {
             throw new TypeError('Campo de propriedade inválido.');
           }
-          if (!['text', 'number', 'slider', 'color', 'select', 'checkbox', 'asset', 'udim2', 'vector2'].includes(field.type)) {
+          if (!['text', 'textarea', 'number', 'slider', 'color', 'select', 'checkbox', 'asset', 'udim2', 'vector2'].includes(field.type)) {
             throw new TypeError('Tipo de campo não suportado: ' + field.type);
           }
           return { ...field, values: field.values?.map(item => ({ ...item })) };
@@ -129,14 +130,51 @@ registerPropertySchema('Frame', { sections: [
 registerPropertySchema('TextButton', { sections: [
   { title: 'Appearance', fields: [color('background', 'BackgroundColor3'), color('border', 'BorderColor3'), number('borderWidth', 'BorderSizePixel', 0, 30), ...commonAppearance] },
   { title: 'Text', fields: [...textAppearance] },
-  instanceSection,
+  { title: 'Data', fields: [text('name', 'Name'), number('zIndex', 'ZIndex', 1, 10)] },
   ...layout
 ]});
 
 registerPropertySchema('TextLabel', { sections: [
-  { title: 'Appearance', fields: [color('background', 'BackgroundColor3'), color('border', 'BorderColor3'), number('borderWidth', 'BorderSizePixel', 0, 30), ...commonAppearance] },
-  { title: 'Text', fields: [...textAppearance] },
-  instanceSection,
+  { title: 'Appearance', fields: [
+    color('backgroundColor3', 'BackgroundColor3'),
+    slider('backgroundTransparency', 'BackgroundTransparency', 0, 1, 0.01),
+    color('border', 'BorderColor3'), number('borderWidth', 'BorderSizePixel', 0, 30), ...commonAppearance
+  ]},
+  { title: 'Text', fields: [
+    textarea('text', 'Text'),
+    color('textColor3', 'TextColor3'),
+    slider('textTransparency', 'TextTransparency', 0, 1, 0.01),
+    select('fontFace', 'FontFace', [
+      { value: 'Arial', label: 'Arial' }, { value: 'ArialBold', label: 'Arial Bold' },
+      { value: 'SourceSans', label: 'Source Sans' }, { value: 'SourceSansBold', label: 'Source Sans Bold' },
+      { value: 'Gotham', label: 'Gotham' }, { value: 'GothamMedium', label: 'Gotham Medium' },
+      { value: 'GothamBold', label: 'Gotham Bold' }, { value: 'Roboto', label: 'Roboto' },
+      { value: 'RobotoMono', label: 'Roboto Mono' }, { value: 'Ubuntu', label: 'Ubuntu' },
+      { value: 'Code', label: 'Code' }
+    ]),
+    number('textSize', 'TextSize', 1, 100),
+    checkbox('textScaled', 'TextScaled'),
+    checkbox('textWrapped', 'TextWrapped'),
+    select('textXAlignment', 'TextXAlignment', [
+      { value: 'Left', label: 'Left' }, { value: 'Center', label: 'Center' }, { value: 'Right', label: 'Right' }
+    ]),
+    select('textYAlignment', 'TextYAlignment', [
+      { value: 'Top', label: 'Top' }, { value: 'Center', label: 'Center' }, { value: 'Bottom', label: 'Bottom' }
+    ]),
+    checkbox('richText', 'RichText'),
+    text('openTypeFeatures', 'OpenTypeFeatures'),
+    color('textStrokeColor3', 'TextStrokeColor3'),
+    slider('textStrokeTransparency', 'TextStrokeTransparency', 0, 1, 0.01),
+    slider('lineHeight', 'LineHeight', 1, 3, 0.05),
+    number('maxVisibleGraphemes', 'MaxVisibleGraphemes', -1, 10000),
+    select('textTruncate', 'TextTruncate', [
+      { value: 'None', label: 'None' }, { value: 'AtEnd', label: 'AtEnd' }, { value: 'SplitWord', label: 'SplitWord' }
+    ]),
+    select('textDirection', 'TextDirection', [
+      { value: 'Auto', label: 'Auto' }, { value: 'LeftToRight', label: 'LeftToRight' }, { value: 'RightToLeft', label: 'RightToLeft' }
+    ])
+  ]},
+  { title: 'Data', fields: [text('name', 'Name'), number('zIndex', 'ZIndex', 1, 10)] },
   ...layout
 ]});
 
@@ -146,7 +184,7 @@ registerPropertySchema('ImageLabel', { sections: [
     slider('backgroundTransparency', 'BackgroundTransparency', 0, 1, 0.01),
     color('border', 'BorderColor3'), number('borderWidth', 'BorderSizePixel', 0, 30), ...commonAppearance
   ]},
-  instanceSection,
+  { title: 'Data', fields: [text('name', 'Name'), number('zIndex', 'ZIndex', 1, 10)] },
   { title: 'Image', fields: [
     { key: 'assetId', label: 'Image', type: 'asset', accept: 'image/*' },
     color('imageColor3', 'ImageColor3'),
