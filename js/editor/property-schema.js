@@ -17,7 +17,7 @@ const sharedLayoutFields = [
   udim2('size', 'Size', 'Size'),
   vector2('anchorPoint', 'AnchorPoint', 'AnchorPoint')
 ];
-const instanceSection = { title: 'Instance', fields: [text('name', 'Name')] };
+const instanceSection = { title: 'Data', fields: [text('name', 'Name')] };
 const layout = [{ title: 'Layout', fields: sharedLayoutFields }];
 const commonAppearance = [
   slider('opacity', 'Opacity', 0, 1, 0.01),
@@ -51,7 +51,7 @@ const textAppearance = [
   ])
 ];
 
-export const PROPERTY_SCHEMA_VERSION = 13;
+export const PROPERTY_SCHEMA_VERSION = 14;
 
 export function registerPropertySchema(className, schema, { replace = false } = {}) {
   if (typeof className !== 'string' || (className !== '*' && !/^[A-Z][A-Za-z0-9]*$/.test(className))) {
@@ -101,66 +101,63 @@ registerPropertySchema('*', { sections: [
 ]});
 
 registerPropertySchema('Frame', { sections: [
-  instanceSection,
-  { title: 'Layout', fields: frameLayout },
-  { title: 'Data', fields: [
-    select('automaticSize', 'AutomaticSize', [
-      { value: 'None', label: 'None' }, { value: 'X', label: 'X' },
-      { value: 'Y', label: 'Y' }, { value: 'XY', label: 'XY' }
-    ]),
-    select('sizeConstraint', 'SizeConstraint', [
-      { value: 'RelativeXY', label: 'RelativeXY' },
-      { value: 'RelativeXX', label: 'RelativeXX' },
-      { value: 'RelativeYY', label: 'RelativeYY' }
-    ]),
-    number('layoutOrder', 'LayoutOrder', -1000, 1000),
-    number('zIndex', 'ZIndex', 1, 10),
-    number('selectionOrder', 'SelectionOrder', 0, 1000)
-  ]},
   { title: 'Appearance', fields: [
     color('backgroundColor3', 'BackgroundColor3'),
     slider('backgroundTransparency', 'BackgroundTransparency', 0, 1, 0.01),
     ...commonAppearance
   ]},
+  { title: 'Data', fields: [
+    text('name', 'Name'),
+    select('automaticSize', 'AutomaticSize', [
+      { value: 'None', label: 'None' }, { value: 'X', label: 'X' },
+      { value: 'Y', label: 'Y' }, { value: 'XY', label: 'XY' }
+    ]),
+    select('sizeConstraint', 'SizeConstraint', [
+      { value: 'RelativeXY', label: 'RelativeXY' }, { value: 'RelativeXX', label: 'RelativeXX' },
+      { value: 'RelativeYY', label: 'RelativeYY' }
+    ]),
+    number('layoutOrder', 'LayoutOrder', -1000, 1000), number('zIndex', 'ZIndex', 1, 10),
+    number('selectionOrder', 'SelectionOrder', 0, 1000)
+  ]},
   { title: 'Behavior', fields: [
-    checkbox('clipsDescendants', 'ClipsDescendants'),
-    checkbox('active', 'Active'),
-    checkbox('interactable', 'Interactable'),
-    checkbox('selectable', 'Selectable')
-  ]}
+    checkbox('clipsDescendants', 'ClipsDescendants'), checkbox('active', 'Active'),
+    checkbox('interactable', 'Interactable'), checkbox('selectable', 'Selectable')
+  ]},
+  { title: 'Layout', fields: frameLayout }
 ]});
 
 registerPropertySchema('TextButton', { sections: [
-  instanceSection,
-  ...layout,
+  { title: 'Appearance', fields: [color('background', 'BackgroundColor3'), color('border', 'BorderColor3'), number('borderWidth', 'BorderSizePixel', 0, 30), ...commonAppearance] },
   { title: 'Text', fields: [...textAppearance] },
-  { title: 'Appearance', fields: [color('background', 'BackgroundColor3'), color('border', 'BorderColor3'), number('borderWidth', 'BorderSizePixel', 0, 30), ...commonAppearance] }
+  instanceSection,
+  ...layout
 ]});
 
 registerPropertySchema('TextLabel', { sections: [
-  instanceSection,
-  ...layout,
+  { title: 'Appearance', fields: [color('background', 'BackgroundColor3'), color('border', 'BorderColor3'), number('borderWidth', 'BorderSizePixel', 0, 30), ...commonAppearance] },
   { title: 'Text', fields: [...textAppearance] },
-  { title: 'Appearance', fields: [color('background', 'BackgroundColor3'), color('border', 'BorderColor3'), number('borderWidth', 'BorderSizePixel', 0, 30), ...commonAppearance] }
+  instanceSection,
+  ...layout
 ]});
 
 registerPropertySchema('ImageLabel', { sections: [
-  instanceSection,
-  ...layout,
-  { title: 'Image', fields: [
-    { key: 'assetId', label: 'Imagem', type: 'asset', accept: 'image/*' },
-    select('fit', 'ScaleType', [
-      { value: 'fill', label: 'Stretch' }, { value: 'contain', label: 'Fit' },
-      { value: 'cover', label: 'Crop' }, { value: 'tile', label: 'Tile' }
-    ]),
-    { ...udim2('tileSize', 'TileSize', 'TileSize'), visibleWhen: { key: 'fit', value: 'tile' } },
-    slider('imageTransparency', 'ImageTransparency', 0, 1, 0.01)
-  ]},
   { title: 'Appearance', fields: [
     color('backgroundColor3', 'BackgroundColor3'),
     slider('backgroundTransparency', 'BackgroundTransparency', 0, 1, 0.01),
     color('border', 'BorderColor3'), number('borderWidth', 'BorderSizePixel', 0, 30), ...commonAppearance
-  ]}
+  ]},
+  instanceSection,
+  { title: 'Image', fields: [
+    { key: 'assetId', label: 'Image', type: 'asset', accept: 'image/*' },
+    color('imageColor3', 'ImageColor3'),
+    slider('imageTransparency', 'ImageTransparency', 0, 1, 0.01),
+    select('fit', 'ScaleType', [
+      { value: 'fill', label: 'Stretch' }, { value: 'contain', label: 'Fit' },
+      { value: 'cover', label: 'Crop' }, { value: 'tile', label: 'Tile' }
+    ]),
+    { ...udim2('tileSize', 'TileSize', 'TileSize'), visibleWhen: { key: 'fit', value: 'tile' } }
+  ]},
+  { title: 'Layout', fields: frameLayout }
 ]});
 
 registerPropertySchema('UIBackdrop', { sections: [

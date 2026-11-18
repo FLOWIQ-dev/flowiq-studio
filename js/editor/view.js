@@ -169,18 +169,39 @@ export function renderScene(container, scene, { selectedId = null, preview = fal
         }
         image.alt = node.name;
         image.draggable = false;
+        const imageAlpha = 1 - Math.max(0, Math.min(1, Number(p.imageTransparency) || 0));
         image.style.objectFit = p.fit === 'fill' ? 'fill' : p.fit === 'contain' ? 'contain' : p.fit === 'tile' ? 'none' : 'cover';
-        image.style.opacity = String(1 - Math.max(0, Math.min(1, Number(p.imageTransparency) || 0)));
+        image.style.opacity = String(imageAlpha);
+        const tint = el('div', 'scene-image-tint');
+        tint.style.backgroundColor = p.imageColor3 || '#ffffff';
+        tint.style.opacity = '1';
+        tint.style.maskImage = 'url("' + cached.url + '")';
+        tint.style.webkitMaskImage = tint.style.maskImage;
         if (p.fit === 'tile') {
           image.style.display = 'none';
           childContainer.style.backgroundImage = 'url("' + cached.url + '")';
           childContainer.style.backgroundRepeat = 'repeat';
           const tile = p.tileSize || {};
-          childContainer.style.backgroundSize = Math.max(1, Number(tile.x?.scale || 0) * layout.width + Number(tile.x?.offset || 64)) + 'px ' + Math.max(1, Number(tile.y?.scale || 0) * layout.height + Number(tile.y?.offset || 64)) + 'px';
+          const tileWidth = Math.max(1, Number(tile.x?.scale || 0) * layout.width + Number(tile.x?.offset || 64));
+          const tileHeight = Math.max(1, Number(tile.y?.scale || 0) * layout.height + Number(tile.y?.offset || 64));
+          childContainer.style.backgroundSize = tileWidth + 'px ' + tileHeight + 'px';
+          tint.style.maskRepeat = 'repeat';
+          tint.style.webkitMaskRepeat = 'repeat';
+          tint.style.maskSize = tileWidth + 'px ' + tileHeight + 'px';
+          tint.style.webkitMaskSize = tint.style.maskSize;
+          tint.style.backgroundRepeat = 'repeat';
+          tint.style.backgroundSize = tint.style.maskSize;
         } else {
           image.style.display = 'block';
           childContainer.style.backgroundImage = 'none';
+          tint.style.maskRepeat = 'no-repeat';
+          tint.style.webkitMaskRepeat = 'no-repeat';
+          tint.style.maskSize = '100% 100%';
+          tint.style.webkitMaskSize = '100% 100%';
+          tint.style.backgroundRepeat = 'no-repeat';
+          tint.style.backgroundSize = '100% 100%';
         }
+        childContainer.prepend(tint);
         childContainer.prepend(image);
         item.dataset.assetId = asset.id;
       } else {

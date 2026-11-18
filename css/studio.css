@@ -1344,3 +1344,9 @@ body[data-screen=editor]{
 @media(max-width:680px){.image-picker-dialog{max-height:86dvh;padding:12px}.image-picker-grid{grid-template-columns:repeat(auto-fill,minmax(92px,1fr))}.image-picker-card img{height:78px}}
 
 .image-picker-none-preview{display:grid;place-items:center;width:100%;height:92px;border-radius:3px;background:#0d1725;color:#8fa4bf;font-size:30px}
+
+/* ImageLabel ImageColor3: preserve source alpha and multiply RGB tint. */
+#screen-editor .scene-imagelabel>.scene-children{isolation:isolate}
+#screen-editor .scene-image-content{position:absolute;inset:0;width:100%;height:100%;z-index:0;pointer-events:none}
+#screen-editor .scene-image-tint{position:absolute;inset:0;z-index:0;pointer-events:none;mix-blend-mode:multiply}
+#screen-editor .scene-imagelabel>.scene-children>.scene-image-tint{border-radius:inherit}
