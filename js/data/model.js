@@ -110,8 +110,8 @@ export class Scene {
     if (!(node instanceof SceneNode) || this.nodes.has(node.id)) throw new Error('Objeto inválido ou duplicado.');
     const parent = parentId ? this.get(parentId) : null;
     if (parentId && !parent) throw new Error('O objeto pai não foi encontrado.');
-    if (node.type === 'UIBackdrop' && parent?.type !== 'Frame') throw new Error('UIBackdrop precisa ser filho de um Frame.');
     if (parent?.type === 'UIBackdrop') throw new Error('UIBackdrop não aceita objetos filhos.');
+    if (node.type === 'UIBackdrop' && parent?.type !== 'Frame') throw new Error('UIBackdrop precisa ser filho de um Frame.');
     if (node.type === 'UIBackdrop' && parent.children.some(childId => this.get(childId)?.type === 'UIBackdrop')) throw new Error('Este Frame já possui um UIBackdrop.');
     node.parentId = parentId;
     this.nodes.set(node.id, node);
@@ -166,8 +166,8 @@ export class Scene {
     const parent = parentId ? this.get(parentId) : null;
     if (!node) throw new Error('Objeto não encontrado.');
     if (parentId && !parent) throw new Error('O destino não foi encontrado.');
-    if (node.type === 'UIBackdrop' && parent?.type !== 'Frame') throw new Error('UIBackdrop precisa ser filho de um Frame.');
     if (parent?.type === 'UIBackdrop') throw new Error('UIBackdrop não aceita objetos filhos.');
+    if (node.type === 'UIBackdrop' && parent?.type !== 'Frame') throw new Error('UIBackdrop precisa ser filho de um Frame.');
     if (node.type === 'UIBackdrop' && parent.children.some(childId => childId !== id && this.get(childId)?.type === 'UIBackdrop')) throw new Error('Este Frame já possui um UIBackdrop.');
     if (id === parentId || (parentId && this.descendants(id).some(item => item.id === parentId))) throw new Error('Essa mudança criaria um ciclo.');
     const oldList = node.parentId ? this.get(node.parentId)?.children : this.roots;
