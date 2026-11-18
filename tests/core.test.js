@@ -343,7 +343,7 @@ test('Frame AnchorPoint uses a compact editable two-value tuple and sliders have
 });
 
 
-test('UIBackdrop is a child pseudo-instance with effect settings and renders beneath the Frame fill', async () => {
+test('UIBackdrop is a child pseudo-instance with effect settings and renders through the Frame surface', async () => {
   const model = await readFile(new URL('../js/data/model.js', import.meta.url), 'utf8');
   const schema = await readFile(new URL('../js/editor/property-schema.js', import.meta.url), 'utf8');
   const view = await readFile(new URL('../js/editor/view.js', import.meta.url), 'utf8');
@@ -356,16 +356,13 @@ test('UIBackdrop is a child pseudo-instance with effect settings and renders ben
   assert.ok(schema.includes('LiquidGlass'));
   assert.ok(schema.includes('FrostedGlass'));
   assert.ok(view.includes("child?.type === 'UIBackdrop'"));
-  assert.ok(view.includes('scene-backdrop-layer'));
-  assert.ok(view.includes('scene-frame-fill'));
+  assert.ok(view.includes('backdropVisible'));
+  assert.ok(view.includes('item.style.backdropFilter'));
+  assert.ok(view.includes('item.style.webkitBackdropFilter'));
+  assert.ok(view.includes('item.style.backgroundColor = fillColor'));
   assert.ok(app.includes("type === 'UIBackdrop'"));
   assert.ok(html.includes('data-add-type="UIBackdrop"'));
-  assert.ok(view.includes('layer.style.backdropFilter'));
-  assert.ok(view.includes('layer.style.webkitBackdropFilter'));
-  assert.ok(view.indexOf('item.append(layer)') < view.indexOf('item.append(fillLayer)'));
-  assert.ok(view.includes('item.append(childContainer)'));
 });
-
 
 test('UIBackdrop can only exist once as a leaf child of a Frame', () => {
   const scene = new Scene();
