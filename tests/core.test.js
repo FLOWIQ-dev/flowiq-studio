@@ -381,7 +381,8 @@ test('Frame backdrop filtering is applied to the translucent Frame surface, not 
   const view = await readFile(new URL('../js/editor/view.js', import.meta.url), 'utf8');
   assert.match(view, /item\.style\.backdropFilter = backdropVisible/);
   assert.match(view, /item\.style\.backgroundColor = fillColor/);
-  assert.match(view, /scene-glass-surface/);\n  assert.match(view, /feDisplacementMap/);\n  assert.match(view, /backdrop-filter', refractiveFilter/);
+  assert.match(view, /scene-glass-surface/);
+  assert.match(view, /feDisplacementMap/);\n  assert.match(view, /backdrop-filter', refractiveFilter/);
   assert.doesNotMatch(view, /el\('div', 'scene-backdrop-layer/);
 });
 
@@ -398,22 +399,22 @@ test('ImageLabel reuses object URLs and DOM nodes across scene renders', async (
 test('ImageLabel renders a persistent real image element instead of a CSS background', async () => {
   const view = await readFile(new URL('../js/editor/view.js', import.meta.url), 'utf8');
   const css = await readFile(new URL('../css/studio.css', import.meta.url), 'utf8');
-  assert.match(view, /el\\('img', 'scene-image-content'\\)/);
-  assert.match(view, /image\\.src = cached\\.url/);
+  assert.match(view, /el\('img', 'scene-image-content'\)/);
+  assert.match(view, /image\.src = cached\.url/);
   assert.match(view, /preservedImage/);
-  assert.match(css, /\\.scene-image-content/);
+  assert.match(css, /\.scene-image-content/);
 });
 
 test('Opening the mobile Inspector does not dim the editable stage', async () => {
   const css = await readFile(new URL('../css/studio.css', import.meta.url), 'utf8');
-  assert.match(css, /editor-shell\\[data-panel="inspector"\\]::before\\{opacity:0;pointer-events:none\\}/);
+  assert.match(css, /editor-shell\[data-panel="inspector"\]::before\{opacity:0;pointer-events:none\}/);
 });
 
 test('LiquidGlass uses a distinct low-blur layered surface with touch-responsive highlights', async () => {
   const view = await readFile(new URL('../js/editor/view.js', import.meta.url), 'utf8');
   assert.match(view, /scene-glass-surface/);
-  assert.match(view, /Math\\.min\\(12, Number\\(backdrop\\.blur\\)/);
-  assert.match(view, /item\\.onpointermove/);
+  assert.match(view, /Math\.min\(12, Number\(backdrop\.blur\)/);
+  assert.match(view, /item\.onpointermove/);
   assert.match(view, /--glass-x/);
   assert.match(view, /--glass-y/);
 });
