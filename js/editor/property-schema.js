@@ -154,8 +154,7 @@ registerPropertySchema('ImageLabel', { sections: [
       { value: 'cover', label: 'Crop' }, { value: 'tile', label: 'Tile' }
     ]),
     { ...udim2('tileSize', 'TileSize', 'TileSize'), visibleWhen: { key: 'fit', value: 'tile' } },
-    slider('imageTransparency', 'ImageTransparency', 0, 1, 0.01),
-    color('imageColor3', 'ImageColor3')
+    slider('imageTransparency', 'ImageTransparency', 0, 1, 0.01)
   ]},
   { title: 'Appearance', fields: [
     color('backgroundColor3', 'BackgroundColor3'),
