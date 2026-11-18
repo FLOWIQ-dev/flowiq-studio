@@ -144,7 +144,7 @@ registerPropertySchema('TextLabel', { sections: [
     textarea('text', 'Text'),
     color('textColor3', 'TextColor3'),
     slider('textTransparency', 'TextTransparency', 0, 1, 0.01),
-    select('font', 'Font', [
+    select('fontFace', 'FontFace', [
       { value: 'Arial', label: 'Arial' }, { value: 'ArialBold', label: 'Arial Bold' },
       { value: 'SourceSans', label: 'Source Sans' }, { value: 'SourceSansBold', label: 'Source Sans Bold' },
       { value: 'Gotham', label: 'Gotham' }, { value: 'GothamMedium', label: 'Gotham Medium' },
@@ -162,6 +162,7 @@ registerPropertySchema('TextLabel', { sections: [
       { value: 'Top', label: 'Top' }, { value: 'Center', label: 'Center' }, { value: 'Bottom', label: 'Bottom' }
     ]),
     checkbox('richText', 'RichText'),
+    text('openTypeFeatures', 'OpenTypeFeatures'),
     color('textStrokeColor3', 'TextStrokeColor3'),
     slider('textStrokeTransparency', 'TextStrokeTransparency', 0, 1, 0.01),
     slider('lineHeight', 'LineHeight', 1, 3, 0.05),
