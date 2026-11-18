@@ -489,6 +489,7 @@ class FlowiqStudio {
   duplicateSelected() {
     const id = this.store.state.selectedId;
     if (!id) return;
+    if (this.scene.get(id)?.type === 'UIBackdrop') { this.toast('Um Frame pode ter apenas um UIBackdrop.'); return; }
     this.history.checkpoint(this.historySnapshot());
     const originals = this.scene.descendants(id);
     const copy = this.scene.duplicate(id);
