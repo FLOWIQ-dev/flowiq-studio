@@ -1234,3 +1234,38 @@ body[data-screen=editor]{
 #screen-editor .camera-reset-button[hidden]{display:none}
 #screen-editor #scene.is-camera-tracking .scene-world,
 #screen-editor #scene.is-camera-interacting .scene-world{transition:none!important}
+
+
+/* Frame inspector: compact UDim2 tuples, quiet controls and readable sliders. */
+#screen-editor .property-group{border:0!important}
+#screen-editor .property-subgroup{padding:3px 0 5px;background:transparent;border-radius:0}
+#screen-editor .property-subgroup-title{margin-bottom:3px;color:#879bb5}
+#screen-editor .property-subgroup-fields{gap:5px 8px}
+#screen-editor .property-subgroup .property-field input.udim2-input{
+  grid-column:1/-1;height:29px;min-height:29px;padding:0 8px;
+  border:0;border-radius:4px;background:#111d2c;color:#e2eaf5;
+  font-size:11px;font-variant-numeric:tabular-nums;letter-spacing:.015em;
+}
+#screen-editor .property-subgroup .property-field input.udim2-input:focus{outline:1px solid rgba(101,167,255,.5)}
+#screen-editor .property-group-body>.property-field:has(input[type=range]){
+  grid-template-columns:minmax(0,38%) minmax(0,1fr) 36px;gap:7px;min-height:31px;
+}
+#screen-editor .property-group-body>.property-field input[type=range]{
+  appearance:none;-webkit-appearance:none;width:100%;height:18px;min-height:18px;
+  margin:0;padding:0;border:0!important;outline:0;background:transparent;accent-color:#78adf0;
+}
+#screen-editor .property-group-body>.property-field input[type=range]::-webkit-slider-runnable-track{height:3px;border:0;border-radius:4px;background:#35465c}
+#screen-editor .property-group-body>.property-field input[type=range]::-moz-range-track{height:3px;border:0;border-radius:4px;background:#35465c}
+#screen-editor .property-group-body>.property-field input[type=range]::-webkit-slider-thumb{
+  appearance:none;-webkit-appearance:none;width:12px;height:12px;margin-top:-4.5px;
+  border:0;border-radius:50%;background:#8dbcf4;box-shadow:0 0 0 2px #101b2a;
+}
+#screen-editor .property-group-body>.property-field input[type=range]::-moz-range-thumb{width:12px;height:12px;border:0;border-radius:50%;background:#8dbcf4}
+#screen-editor .property-group-body>.property-field .property-slider-value{
+  grid-column:3;grid-row:1;min-width:34px;padding:0;border:0;border-radius:0;
+  background:transparent;color:#cbd8e8;font-size:10px;text-align:right;
+}
+#screen-editor .property-group-body>.property-field:has(input[type=range])>span{grid-column:1}
+#screen-editor .property-group-body>.property-field input[type=range]{grid-column:2;grid-row:1}
+#screen-editor .property-group-body>.property-field input[type=range]:focus-visible{outline:1px solid rgba(120,173,240,.65);outline-offset:3px}
+#screen-editor .property-group-body>.property-field input[type=range]::-moz-range-progress{height:3px;background:#78adf0}
