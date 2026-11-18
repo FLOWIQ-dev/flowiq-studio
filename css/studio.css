@@ -1349,3 +1349,13 @@ body[data-screen=editor]{
 #screen-editor .scene-imagelabel>.scene-children>.scene-image-layer{isolation:isolate}
 #screen-editor .scene-image-layer>.scene-image-content{position:absolute;inset:0;width:100%;height:100%;max-width:none;max-height:none;object-position:center;pointer-events:none;user-select:none;-webkit-user-drag:none}
 #screen-editor .scene-image-layer>.scene-image-tint{position:absolute;inset:0;pointer-events:none;mix-blend-mode:multiply;border-radius:inherit}
+
+
+/* TextLabel: Roblox-like text surface, independent text/background transparency. */
+.scene-node.scene-textlabel{display:flex;align-items:stretch;justify-content:stretch;overflow:hidden}
+.scene-textlabel>.scene-text-content{display:flex;flex:1;align-items:center;justify-content:center;box-sizing:border-box;width:100%;height:100%;min-width:0;min-height:0;overflow:hidden;padding:5px 9px;white-space:pre-wrap;word-break:normal;overflow-wrap:anywhere;pointer-events:none}
+.scene-textlabel>.scene-children{z-index:2}
+
+/* Every GuiObject is its own stacking context: child ZIndex values cannot escape their parent. */
+.scene-node{isolation:isolate}
+.scene-node>.scene-children{z-index:2}
