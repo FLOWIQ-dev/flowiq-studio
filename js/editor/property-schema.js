@@ -35,7 +35,7 @@ const appearance = [
   number('borderWidth', 'Espessura da borda', 0, 30),
   number('radius', 'Arredondamento', 0, 120),
   number('opacity', 'Opacidade', 0, 1, 0.05),
-  number('rotation', 'Rotação', -360, 360),
+  slider('rotation', 'Rotação', -360, 360, 1),
   checkbox('visible', 'Visível')
 ];
 
@@ -105,14 +105,20 @@ registerPropertySchema('*', { sections: [
 
 registerPropertySchema('Frame', { sections: [
   { title: 'Instance', fields: [text('name', 'Name')] },
-  ...layout,
   { title: 'Data', fields: [
+    ...layout,
+    select('automaticSize', 'AutomaticSize', [
+      { value: 'None', label: 'None' }, { value: 'X', label: 'X' },
+      { value: 'Y', label: 'Y' }, { value: 'XY', label: 'XY' }
+    ]),
     select('sizeConstraint', 'SizeConstraint', [
       { value: 'RelativeXY', label: 'RelativeXY' },
       { value: 'RelativeXX', label: 'RelativeXX' },
       { value: 'RelativeYY', label: 'RelativeYY' }
     ]),
-    number('zIndex', 'ZIndex', 1, 10)
+    number('layoutOrder', 'LayoutOrder', -1000, 1000),
+    number('zIndex', 'ZIndex', 1, 10),
+    number('selectionOrder', 'SelectionOrder', 0, 1000)
   ]},
   { title: 'Appearance', fields: [
     color('backgroundColor3', 'BackgroundColor3'),
@@ -124,11 +130,14 @@ registerPropertySchema('Frame', { sections: [
       { value: 'Middle', label: 'Middle' },
       { value: 'Inset', label: 'Inset' }
     ]),
-    number('rotation', 'Rotation', -360, 360)
+    slider('rotation', 'Rotation', -360, 360, 1)
   ]},
   { title: 'Behavior', fields: [
     checkbox('visible', 'Visible'),
-    checkbox('clipsDescendants', 'ClipsDescendants')
+    checkbox('clipsDescendants', 'ClipsDescendants'),
+    checkbox('active', 'Active'),
+    checkbox('interactable', 'Interactable'),
+    checkbox('selectable', 'Selectable')
   ]}
 ]});
 
