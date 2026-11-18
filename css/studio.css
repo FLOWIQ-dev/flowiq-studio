@@ -1217,3 +1217,13 @@ body[data-screen=editor]{
   transition:transform 120ms linear;
   will-change:transform;
 }
+
+
+/* Build 1.5.3: camera stays inside the adaptive stage; reset lives in the toolbar. */
+#screen-editor .camera-reset-button{
+  min-height:28px;padding:0 9px;border:1px solid rgba(112,178,255,.35);border-radius:6px;
+  background:rgba(40,91,145,.22);color:#b8d8ff;font-size:10px;font-weight:650;white-space:nowrap;
+}
+#screen-editor .camera-reset-button[hidden]{display:none}
+#screen-editor #scene.is-camera-tracking .scene-world{transition:transform 120ms ease-out}
+#screen-editor #scene.is-camera-interacting .scene-world{transition:none!important}
