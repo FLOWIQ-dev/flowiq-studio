@@ -393,6 +393,6 @@ test('ImageLabel reuses object URLs and DOM nodes across scene renders', async (
   assert.match(view, /container\._assetObjectUrls/);
   assert.match(view, /cached\.blob !== asset\.blob/);
   assert.match(view, /existingNodes\.get\(node\.id\)/);
-  assert.match(view, /existing \? existing/);
+  assert.match(view, /existing && existing\.tagName/);
   assert.doesNotMatch(view, /for \(const url of container\._objectUrls/);
 });
