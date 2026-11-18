@@ -508,3 +508,15 @@ test('ImageLabel renderer applies image tint without changing the background', a
   const css = await readFile(new URL('../css/studio.css', import.meta.url), 'utf8');
   assert.match(css, /mix-blend-mode:multiply/);
 });
+
+
+test('ImageLabel composites tint and image transparency in one isolated image layer', async () => {
+  const view = await readFile(new URL('../js/editor/view.js', import.meta.url), 'utf8');
+  const css = await readFile(new URL('../css/studio.css', import.meta.url), 'utf8');
+  assert.match(view, /scene-image-layer/);
+  assert.match(view, /layer\.style\.opacity = String\(imageAlpha\)/);
+  assert.match(view, /layer\.append\(image, tint\)/);
+  assert.match(view, /layer\.style\.backgroundImage = 'url\("/);
+  assert.match(css, /scene-image-layer\{isolation:isolate\}/);
+  assert.match(css, /scene-image-layer>\.scene-image-tint[\s\S]*?mix-blend-mode:multiply/);
+});
