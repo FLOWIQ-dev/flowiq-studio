@@ -1210,12 +1210,19 @@ body[data-screen=editor]{
 
 
 /* Build 1.5.1: camera movement stays clipped to the adaptive stage surface. */
-#screen-editor .stage-viewport{overflow:hidden}
-#screen-editor #scene-zoom{transform:none!important;position:relative;max-width:100%;max-height:100%}
-#screen-editor #scene{position:relative;overflow:hidden}
-#screen-editor #scene.is-camera-tracking .scene-world{
-  transition:transform 120ms linear;
-  will-change:transform;
+#screen-editor .stage-viewport{
+  position:relative;min-width:0;min-height:0;overflow:hidden;isolation:isolate;
+}
+#screen-editor #scene-zoom{
+  position:relative;flex:0 0 auto;max-width:100%;max-height:100%;
+  transform:none!important;overflow:hidden;
+}
+#screen-editor #scene{
+  position:relative;flex:0 0 auto;overflow:hidden;contain:layout paint;
+}
+#screen-editor #scene .scene-world{
+  position:absolute;left:0;top:0;transform-origin:50% 50%;
+  transition:none!important;will-change:transform;
 }
 
 
@@ -1225,5 +1232,5 @@ body[data-screen=editor]{
   background:rgba(40,91,145,.22);color:#b8d8ff;font-size:10px;font-weight:650;white-space:nowrap;
 }
 #screen-editor .camera-reset-button[hidden]{display:none}
-#screen-editor #scene.is-camera-tracking .scene-world{transition:transform 120ms ease-out}
+#screen-editor #scene.is-camera-tracking .scene-world,
 #screen-editor #scene.is-camera-interacting .scene-world{transition:none!important}
