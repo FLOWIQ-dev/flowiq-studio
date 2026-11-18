@@ -451,7 +451,7 @@ test('Frame and ImageLabel share the exact same UDim2 and AnchorPoint layout con
   ]);
   for (const type of ['Frame', 'TextButton', 'TextLabel', 'ImageLabel']) {
     const current = getPropertySchema(type);
-    assert.equal(current.sections[0].title, 'Instance');
+    assert.equal(current.sections[0].title, 'Appearance');
     assert.ok(current.sections.some(section => section.title === 'Layout'));
   }
 });
