@@ -79,6 +79,8 @@ export class SceneNode {
     this.name = cleanName(name, type);
     const clean = cleanProps(props);
     const merged = { rotation: 0, ...DEFAULTS[type], ...clean };
+    // UIBackdrop's former FrostedGlass preset is now named Blur.
+    if (type === 'UIBackdrop' && merged.effect === 'FrostedGlass') merged.effect = 'Blur';
     if (!Object.hasOwn(clean, 'position')) merged.position = {
       x: { scale: 0, offset: finite(clean.x, DEFAULTS[type].x) },
       y: { scale: 0, offset: finite(clean.y, DEFAULTS[type].y) }
