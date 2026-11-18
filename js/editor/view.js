@@ -235,7 +235,7 @@ export function renderScene(container, scene, { selectedId = null, preview = fal
       const fontSize = Math.max(1, Math.min(100, Number(p.textSize ?? 14)));
       const paddingX = 18, paddingY = 10;
       const resolvedSize = p.textScaled
-        ? fitTextSize(textValue, fontFamily, fontSize, Math.max(1, layout.width - paddingX), Math.max(1, layout.height - paddingY), Number(p.lineHeight) || 1, wrapped)
+        ? fitTextSize(textValue, fontFamily, 100, Math.max(1, layout.width - paddingX), Math.max(1, layout.height - paddingY), Number(p.lineHeight) || 1, wrapped)
         : fontSize;
       if (p.richText) content.append(richTextFragment(textValue));
       else content.textContent = textValue;
@@ -508,8 +508,9 @@ export function renderInspector(container, node, { onChange, onDelete, onDuplica
         input.append(option);
       });
     } else {
-      input = el('input');
-      input.type = type === 'slider' ? 'range' : type;
+      input = type === 'textarea' ? el('textarea') : el('input');
+      if (type === 'textarea') { input.rows = 3; input.classList.add('property-textarea'); }
+      else input.type = type === 'slider' ? 'range' : type;
       if (type === 'number' || type === 'slider') {
         input.min = descriptor.min ?? '0';
         input.max = descriptor.max ?? '2000';
