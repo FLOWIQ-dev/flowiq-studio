@@ -2,7 +2,7 @@ import { Store } from './core/store.js';
 import { History } from './core/history.js';
 import { Scene, COMPONENTS, resolveNodeLayout } from './data/model.js';
 import { Database } from './data/database.js';
-import { renderScene, renderTree, renderInspector } from './editor/view.js';
+import { renderScene, renderTree, renderInspector, updateSceneLayout } from './editor/view.js';
 import { Runtime } from './runtime/runtime.js';
 
 const $ = id => document.getElementById(id);
@@ -825,12 +825,9 @@ class FlowiqStudio {
       }
       const liveWidth = drag.parentWidth * current.props.size.x.scale + current.props.size.x.offset;
       const liveHeight = drag.parentHeight * current.props.size.y.scale + current.props.size.y.offset;
-      target.style.left = (drag.parentWidth * current.props.position.x.scale + current.props.position.x.offset) + 'px';
-      target.style.top = (drag.parentHeight * current.props.position.y.scale + current.props.position.y.offset) + 'px';
-      target.style.width = liveWidth + 'px';
-      target.style.height = liveHeight + 'px';
-      target.style.transform = 'translate(' + (-current.props.anchorPoint.x * 100) + '%,' + (-current.props.anchorPoint.y * 100) + '%) rotate(' + (Number(current.props.rotation) || 0) + 'deg)';
-      const rotateHandle = target.querySelector('.rotate-handle');
+      updateSceneLayout($('scene'), this.scene, this.getStageSize());
+      const liveTarget = $('scene').querySelector('[data-node-id="' + CSS.escape(current.id) + '"]');
+      const rotateHandle = liveTarget?.querySelector('.rotate-handle');
       if (rotateHandle) rotateHandle.style.transform = 'rotate(' + (-(Number(current.props.rotation) || 0)) + 'deg)';
     };
     const end = endEvent => {
