@@ -17,21 +17,12 @@ const el = (tag, className, text) => {
 };
 
 const FONT_CSS = Object.freeze({
-  Arial: 'Arial, sans-serif', ArialBold: 'Arial, sans-serif',
-  SourceSans: 'Arial, sans-serif', SourceSansBold: 'Arial, sans-serif',
-  Gotham: 'Arial, sans-serif', GothamMedium: 'Arial, sans-serif', GothamBold: 'Arial, sans-serif',
-  Roboto: 'Roboto, Arial, sans-serif', RobotoMono: 'ui-monospace, monospace',
-  Ubuntu: 'Ubuntu, Arial, sans-serif', Code: 'ui-monospace, monospace'
+  Arial: 'Arial, Helvetica, sans-serif',
+  Inter: 'Inter, ui-sans-serif, system-ui, sans-serif',
+  Roboto: 'Roboto, Arial, sans-serif',
+  Georgia: 'Georgia, serif',
+  Monospace: 'ui-monospace, SFMono-Regular, Consolas, monospace'
 });
-const FONT_WEIGHT = Object.freeze({ ArialBold: 700, SourceSansBold: 700, GothamMedium: 600, GothamBold: 700 });
-
-function rgbaColor(value, alpha = 1) {
-  const match = String(value || '#000000').match(/^#([0-9a-f]{3}|[0-9a-f]{6})$/i);
-  if (!match) return value || 'rgba(0,0,0,' + alpha + ')';
-  const hex = match[1].length === 3 ? match[1].split('').map(char => char + char).join('') : match[1];
-  const rgb = [0, 2, 4].map(index => parseInt(hex.slice(index, index + 2), 16));
-  return 'rgba(' + rgb.join(',') + ',' + Math.max(0, Math.min(1, alpha)) + ')';
-}
 
 function richTextFragment(source) {
   const parsed = new DOMParser().parseFromString(String(source ?? ''), 'text/html');
@@ -222,12 +213,10 @@ export function renderScene(container, scene, { selectedId = null, preview = fal
     for (const child of Array.from(item.children)) if (child !== childContainer && child !== preservedImageLayer && !(node.type === 'TextLabel' && child.classList.contains('scene-text-content'))) child.remove();
     if (node.type === 'TextLabel') {
       const content = el('span', 'scene-text-content');
-      const fontKey = p.fontFace || p.font || 'Arial';
-      const fontFamily = FONT_CSS[fontKey] || 'Arial, sans-serif';
-      const weight = FONT_WEIGHT[fontKey] || 400;
-      let textValue = String(p.text ?? '');
-      const maxGraphemes = Number(p.maxVisibleGraphemes ?? -1);
-      if (!p.richText && maxGraphemes >= 0) textValue = Array.from(textValue).slice(0, maxGraphemes).join('');
+      const fontKey = p.fontFace || 'Arial';
+      const fontFamily = FONT_CSS[fontKey] || FONT_CSS.Arial;
+      const weight = [400, 500, 600, 700].includes(Number(p.fontWeight)) ? Number(p.fontWeight) : 400;
+      const textValue = String(p.text ?? '');
       const wrapped = Boolean(p.textWrapped || p.textScaled);
       const horizontal = p.textXAlignment || 'Center';
       const vertical = p.textYAlignment || 'Center';
@@ -255,9 +244,7 @@ export function renderScene(container, scene, { selectedId = null, preview = fal
       content.style.overflowWrap = wrapped ? 'anywhere' : 'normal';
       content.style.direction = p.textDirection === 'RightToLeft' ? 'rtl' : p.textDirection === 'LeftToRight' ? 'ltr' : 'inherit';
       content.style.overflow = 'hidden';
-      if (p.textTruncate !== 'None' && !wrapped) content.style.textOverflow = 'ellipsis';
-      const strokeAlpha = 1 - Math.max(0, Math.min(1, Number(p.textStrokeTransparency ?? 1)));
-      content.style.webkitTextStroke = strokeAlpha > 0 ? '1px ' + rgbaColor(p.textStrokeColor3 || '#000000', strokeAlpha) : '0 transparent';
+      if (!wrapped) content.style.textOverflow = 'ellipsis';
       content.style.padding = '5px 9px';
       content.style.boxSizing = 'border-box';
       content.style.width = '100%';
