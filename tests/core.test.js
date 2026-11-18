@@ -222,3 +222,23 @@ test('Inspector actions live in the panel title bar and property groups are sear
   assert.match(view, /aria-expanded/);
   assert.match(css, /inspector-panel-title\{display:grid;grid-template-columns:minmax\(0,1fr\) auto auto/);
 });
+
+
+test('editor recalculates nested descendants during live parent transforms', async () => {
+  const app = await readFile(new URL('../js/app.js', import.meta.url), 'utf8');
+  const view = await readFile(new URL('../js/editor/view.js', import.meta.url), 'utf8');
+  assert.match(app, /updateSceneLayout\(\$\('scene'\), this\.scene, this\.getStageSize\(\)\)/);
+  assert.match(view, /export function updateSceneLayout/);
+  assert.match(view, /visit\(childId, children, layout\.width, layout\.height\)/);
+  const scene = new Scene([
+    { id: 'parent', type: 'Frame', props: { size: { x: { scale: 0, offset: 400 }, y: { scale: 0, offset: 300 } } }, children: [
+      { id: 'child', type: 'Frame', props: { position: { x: { scale: 0.5, offset: 0 }, y: { scale: 0.5, offset: 0 } }, size: { x: { scale: 0.5, offset: 0 }, y: { scale: 0.5, offset: 0 } } } }
+    ] }
+  ]);
+  const parent = scene.get('parent');
+  const child = scene.get('child');
+  assert.deepEqual(resolveNodeLayout(child, 400, 300), { x: 200, y: 150, width: 200, height: 150 });
+  parent.props.size.x.offset = 600;
+  parent.props.size.y.offset = 500;
+  assert.deepEqual(resolveNodeLayout(child, 600, 500), { x: 300, y: 250, width: 300, height: 250 });
+});
