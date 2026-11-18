@@ -1,10 +1,10 @@
-const CACHE = 'flowiq-studio-clean-v133';
+const CACHE = 'flowiq-studio-clean-v134';
 const FILES = [
   './',
   './index.html',
   './manifest.json',
-  './css/studio.css?v=2026.11.18.133',
-  './js/app.js?v=2026.11.18.133',
+  './css/studio.css?v=2026.11.18.134',
+  './js/app.js?v=2026.11.18.134',
   './js/core/store.js',
   './js/core/history.js',
   './js/data/model.js',
