@@ -379,10 +379,33 @@ class FlowiqStudio {
     this.renderEditor();
   }
 
-  updateProperty(key, value) {
+  beginPropertyEdit(key) {
+    if (this.activePropertyEdit?.key === key) return;
+    this.activePropertyEdit = { key };
+    this.history.checkpoint(this.historySnapshot());
+  }
+
+  previewProperty(key, value) {
+    this.updateProperty(key, value, { checkpoint: false, render: false, save: false });
+    const stageSize = this.getStageSize();
+    renderScene($('scene'), this.scene, { selectedId: this.store.state.selectedId, assets: this.assets, sceneSize: stageSize, zoom: this.zoom });
+  }
+
+  commitPropertyEdit(key, value) {
+    if (this.activePropertyEdit?.key !== key) {
+      this.updateProperty(key, value);
+      return;
+    }
+    this.activePropertyEdit = null;
+    this.updateProperty(key, value, { checkpoint: false, render: false, save: true });
+    const stageSize = this.getStageSize();
+    renderScene($('scene'), this.scene, { selectedId: this.store.state.selectedId, assets: this.assets, sceneSize: stageSize, zoom: this.zoom });
+  }
+
+  updateProperty(key, value, { checkpoint = true, render = true, save = true } = {}) {
     const node = this.scene.get(this.store.state.selectedId);
     if (!node) return;
-    this.history.checkpoint(this.historySnapshot());
+    if (checkpoint) this.history.checkpoint(this.historySnapshot());
     if (key === 'name') node.name = String(value).trim().slice(0, 64) || node.type;
     else if (key.includes('.')) {
       const parts = key.split('.');
@@ -410,8 +433,8 @@ class FlowiqStudio {
     } else if (key === 'opacity') node.props[key] = Math.max(0, Math.min(1, Number(value) || 0));
     else if (key === 'radius') node.props[key] = Math.max(0, Math.min(160, Number(value) || 0));
     else node.props[key] = value;
-    this.scheduleSave();
-    this.renderEditor();
+    if (save) this.scheduleSave();
+    if (render) this.renderEditor();
   }
 
   saveButtonAction(nodeId, actions) {
@@ -601,6 +624,9 @@ class FlowiqStudio {
     renderInspector($('inspector'), node, {
       assets: this.assets,
       onChange: (key, value) => this.updateProperty(key, value),
+      onEditStart: key => this.beginPropertyEdit(key),
+      onPreview: (key, value) => this.previewProperty(key, value),
+      onCommit: (key, value) => this.commitPropertyEdit(key, value),
       onDuplicate: () => this.duplicateSelected(),
       onDelete: () => { this.deleteSelected(); this.setPanel('stage'); },
       onAsset: id => this.updateProperty('assetId', id),
