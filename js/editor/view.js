@@ -25,6 +25,13 @@ export function renderScene(container, scene, { selectedId = null, preview = fal
   const rootHeight = Math.max(1, Number(sceneSize.height) || container.clientHeight || 640);
   container.style.position = 'relative';
   const world = el('div', 'scene-world');
+  const svgNamespace = 'http://www.w3.org/2000/svg';
+  const filterSvg = document.createElementNS(svgNamespace, 'svg');
+  filterSvg.setAttribute('aria-hidden', 'true');
+  filterSvg.style.cssText = 'position:absolute;width:0;height:0;overflow:hidden;pointer-events:none';
+  const filterDefs = document.createElementNS(svgNamespace, 'defs');
+  filterSvg.append(filterDefs);
+  world.append(filterSvg);
   world.style.width = rootWidth + 'px';
   world.style.height = rootHeight + 'px';
   world.style.transformOrigin = preview ? 'top left' : '50% 50%';
@@ -117,6 +124,33 @@ export function renderScene(container, scene, { selectedId = null, preview = fal
           const refract = Math.max(0, Math.min(1, Number(backdrop.refraction) || 0));
           glassSurface = el('div', 'scene-glass-surface');
           glassSurface.setAttribute('aria-hidden', 'true');
+          const filterId = 'flowiq-liquid-glass-' + String(container.id || 'scene').replace(/[^a-z0-9_-]/gi, '-') + '-' + String(node.id).replace(/[^a-z0-9_-]/gi, '-');
+          const svgFilter = document.createElementNS(svgNamespace, 'filter');
+          svgFilter.setAttribute('id', filterId);
+          svgFilter.setAttribute('x', '-12%');
+          svgFilter.setAttribute('y', '-12%');
+          svgFilter.setAttribute('width', '124%');
+          svgFilter.setAttribute('height', '124%');
+          svgFilter.setAttribute('color-interpolation-filters', 'sRGB');
+          const turbulence = document.createElementNS(svgNamespace, 'feTurbulence');
+          turbulence.setAttribute('type', 'fractalNoise');
+          turbulence.setAttribute('baseFrequency', '0.012 0.019');
+          turbulence.setAttribute('numOctaves', '2');
+          turbulence.setAttribute('seed', '8');
+          turbulence.setAttribute('result', 'glassNoise');
+          const displacement = document.createElementNS(svgNamespace, 'feDisplacementMap');
+          displacement.setAttribute('in', 'SourceGraphic');
+          displacement.setAttribute('in2', 'glassNoise');
+          displacement.setAttribute('scale', String(4 + refract * 24));
+          displacement.setAttribute('xChannelSelector', 'R');
+          displacement.setAttribute('yChannelSelector', 'G');
+          svgFilter.append(turbulence, displacement);
+          filterDefs.append(svgFilter);
+          const refractiveFilter = 'url(#' + filterId + ') ' + item.style.backdropFilter;
+          if (globalThis.CSS?.supports?.('backdrop-filter', refractiveFilter)) {
+            item.style.backdropFilter = refractiveFilter;
+            item.style.webkitBackdropFilter = refractiveFilter;
+          }
           glassSurface.style.setProperty('--glass-tint', 'rgba(' + tintRgb + ',' + Math.max(0.035, tintAlpha * 0.42) + ')');
           glassSurface.style.setProperty('--glass-shine', String(shine));
           glassSurface.style.setProperty('--glass-refraction', String(refract));
@@ -196,6 +230,7 @@ export function renderScene(container, scene, { selectedId = null, preview = fal
         childContainer.prepend(image);
         item.dataset.assetId = asset.id;
       } else {
+        preservedImage?.remove();
         delete item.dataset.assetId;
         delete item.dataset.imageUrl;
       }
