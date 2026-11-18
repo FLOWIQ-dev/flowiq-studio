@@ -124,6 +124,15 @@ export function renderScene(container, scene, { selectedId = null, preview = fal
     } else {
       item.style.borderRadius = Math.max(0, Number(p.radius) || 0) + 'px';
       item.style.border = Math.max(0, Number(p.borderWidth) || 0) + 'px solid ' + (p.border || 'transparent');
+      if (node.type === 'ImageLabel') {
+        const bg = String(p.backgroundColor3 || p.background || 'transparent');
+        const alpha = 1 - Math.max(0, Math.min(1, Number(p.backgroundTransparency) || 0));
+        const match = bg.match(/^#([0-9a-f]{3}|[0-9a-f]{6})$/i);
+        if (match) {
+          const hex = match[1].length === 3 ? match[1].split('').map(char => char + char).join('') : match[1];
+          item.style.backgroundColor = 'rgba(' + [0,2,4].map(index => parseInt(hex.slice(index,index+2),16)).join(',') + ',' + alpha + ')';
+        } else item.style.backgroundColor = bg;
+      }
     }
     item.style.color = p.color || '#ffffff';
     item.style.fontSize = Math.max(8, Number(p.fontSize) || 16) + 'px';
@@ -159,10 +168,22 @@ export function renderScene(container, scene, { selectedId = null, preview = fal
         }
         image.alt = node.name;
         image.draggable = false;
-        image.style.objectFit = p.fit || 'cover';
+        image.style.objectFit = p.fit === 'fill' ? 'fill' : p.fit === 'contain' ? 'contain' : p.fit === 'tile' ? 'none' : 'cover';
+        image.style.opacity = String(1 - Math.max(0, Math.min(1, Number(p.imageTransparency) || 0)));
+        if (p.fit === 'tile') {
+          image.style.display = 'none';
+          childContainer.style.backgroundImage = 'url("' + cached.url + '")';
+          childContainer.style.backgroundRepeat = 'repeat';
+          const tile = p.tileSize || {};
+          childContainer.style.backgroundSize = Math.max(1, Number(tile.x?.scale || 0) * layout.width + Number(tile.x?.offset || 64)) + 'px ' + Math.max(1, Number(tile.y?.scale || 0) * layout.height + Number(tile.y?.offset || 64)) + 'px';
+        } else {
+          image.style.display = 'block';
+          childContainer.style.backgroundImage = 'none';
+        }
         childContainer.prepend(image);
         item.dataset.assetId = asset.id;
       } else {
+        childContainer.style.backgroundImage = 'none';
         preservedImage?.remove();
         delete item.dataset.assetId;
         delete item.dataset.imageUrl;
@@ -321,13 +342,18 @@ export function renderInspector(container, node, { onChange, onDelete, onDuplica
     const { key, label: labelText, type = 'number' } = descriptor;
     const wrap = el('label', 'property-field');
     if (type !== 'udim2' && type !== 'vector2') wrap.append(el('span', '', labelText));
+    const propertyValue = readValue(key);
     let input;
-    if (type === 'select' || type === 'asset') {
+    if (type === 'asset') {
+      input = el('button', 'asset-picker-trigger');
+      input.type = 'button';
+      const selectedAsset = assets.find(asset => asset.id === propertyValue);
+      input.textContent = selectedAsset?.name || 'Escolher imagem…';
+      input.dataset.openAssetPicker = 'true';
+      input.setAttribute('aria-label', 'Escolher imagem da Biblioteca');
+    } else if (type === 'select') {
       input = el('select');
-      const values = type === 'asset'
-        ? [{ value: '', label: 'Nenhum arquivo' }, ...assets.filter(asset => !descriptor.accept || asset.mime?.startsWith(descriptor.accept.replace('/*', '/'))).map(asset => ({ value: asset.id, label: asset.name }))]
-        : (descriptor.values || []);
-      values.forEach(value => {
+      (descriptor.values || []).forEach(value => {
         const option = el('option', '', value.label);
         option.value = value.value;
         input.append(option);
@@ -341,7 +367,6 @@ export function renderInspector(container, node, { onChange, onDelete, onDuplica
         input.step = descriptor.step ?? '1';
       }
     }
-    const propertyValue = readValue(key);
     if (type === 'udim2' || type === 'vector2') {
       input.type = 'text';
       input.inputMode = 'decimal';
@@ -413,6 +438,8 @@ export function renderInspector(container, node, { onChange, onDelete, onDuplica
       input.addEventListener('change', commit);
       valueInput.addEventListener('change', commit);
       wrap.append(input, valueInput);
+    } else if (type === 'asset') {
+      wrap.append(input);
     } else {
       if (type === 'number' || type === 'color') {
         const begin = () => onEditStart?.(key);
@@ -455,6 +482,7 @@ export function renderInspector(container, node, { onChange, onDelete, onDuplica
     definition.fields.forEach(descriptor => {
       const control = field(descriptor);
       control.dataset.propertySearch = (descriptor.label + ' ' + descriptor.key + ' ' + definition.title + ' ' + (descriptor.subgroup || '')).toLocaleLowerCase('pt-BR');
+      if (descriptor.visibleWhen) control.hidden = node.props[descriptor.visibleWhen.key] !== descriptor.visibleWhen.value;
       if (descriptor.enabledOnly || descriptor.effectOnly) {
         control.dataset.effectOnly = (descriptor.effectOnly || []).join(',');
         const enabled = Boolean(node.props.enabled);
