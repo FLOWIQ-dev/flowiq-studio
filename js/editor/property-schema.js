@@ -5,6 +5,7 @@ const registry = new Map();
 
 const number = (key, label, min, max, step = 1) => ({ key, label, type: 'number', min, max, step });
 const slider = (key, label, min, max, step = 0.01) => ({ key, label, type: 'slider', min, max, step });
+const udim2 = (key, label, subgroup) => ({ key, label, type: 'udim2', subgroup });
 const text = (key, label) => ({ key, label, type: 'text' });
 const color = (key, label) => ({ key, label, type: 'color' });
 const select = (key, label, values) => ({ key, label, type: 'select', values });
@@ -34,7 +35,7 @@ const appearance = [
   color('border', 'Borda'),
   number('borderWidth', 'Espessura da borda', 0, 30),
   number('radius', 'Arredondamento', 0, 120),
-  number('opacity', 'Opacidade', 0, 1, 0.05),
+  slider('opacity', 'Opacidade', 0, 1, 0.01),
   slider('rotation', 'Rotação', -360, 360, 1),
   checkbox('visible', 'Visível')
 ];
@@ -56,7 +57,7 @@ const textAppearance = [
   ])
 ];
 
-export const PROPERTY_SCHEMA_VERSION = 2;
+export const PROPERTY_SCHEMA_VERSION = 3;
 
 export function registerPropertySchema(className, schema, { replace = false } = {}) {
   if (typeof className !== 'string' || (className !== '*' && !/^[A-Z][A-Za-z0-9]*$/.test(className))) {
@@ -76,7 +77,7 @@ export function registerPropertySchema(className, schema, { replace = false } = 
           if (!field || typeof field.key !== 'string' || typeof field.label !== 'string') {
             throw new TypeError('Campo de propriedade inválido.');
           }
-          if (!['text', 'number', 'slider', 'color', 'select', 'checkbox', 'asset'].includes(field.type)) {
+          if (!['text', 'number', 'slider', 'color', 'select', 'checkbox', 'asset', 'udim2'].includes(field.type)) {
             throw new TypeError('Tipo de campo não suportado: ' + field.type);
           }
           return { ...field, values: field.values?.map(item => ({ ...item })) };
@@ -97,6 +98,13 @@ export function listPropertySchemas() {
   return [...registry.entries()].map(([className, schema]) => ({ className, schema }));
 }
 
+const frameLayout = [
+  udim2('position', 'Position', 'Position'),
+  udim2('size', 'Size', 'Size'),
+  { ...number('anchorPoint.x', 'X', 0, 1, 0.01), subgroup: 'AnchorPoint' },
+  { ...number('anchorPoint.y', 'Y', 0, 1, 0.01), subgroup: 'AnchorPoint' }
+];
+
 registerPropertySchema('*', { sections: [
   { title: 'Identificação', fields: [text('name', 'Nome')] },
   ...layout,
@@ -105,7 +113,7 @@ registerPropertySchema('*', { sections: [
 
 registerPropertySchema('Frame', { sections: [
   { title: 'Instance', fields: [text('name', 'Name')] },
-  { title: 'Layout', fields: layout.flatMap(section => section.fields) },
+  { title: 'Layout', fields: frameLayout },
   { title: 'Data', fields: [
     select('automaticSize', 'AutomaticSize', [
       { value: 'None', label: 'None' }, { value: 'X', label: 'X' },
@@ -123,13 +131,7 @@ registerPropertySchema('Frame', { sections: [
   { title: 'Appearance', fields: [
     color('backgroundColor3', 'BackgroundColor3'),
     slider('backgroundTransparency', 'BackgroundTransparency', 0, 1, 0.01),
-    color('borderColor3', 'BorderColor3'),
-    slider('borderSizePixel', 'BorderSizePixel', 0, 20, 1),
-    select('borderMode', 'BorderMode', [
-      { value: 'Outline', label: 'Outline' },
-      { value: 'Middle', label: 'Middle' },
-      { value: 'Inset', label: 'Inset' }
-    ]),
+    slider('opacity', 'Opacity', 0, 1, 0.01),
     slider('rotation', 'Rotation', -360, 360, 1)
   ]},
   { title: 'Behavior', fields: [
