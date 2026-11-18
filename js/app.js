@@ -428,6 +428,9 @@ class FlowiqStudio {
       }
       if (key === 'position') { node.props.x = target.x.offset; node.props.y = target.y.offset; }
       else { node.props.width = target.x.offset; node.props.height = target.y.offset; }
+    } else if (key === 'anchorPoint' && value && typeof value === 'object') {
+      node.props.anchorPoint.x = Math.max(0, Math.min(1, Number(value.x) || 0));
+      node.props.anchorPoint.y = Math.max(0, Math.min(1, Number(value.y) || 0));
     } else if (key.includes('.')) {
       const parts = key.split('.');
       const leaf = parts.pop();
