@@ -1183,3 +1183,27 @@ body[data-screen=editor]{
  #screen-editor .inspector-content{padding:5px 12px max(22px,env(safe-area-inset-bottom))}
  #screen-editor .property-subgroup-fields{gap:4px 7px}
 }
+
+
+/* Build 1.4.8: readable slider values and live property feedback. */
+#screen-editor .property-group-body>.property-field:has(input[type=range]){
+  grid-template-columns:minmax(0,42%) minmax(0,1fr) 34px;
+  gap:5px;
+}
+#screen-editor .property-group-body>.property-field .property-slider-value{
+  display:block;
+  min-width:30px;
+  padding:2px 3px;
+  color:#d8e6f7;
+  background:rgba(120,145,175,.10);
+  border-radius:3px;
+  font-size:10px;
+  font-variant-numeric:tabular-nums;
+  line-height:1.4;
+  text-align:center;
+}
+#screen-editor .property-group-body>.property-field input[type=range]{
+  min-width:0;
+  accent-color:#6ea9ed;
+  touch-action:pan-y;
+}
