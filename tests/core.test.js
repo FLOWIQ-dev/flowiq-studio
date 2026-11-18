@@ -559,13 +559,14 @@ test('ImageLabel composites tint and image transparency in one isolated image la
 });
 
 
-test('ZIndex is available on every GuiObject and remains bounded to the Roblox layer range', () => {
+test('ZIndex is available on every GuiObject and supports Roblox signed integer layers', () => {
   const scene = new Scene();
   for (const type of ['Frame', 'TextButton', 'TextLabel', 'ImageLabel']) {
     const node = scene.create(type);
     assert.equal(node.props.zIndex, 1, type + ' should default to ZIndex 1');
     const fields = getPropertySchema(type).sections.flatMap(section => section.fields);
-    assert.equal(fields.find(field => field.key === 'zIndex')?.max, 10, type + ' should expose ZIndex');
+    assert.equal(fields.find(field => field.key === 'zIndex')?.min, -2147483648, type + ' should expose negative ZIndex');
+    assert.equal(fields.find(field => field.key === 'zIndex')?.max, 2147483647, type + ' should expose positive ZIndex');
   }
   assert.ok(COMPONENTS.some(component => component.type === 'TextLabel'), 'TextLabel must be available in Insert Object');
 });
@@ -579,7 +580,7 @@ test('TextLabel exposes Roblox text properties and hierarchy-aware rendering', a
   assert.equal(fields.find(field => field.key === 'text')?.type, 'textarea');
   const view = await readFile(new URL('../js/editor/view.js', import.meta.url), 'utf8');
   const css = await readFile(new URL('../css/studio.css', import.meta.url), 'utf8');
-  assert.match(view, /item\.style\.zIndex = String\(Math\.max\(1, Math\.min\(10/);
+  assert.match(view, /item\.style\.zIndex = String\(normalizeZIndex\(p\.zIndex\)\)/);
   assert.match(view, /childContainer\.style\.zIndex = '2'/);
   assert.match(view, /fitTextSize\(/);
   assert.match(view, /richTextFragment\(/);
