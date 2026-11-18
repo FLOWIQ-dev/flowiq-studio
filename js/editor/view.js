@@ -15,7 +15,7 @@ const el = (tag, className, text) => {
   return node;
 };
 
-export function renderScene(container, scene, { selectedId = null, preview = false, assets = [], onRun = () => {}, sceneSize = { width: 960, height: 640 }, zoom = 1 } = {}) {
+export function renderScene(container, scene, { selectedId = null, preview = false, assets = [], onRun = () => {}, sceneSize = { width: 960, height: 640 }, zoom = 1, cameraOffset = { x: 0, y: 0 } } = {}) {
   for (const url of container._objectUrls || []) URL.revokeObjectURL(url);
   container._objectUrls = [];
   container.replaceChildren();
@@ -27,7 +27,10 @@ export function renderScene(container, scene, { selectedId = null, preview = fal
   world.style.width = rootWidth + 'px';
   world.style.height = rootHeight + 'px';
   world.style.transformOrigin = preview ? 'top left' : '50% 50%';
-  world.style.transform = 'scale(' + Math.max(0.25, Math.min(2.5, Number(zoom) || 1)) + ')';
+  const safeZoom = Math.max(0.25, Math.min(2.5, Number(zoom) || 1));
+  const offsetX = preview ? 0 : Number(cameraOffset?.x) || 0;
+  const offsetY = preview ? 0 : Number(cameraOffset?.y) || 0;
+  world.style.transform = preview ? 'scale(' + safeZoom + ')' : 'translate3d(' + offsetX + 'px,' + offsetY + 'px,0) scale(' + safeZoom + ')';
   container.append(world);
   const assetMap = new Map(assets.map(asset => [asset.id, asset]));
   const measureLayout = (node, parentWidth, parentHeight) => {
