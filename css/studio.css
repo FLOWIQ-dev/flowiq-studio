@@ -1311,10 +1311,4 @@ body[data-screen=editor]{
 .scene-node.scene-imagelabel{overflow:visible!important;contain:none}
 .scene-node.scene-imagelabel>.scene-children{overflow:visible!important}
 
-/* Flowiq materials: visual layers remain clipped to their owning Frame. */
-.scene-effect-surface{position:absolute;inset:0;z-index:1;display:block;overflow:hidden;pointer-events:none;contain:paint;background-repeat:no-repeat;opacity:var(--effect-intensity,.5)}
-.scene-effect-prism{filter:saturate(1.18)}
-.scene-effect-emboss{opacity:1}
-.scene-effect-holographic{opacity:var(--effect-intensity,.5);animation:flowiq-holographic-drift 8s ease-in-out infinite alternate;will-change:background-position}
-@keyframes flowiq-holographic-drift{from{background-position:0% 50%,0 0}to{background-position:100% 50%,0 0}}
-@media(prefers-reduced-motion:reduce){.scene-effect-holographic{animation:none!important}}
+/* Blur is rendered directly on its owning Frame and clipped by its shape. */

@@ -29,7 +29,6 @@ const appearance = [
   color('background', 'Fundo'),
   color('border', 'Borda'),
   number('borderWidth', 'Espessura da borda', 0, 30),
-  number('radius', 'Arredondamento', 0, 120),
   slider('opacity', 'Opacidade', 0, 1, 0.01),
   slider('rotation', 'Rotação', -360, 360, 1),
   checkbox('visible', 'Visível')
@@ -52,7 +51,7 @@ const textAppearance = [
   ])
 ];
 
-export const PROPERTY_SCHEMA_VERSION = 11;
+export const PROPERTY_SCHEMA_VERSION = 12;
 
 export function registerPropertySchema(className, schema, { replace = false } = {}) {
   if (typeof className !== 'string' || (className !== '*' && !/^[A-Z][A-Za-z0-9]*$/.test(className))) {
@@ -120,7 +119,6 @@ registerPropertySchema('Frame', { sections: [
   ]},
   { title: 'Appearance', fields: [
     color('backgroundColor3', 'BackgroundColor3'),
-    slider('radius', 'CornerRadius', 0, 200, 1),
     slider('backgroundTransparency', 'BackgroundTransparency', 0, 1, 0.01),
     ...commonAppearance
   ]},
@@ -136,14 +134,14 @@ registerPropertySchema('TextButton', { sections: [
   instanceSection,
   ...layout,
   { title: 'Text', fields: [...textAppearance] },
-  { title: 'Appearance', fields: [color('background', 'BackgroundColor3'), number('radius', 'CornerRadius', 0, 120), color('border', 'BorderColor3'), number('borderWidth', 'BorderSizePixel', 0, 30), ...commonAppearance] }
+  { title: 'Appearance', fields: [color('background', 'BackgroundColor3'), color('border', 'BorderColor3'), number('borderWidth', 'BorderSizePixel', 0, 30), ...commonAppearance] }
 ]});
 
 registerPropertySchema('TextLabel', { sections: [
   instanceSection,
   ...layout,
   { title: 'Text', fields: [...textAppearance] },
-  { title: 'Appearance', fields: [color('background', 'BackgroundColor3'), number('radius', 'CornerRadius', 0, 120), color('border', 'BorderColor3'), number('borderWidth', 'BorderSizePixel', 0, 30), ...commonAppearance] }
+  { title: 'Appearance', fields: [color('background', 'BackgroundColor3'), color('border', 'BorderColor3'), number('borderWidth', 'BorderSizePixel', 0, 30), ...commonAppearance] }
 ]});
 
 registerPropertySchema('ImageLabel', { sections: [
@@ -157,29 +155,18 @@ registerPropertySchema('ImageLabel', { sections: [
       { value: 'fill', label: 'Stretch' }
     ])
   ]},
-  { title: 'Appearance', fields: [color('background', 'BackgroundColor3'), number('radius', 'CornerRadius', 0, 120), color('border', 'BorderColor3'), number('borderWidth', 'BorderSizePixel', 0, 30), ...commonAppearance] }
+  { title: 'Appearance', fields: [color('background', 'BackgroundColor3'), color('border', 'BorderColor3'), number('borderWidth', 'BorderSizePixel', 0, 30), ...commonAppearance] }
 ]});
 
 registerPropertySchema('UIBackdrop', { sections: [
   instanceSection,
   { title: 'Behavior', fields: [checkbox('enabled', 'Enabled')] },
-  { title: 'Effect', fields: [
-    { ...select('effect', 'Effect', [
-      { value: 'Blur', label: 'Blur' }, { value: 'Prism', label: 'Prism' },
-      { value: 'Emboss', label: 'Emboss' }, { value: 'Holographic', label: 'Holographic' }
-    ]), enabledOnly: true },
-    { ...slider('blur', 'Blur', 0, 40, 0.5), enabledOnly: true, effectOnly: ['Blur'] },
-    { ...slider('saturation', 'Saturation', 0, 3, 0.01), enabledOnly: true, effectOnly: ['Blur'] },
-    { ...color('tintColor', 'Tint color'), enabledOnly: true, effectOnly: ['Blur'] },
-    { ...slider('tintOpacity', 'Tint opacity', 0, 1, 0.01), enabledOnly: true, effectOnly: ['Blur'] },
-    { ...slider('prismIntensity', 'Prism intensity', 0, 1, 0.01), enabledOnly: true, effectOnly: ['Prism'] },
-    { ...slider('prismAngle', 'Prism angle', 0, 360, 1), enabledOnly: true, effectOnly: ['Prism'] },
-    { ...slider('prismScale', 'Prism scale', 0.5, 2, 0.01), enabledOnly: true, effectOnly: ['Prism'] },
-    { ...slider('embossDepth', 'Depth', 0, 1, 0.01), enabledOnly: true, effectOnly: ['Emboss'] },
-    { ...slider('embossAngle', 'Light angle', 0, 360, 1), enabledOnly: true, effectOnly: ['Emboss'] },
-    { ...slider('embossSoftness', 'Softness', 0, 1, 0.01), enabledOnly: true, effectOnly: ['Emboss'] },
-    { ...slider('holographicIntensity', 'Holographic intensity', 0, 1, 0.01), enabledOnly: true, effectOnly: ['Holographic'] },
-    { ...slider('holographicAngle', 'Holographic angle', 0, 360, 1), enabledOnly: true, effectOnly: ['Holographic'] },
-    { ...slider('holographicSpeed', 'Animation speed', 0, 1, 0.01), enabledOnly: true, effectOnly: ['Holographic'] }
+  { title: 'Blur', fields: [
+    { ...slider('blur', 'Blur amount', 0, 64, 0.5), enabledOnly: true },
+    { ...slider('saturation', 'Saturation', 0, 2.5, 0.01), enabledOnly: true },
+    { ...slider('brightness', 'Brightness', 0.5, 1.5, 0.01), enabledOnly: true },
+    { ...slider('contrast', 'Contrast', 0.5, 1.5, 0.01), enabledOnly: true },
+    { ...color('tintColor', 'Tint color'), enabledOnly: true },
+    { ...slider('tintOpacity', 'Tint strength', 0, 0.5, 0.01), enabledOnly: true }
   ]}
 ]});
