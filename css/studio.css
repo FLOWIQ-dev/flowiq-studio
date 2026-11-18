@@ -1288,11 +1288,11 @@ body[data-screen=editor]{
 
 
 /* Frame materials are clipped to the Frame surface. */
-.scene-node.scene-frame{isolation:auto;background-clip:padding-box}
+.scene-node.scene-frame{background-clip:padding-box}
 .scene-node.scene-frame>.scene-children{background:transparent}
 
 /* Build 1.5.9: frame materials use the Frame surface as the backdrop-filter sampling plane. */
-.scene-node.scene-frame{isolation:auto;background-clip:padding-box}
+.scene-node.scene-frame{background-clip:padding-box}
 .scene-node.scene-frame>.scene-children{background:transparent}
 
 
