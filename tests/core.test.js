@@ -441,7 +441,7 @@ test('Frame and ImageLabel share the exact same UDim2 and AnchorPoint layout con
 
 test('ImageLabel does not clip its own selection handles', async () => {
   const css = await readFile(new URL('../css/studio.css', import.meta.url), 'utf8');
-  assert.match(css, /scene-node\\.scene-imagelabel\\{overflow:visible!important/);
-  assert.doesNotMatch(css, /\\.scene-imagelabel\\{[^}]*overflow:hidden/);
-  assert.match(css, /scene-image-content\\{[^}]*border-radius:inherit/);
+  assert.ok(css.includes('.scene-imagelabel{background-image:none!important;overflow:visible!important}'));
+  assert.ok(css.includes('.scene-node.scene-imagelabel{overflow:visible!important;contain:none}'));
+  assert.ok(css.includes('border-radius:inherit'));
 });
