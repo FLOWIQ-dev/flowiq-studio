@@ -380,6 +380,7 @@ class FlowiqStudio {
     if (id && !this.scene.get(id)) return;
     if (id) { let parent = this.scene.get(id)?.parentId; while (parent) { this.treeExpanded.add(parent); parent = this.scene.get(parent)?.parentId; } }
     this.store.set({ selectedId: id });
+    if (this.cameraTracking) this.cameraTrackingId = id;
     this.renderEditor();
     if (this.cameraTracking) this.trackSelectedObject();
   }
@@ -913,7 +914,9 @@ class FlowiqStudio {
     this.cameraTrackFrame = requestAnimationFrame(() => {
       this.cameraTrackFrame = 0;
       const viewport = $('stage-viewport');
-      const panel = this.store.state.panel === 'inspector' ? document.querySelector('#screen-editor .inspector-panel') : null;
+      const panel = this.store.state.panel === 'inspector'
+        ? document.querySelector('#screen-editor .inspector-panel')
+        : this.store.state.panel === 'explorer' ? document.querySelector('#screen-editor .explorer-panel') : null;
       const target = $('scene').querySelector('[data-node-id="' + CSS.escape(this.store.state.selectedId) + '"]');
       if (!viewport || !target || !this.cameraTracking || this.cameraTrackingId !== this.store.state.selectedId) return;
       const stageRect = viewport.getBoundingClientRect();
