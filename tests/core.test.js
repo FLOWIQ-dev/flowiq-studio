@@ -155,7 +155,7 @@ test('service worker precaches every module used by the new application', async 
 
 
 test('Inspector property schemas are class-based and extensible', () => {
-  assert.equal(PROPERTY_SCHEMA_VERSION, 3);
+  assert.equal(PROPERTY_SCHEMA_VERSION, 4);
   const frame = getPropertySchema('Frame');
   assert.ok(frame.sections.some(section => section.title === 'Data'));
   const frameKeys = frame.sections.flatMap(section => section.fields.map(field => field.key));
@@ -170,6 +170,7 @@ test('Inspector property schemas are class-based and extensible', () => {
   assert.equal(frameFields.find(field => field.key === 'backgroundTransparency')?.type, 'slider');
   assert.ok(frameFields.some(field => field.key === 'position' && field.type === 'udim2'));
   assert.ok(frameFields.some(field => field.key === 'size' && field.type === 'udim2'));
+  assert.ok(frameFields.some(field => field.key === 'anchorPoint' && field.type === 'vector2'));
   assert.ok(!frameFields.some(field => /border/i.test(field.key)), 'Frame border properties are intentionally omitted');
   registerPropertySchema('FutureWidget', { sections: [
     { title: 'Dados', fields: [{ key: 'value', label: 'Valor', type: 'number', min: 0, max: 10 }] }
@@ -326,4 +327,17 @@ test('Frame Position and Size use editable four-value UDim2 tuples', async () =>
   assert.match(view, /0, 30, 0, 20/);
   assert.match(view, /parts\.length !== 4/);
   assert.match(app, /\['position', 'size'\]\.includes\(key\)/);
+});
+
+
+test('Frame AnchorPoint uses a compact editable two-value tuple and sliders have editable numeric fields', async () => {
+  const schema = await readFile(new URL('../js/editor/property-schema.js', import.meta.url), 'utf8');
+  const view = await readFile(new URL('../js/editor/view.js', import.meta.url), 'utf8');
+  const app = await readFile(new URL('../js/app.js', import.meta.url), 'utf8');
+  assert.match(schema, /vector2\('anchorPoint', 'AnchorPoint'/);
+  assert.match(view, /type === 'udim2' \|\| type === 'vector2'/);
+  assert.match(view, /valueInput\.type = 'number'/);
+  assert.match(view, /valueInput\.addEventListener\('input'/);
+  assert.match(app, /key === 'anchorPoint' && value && typeof value === 'object'/);
+  assert.match(view, /type !== 'udim2' && type !== 'vector2'/);
 });
