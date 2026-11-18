@@ -147,7 +147,10 @@ export function renderScene(container, scene, { selectedId = null, preview = fal
           assetUrls.set(asset.id, cached);
         }
         const imageUrl = 'url("' + cached.url + '")';
-        if (item.style.backgroundImage !== imageUrl && !item.style.backgroundImage.includes('linear-gradient')) item.style.backgroundImage = imageUrl;
+        if (item.dataset.imageUrl !== cached.url) {
+          item.style.backgroundImage = imageUrl;
+          item.dataset.imageUrl = cached.url;
+        }
         item.style.backgroundSize = p.fit || 'cover';
         item.style.backgroundPosition = 'center';
         item.style.backgroundRepeat = 'no-repeat';
@@ -155,11 +158,12 @@ export function renderScene(container, scene, { selectedId = null, preview = fal
       } else {
         item.style.backgroundImage = 'none';
         delete item.dataset.assetId;
+        delete item.dataset.imageUrl;
       }
       item.setAttribute('aria-label', node.name);
     }
     if (selectedId === node.id && !preview) item.classList.add('is-selected');
-    if (preview && node.type === 'TextButton') item.addEventListener('click', event => { event.stopPropagation(); onRun(node, 'click'); });
+    item.onclick = preview && node.type === 'TextButton' ? event => { event.stopPropagation(); onRun(node, 'click'); } : null;
     parent.append(item);
     for (const childId of node.children) build(childId, childContainer, layout.width, layout.height);
     if (selectedId === node.id && !preview) {
