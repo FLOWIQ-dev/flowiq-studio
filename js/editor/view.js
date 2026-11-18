@@ -272,10 +272,23 @@ export function renderInspector(container, node, { onChange, onDelete, onDuplica
     toggle.setAttribute('aria-expanded', 'true');
     toggle.innerHTML = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="m4 6 4 4 4-4"/></svg><span>' + definition.title + '</span>';
     const body = el('div', 'property-group-body');
+    const subgroups = new Map();
     definition.fields.forEach(descriptor => {
       const control = field(descriptor);
-      control.dataset.propertySearch = (descriptor.label + ' ' + descriptor.key + ' ' + definition.title).toLocaleLowerCase('pt-BR');
-      body.append(control);
+      control.dataset.propertySearch = (descriptor.label + ' ' + descriptor.key + ' ' + definition.title + ' ' + (descriptor.subgroup || '')).toLocaleLowerCase('pt-BR');
+      if (descriptor.subgroup) {
+        let subgroup = subgroups.get(descriptor.subgroup);
+        if (!subgroup) {
+          subgroup = el('div', 'property-subgroup');
+          subgroup.dataset.subgroup = descriptor.subgroup;
+          subgroup.append(el('div', 'property-subgroup-title', descriptor.subgroup));
+          const fields = el('div', 'property-subgroup-fields');
+          subgroup.append(fields);
+          subgroups.set(descriptor.subgroup, subgroup);
+          body.append(subgroup);
+        }
+        subgroup.querySelector('.property-subgroup-fields').append(control);
+      } else body.append(control);
     });
     toggle.addEventListener('click', () => {
       const expanded = toggle.getAttribute('aria-expanded') === 'true';
