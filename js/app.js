@@ -1277,7 +1277,7 @@ class FlowiqStudio {
 
   keydown(event) {
     const editing = ['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement?.tagName);
-    if (event.key === 'Escape') { this.stopPreview(false); this.closeAddMenu(); this.resolveDialog(null); }
+    if (event.key === 'Escape') { this.stopPreview(false); this.closeAddMenu(); this.closeImagePicker(); this.resolveDialog(null); }
     if (editing) return;
     if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 's') { event.preventDefault(); this.saveProject().catch(() => {}); }
     if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'z') { event.preventDefault(); event.shiftKey ? this.redo() : this.undo(); }
