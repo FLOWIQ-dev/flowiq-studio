@@ -12,23 +12,17 @@ const color = (key, label) => ({ key, label, type: 'color' });
 const select = (key, label, values) => ({ key, label, type: 'select', values });
 const checkbox = (key, label) => ({ key, label, type: 'checkbox' });
 
-const layout = [
-  { title: 'Position · UDim2', fields: [
-    { ...number('position.x.scale', 'X · Scale', -10, 10, 0.01), subgroup: 'Position' },
-    { ...number('position.x.offset', 'X · Offset', -4000, 4000), subgroup: 'Position' },
-    { ...number('position.y.scale', 'Y · Scale', -10, 10, 0.01), subgroup: 'Position' },
-    { ...number('position.y.offset', 'Y · Offset', -4000, 4000), subgroup: 'Position' }
-  ]},
-  { title: 'Size · UDim2', fields: [
-    { ...number('size.x.scale', 'X · Scale', -10, 10, 0.01), subgroup: 'Size' },
-    { ...number('size.x.offset', 'X · Offset', 1, 4000), subgroup: 'Size' },
-    { ...number('size.y.scale', 'Y · Scale', -10, 10, 0.01), subgroup: 'Size' },
-    { ...number('size.y.offset', 'Y · Offset', 1, 4000), subgroup: 'Size' }
-  ]},
-  { title: 'AnchorPoint', fields: [
-    { ...number('anchorPoint.x', 'X', 0, 1, 0.01), subgroup: 'AnchorPoint' },
-    { ...number('anchorPoint.y', 'Y', 0, 1, 0.01), subgroup: 'AnchorPoint' }
-  ]}
+const sharedLayoutFields = [
+  udim2('position', 'Position', 'Position'),
+  udim2('size', 'Size', 'Size'),
+  vector2('anchorPoint', 'AnchorPoint', 'AnchorPoint')
+];
+const instanceSection = { title: 'Instance', fields: [text('name', 'Name')] };
+const layout = [{ title: 'Layout', fields: sharedLayoutFields }];
+const commonAppearance = [
+  slider('opacity', 'Opacity', 0, 1, 0.01),
+  slider('rotation', 'Rotation', -360, 360, 1),
+  checkbox('visible', 'Visible')
 ];
 
 const appearance = [
@@ -58,7 +52,7 @@ const textAppearance = [
   ])
 ];
 
-export const PROPERTY_SCHEMA_VERSION = 6;
+export const PROPERTY_SCHEMA_VERSION = 7;
 
 export function registerPropertySchema(className, schema, { replace = false } = {}) {
   if (typeof className !== 'string' || (className !== '*' && !/^[A-Z][A-Za-z0-9]*$/.test(className))) {
@@ -99,20 +93,16 @@ export function listPropertySchemas() {
   return [...registry.entries()].map(([className, schema]) => ({ className, schema }));
 }
 
-const frameLayout = [
-  udim2('position', 'Position', 'Position'),
-  udim2('size', 'Size', 'Size'),
-  vector2('anchorPoint', 'AnchorPoint', 'AnchorPoint')
-];
+const frameLayout = sharedLayoutFields;
 
 registerPropertySchema('*', { sections: [
-  { title: 'Identificação', fields: [text('name', 'Nome')] },
+  instanceSection,
   ...layout,
-  { title: 'Aparência', fields: appearance }
+  { title: 'Appearance', fields: [...appearance.filter(field => !['opacity', 'rotation', 'visible'].includes(field.key)), ...commonAppearance] }
 ]});
 
 registerPropertySchema('Frame', { sections: [
-  { title: 'Instance', fields: [text('name', 'Name')] },
+  instanceSection,
   { title: 'Layout', fields: frameLayout },
   { title: 'Data', fields: [
     select('automaticSize', 'AutomaticSize', [
@@ -131,11 +121,9 @@ registerPropertySchema('Frame', { sections: [
   { title: 'Appearance', fields: [
     color('backgroundColor3', 'BackgroundColor3'),
     slider('backgroundTransparency', 'BackgroundTransparency', 0, 1, 0.01),
-    slider('opacity', 'Opacity', 0, 1, 0.01),
-    slider('rotation', 'Rotation', -360, 360, 1)
+    ...commonAppearance
   ]},
   { title: 'Behavior', fields: [
-    checkbox('visible', 'Visible'),
     checkbox('clipsDescendants', 'ClipsDescendants'),
     checkbox('active', 'Active'),
     checkbox('interactable', 'Interactable'),
@@ -144,41 +132,35 @@ registerPropertySchema('Frame', { sections: [
 ]});
 
 registerPropertySchema('TextButton', { sections: [
-  { title: 'Identificação', fields: [text('name', 'Nome')] },
+  instanceSection,
   ...layout,
-  { title: 'Aparência', fields: [color('background', 'Fundo'), ...textAppearance, number('radius', 'Arredondamento', 0, 120), number('opacity', 'Opacidade', 0, 1, 0.05), color('border', 'Borda'), number('borderWidth', 'Espessura da borda', 0, 30), number('rotation', 'Rotação', -360, 360), checkbox('visible', 'Visível')] }
+  { title: 'Text', fields: [...textAppearance] },
+  { title: 'Appearance', fields: [color('background', 'BackgroundColor3'), number('radius', 'CornerRadius', 0, 120), color('border', 'BorderColor3'), number('borderWidth', 'BorderSizePixel', 0, 30), ...commonAppearance] }
 ]});
 
 registerPropertySchema('TextLabel', { sections: [
-  { title: 'Identificação', fields: [text('name', 'Nome')] },
+  instanceSection,
   ...layout,
-  { title: 'Aparência', fields: [color('background', 'Fundo'), ...textAppearance, number('radius', 'Arredondamento', 0, 120), number('opacity', 'Opacidade', 0, 1, 0.05), color('border', 'Borda'), number('borderWidth', 'Espessura da borda', 0, 30), number('rotation', 'Rotação', -360, 360), checkbox('visible', 'Visível')] }
+  { title: 'Text', fields: [...textAppearance] },
+  { title: 'Appearance', fields: [color('background', 'BackgroundColor3'), number('radius', 'CornerRadius', 0, 120), color('border', 'BorderColor3'), number('borderWidth', 'BorderSizePixel', 0, 30), ...commonAppearance] }
 ]});
 
 registerPropertySchema('ImageLabel', { sections: [
-  { title: 'Identificação', fields: [text('name', 'Nome')] },
+  instanceSection,
   ...layout,
-  { title: 'Imagem', fields: [
-    { key: 'assetId', label: 'Arquivo da biblioteca', type: 'asset', accept: 'image/*' },
-    select('fit', 'Ajuste', [
-      { value: 'cover', label: 'Preencher' },
-      { value: 'contain', label: 'Conter' },
-      { value: 'fill', label: 'Esticar' }
+  { title: 'Image', fields: [
+    { key: 'assetId', label: 'Asset', type: 'asset', accept: 'image/*' },
+    select('fit', 'ScaleType', [
+      { value: 'cover', label: 'Cover' },
+      { value: 'contain', label: 'Contain' },
+      { value: 'fill', label: 'Stretch' }
     ])
   ]},
-  { title: 'Aparência', fields: [
-    color('background', 'Fundo'),
-    number('radius', 'Arredondamento', 0, 120),
-    number('opacity', 'Opacidade', 0, 1, 0.05),
-    color('border', 'Borda'),
-    number('borderWidth', 'Espessura da borda', 0, 30),
-    number('rotation', 'Rotação', -360, 360),
-    checkbox('visible', 'Visível')
-  ]}
+  { title: 'Appearance', fields: [color('background', 'BackgroundColor3'), number('radius', 'CornerRadius', 0, 120), color('border', 'BorderColor3'), number('borderWidth', 'BorderSizePixel', 0, 30), ...commonAppearance] }
 ]});
 
 registerPropertySchema('UIBackdrop', { sections: [
-  { title: 'Instance', fields: [text('name', 'Name')] },
+  instanceSection,
   { title: 'Behavior', fields: [checkbox('enabled', 'Enabled')] },
   { title: 'Effect', fields: [
     { ...select('effect', 'Effect', [
