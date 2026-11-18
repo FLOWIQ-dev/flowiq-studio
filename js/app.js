@@ -369,9 +369,14 @@ class FlowiqStudio {
 
   addNode(type, parentId = undefined) {
     if (!COMPONENTS.some(item => item.type === type)) return;
-    this.history.checkpoint(this.historySnapshot());
     const destinationId = parentId !== undefined ? parentId : this.addParentId !== null ? this.addParentId : undefined;
-    const parent = destinationId === undefined ? this.scene.get(this.store.state.selectedId) : this.scene.get(destinationId);
+    let parent = destinationId === undefined ? this.scene.get(this.store.state.selectedId) : this.scene.get(destinationId);
+    if (type === 'UIBackdrop') {
+      if (parent?.type !== 'Frame') { this.toast('Selecione um Frame para adicionar um UIBackdrop.', 'error'); return; }
+      const existing = parent.children.map(id => this.scene.get(id)).find(child => child?.type === 'UIBackdrop');
+      if (existing) { this.select(existing.id); this.closeAddMenu(); this.toast('Este Frame já possui um UIBackdrop.'); return; }
+    } else if (parent?.type === 'UIBackdrop') parent = this.scene.get(parent.parentId);
+    this.history.checkpoint(this.historySnapshot());
     const node = this.scene.create(type, parent?.id || null);
     this.select(node.id);
     this.closeAddMenu();
