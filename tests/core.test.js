@@ -192,7 +192,7 @@ test('ZIndex follows Roblox Sibling semantics with signed 32-bit integers', asyn
 });
 
 test('Inspector property schemas are class-based and extensible', () => {
-  assert.equal(PROPERTY_SCHEMA_VERSION, 16);
+  assert.equal(PROPERTY_SCHEMA_VERSION, 17);
   const frame = getPropertySchema('Frame');
   assert.ok(frame.sections.some(section => section.title === 'Data'));
   const frameKeys = frame.sections.flatMap(section => section.fields.map(field => field.key));
@@ -571,10 +571,31 @@ test('ZIndex is available on every GuiObject and supports Roblox signed integer 
   assert.ok(COMPONENTS.some(component => component.type === 'TextLabel'), 'TextLabel must be available in Insert Object');
 });
 
+test('TextLabel typography is focused: useful fonts and independent weights, no text stroke or legacy controls', async () => {
+  const fields = getPropertySchema('TextLabel').sections.flatMap(section => section.fields);
+  const font = fields.find(field => field.key === 'fontFace');
+  const weight = fields.find(field => field.key === 'fontWeight');
+  assert.deepEqual(font.values.map(item => item.value), ['Arial', 'Inter', 'Roboto', 'Georgia', 'Monospace']);
+  assert.deepEqual(weight.values.map(item => item.value), ['400', '500', '600', '700']);
+  for (const removed of ['textStrokeColor3', 'textStrokeTransparency', 'openTypeFeatures', 'maxVisibleGraphemes', 'textTruncate', 'textDirection']) {
+    assert.ok(!fields.some(field => field.key === removed), removed + ' should not appear in TextLabel properties');
+  }
+  const scene = new Scene();
+  const label = scene.create('TextLabel');
+  assert.equal(label.props.fontFace, 'Arial');
+  assert.equal(label.props.fontWeight, '400');
+  assert.ok(!('textStrokeColor3' in label.props));
+  assert.ok(!('textStrokeTransparency' in label.props));
+  const view = await readFile(new URL('../js/editor/view.js', import.meta.url), 'utf8');
+  assert.match(view, /fontWeight = \[400, 500, 600, 700\]/);
+  assert.match(view, /content\.style\.fontWeight = String\(weight\)/);
+  assert.doesNotMatch(view, /webkitTextStroke|textStrokeTransparency|FONT_WEIGHT/);
+});
+
 test('TextLabel exposes Roblox text properties and hierarchy-aware rendering', async () => {
   const schema = getPropertySchema('TextLabel');
   const fields = schema.sections.flatMap(section => section.fields);
-  for (const key of ['text','textColor3','textTransparency','fontFace','openTypeFeatures','textSize','textScaled','textWrapped','textXAlignment','textYAlignment','richText','textStrokeColor3','textStrokeTransparency','lineHeight','maxVisibleGraphemes','textTruncate','textDirection','zIndex']) {
+  for (const key of ['text','textColor3','textTransparency','fontFace','fontWeight','textSize','textScaled','textWrapped','textXAlignment','textYAlignment','richText','lineHeight','zIndex']) {
     assert.ok(fields.some(field => field.key === key), 'TextLabel should expose ' + key);
   }
   assert.equal(fields.find(field => field.key === 'text')?.type, 'textarea');
