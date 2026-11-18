@@ -451,7 +451,7 @@ class FlowiqStudio {
       const next = Math.max(1, Math.min(4000, Number(value) || 1));
       node.props[key] = next;
       node.props.size[key === 'width' ? 'x' : 'y'].offset = next;
-    } else if (key === 'opacity') node.props[key] = Math.max(0, Math.min(1, Number(value) || 0));
+    } else if (key === 'opacity' || key === 'backgroundTransparency') node.props[key] = Math.max(0, Math.min(1, Number(value) || 0));
     else if (key === 'radius') node.props[key] = Math.max(0, Math.min(160, Number(value) || 0));
     else node.props[key] = value;
     if (save) this.scheduleSave();
