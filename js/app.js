@@ -945,52 +945,36 @@ class FlowiqStudio {
       const viewport = $('stage-viewport');
       const target = $('scene').querySelector('[data-node-id="' + CSS.escape(targetId) + '"]');
       if (!viewport || !target || (!this.cameraTracking && !(this.store.state.panel === 'inspector' && this.inspectorCameraSnapshot)) || (this.cameraTracking && this.cameraTrackingId !== targetId)) return;
-
       const stage = viewport.getBoundingClientRect();
       const visible = { left: stage.left + 12, right: stage.right - 12, top: stage.top + 12, bottom: stage.bottom - 12 };
       if (this.store.state.panel === 'inspector') {
         const panel = document.querySelector('#screen-editor .inspector-panel');
         const panelRect = panel?.getBoundingClientRect();
-        if (panelRect && panelRect.left < stage.right && panelRect.right > stage.left && panelRect.top < stage.bottom && panelRect.bottom > stage.top) {
-          visible.bottom = Math.min(visible.bottom, panelRect.top - 10);
-        }
+        if (panelRect && panelRect.left < stage.right && panelRect.right > stage.left && panelRect.top < stage.bottom && panelRect.bottom > stage.top) visible.bottom = Math.min(visible.bottom, panelRect.top - 10);
       }
-
-      let rect = target.getBoundingClientRect();
       const availableWidth = Math.max(1, visible.right - visible.left);
       const availableHeight = Math.max(1, visible.bottom - visible.top);
       if (availableWidth < 40 || availableHeight < 40) return;
-
-      // Objetos maiores que a área útil recebem zoom-out, sem alterar seu layout lógico.
-      const fit = Math.min(1, (availableWidth - 24) / Math.max(1, rect.width), (availableHeight - 24) / Math.max(1, rect.height));
-      if (fit < 0.995 && this.zoom > 0.25) {
-        this.setZoom(Math.max(0.25, this.zoom * fit));
-        rect = target.getBoundingClientRect();
+      let rect = target.getBoundingClientRect();
+      // Zoom não muda durante gestos de edição. Isso mantém a escala do ponteiro estável.
+      if (!this.drag) {
+        const fit = Math.min(1, (availableWidth - 24) / Math.max(1, rect.width), (availableHeight - 24) / Math.max(1, rect.height));
+        if (fit < 0.995 && this.zoom > 0.25) {
+          this.setZoom(Math.max(0.25, this.zoom * fit));
+          rect = target.getBoundingClientRect();
+        }
       }
-
-      const outsideX = Math.max(0, visible.left - rect.left) + Math.max(0, rect.right - visible.right);
-      const outsideY = Math.max(0, visible.top - rect.top) + Math.max(0, rect.bottom - visible.bottom);
-      const outsideRatio = Math.max(outsideX / Math.max(1, rect.width), outsideY / Math.max(1, rect.height));
       let dx = 0, dy = 0;
-      if (rect.left < visible.left) dx = visible.left - rect.left;
+      if (rect.width > availableWidth) dx = (visible.left + visible.right) / 2 - (rect.left + rect.right) / 2;
+      else if (rect.left < visible.left) dx = visible.left - rect.left;
       else if (rect.right > visible.right) dx = visible.right - rect.right;
-      if (rect.top < visible.top) dy = visible.top - rect.top;
+      if (rect.height > availableHeight) dy = (visible.top + visible.bottom) / 2 - (rect.top + rect.bottom) / 2;
+      else if (rect.top < visible.top) dy = visible.top - rect.top;
       else if (rect.bottom > visible.bottom) dy = visible.bottom - rect.bottom;
-      if (!dx && !dy) return;
-
-      const limitX = Math.max(0, (visible.right - visible.left) * 0.3);
-      const limitY = Math.max(0, (visible.bottom - visible.top) * 0.3);
-      const nextX = this.cameraOffset.x + dx;
-      const nextY = this.cameraOffset.y + dy;
-      const exceedsSafeFrame = Math.abs(nextX) > limitX || Math.abs(nextY) > limitY;
-      if (exceedsSafeFrame && outsideRatio <= 0.3) {
-        this.cameraOffset.x = Math.max(-limitX, Math.min(limitX, nextX));
-        this.cameraOffset.y = Math.max(-limitY, Math.min(limitY, nextY));
-      } else {
-        this.cameraOffset.x = nextX;
-        this.cameraOffset.y = nextY;
-        if (exceedsSafeFrame && outsideRatio > 0.3) this.cameraEscaped = true;
-      }
+      if (Math.abs(dx) < 0.5 && Math.abs(dy) < 0.5) return;
+      this.cameraOffset = { x: this.cameraOffset.x + dx, y: this.cameraOffset.y + dy };
+      const stageWidth = Math.max(1, stage.width), stageHeight = Math.max(1, stage.height);
+      this.cameraEscaped = Math.abs(this.cameraOffset.x) > stageWidth * 0.3 || Math.abs(this.cameraOffset.y) > stageHeight * 0.3;
       this.applyCameraOffset();
     });
   }
