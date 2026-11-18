@@ -141,7 +141,7 @@ registerPropertySchema('TextLabel', { sections: [
   instanceSection,
   ...layout,
   { title: 'Text', fields: [...textAppearance] },
-  { title: 'Appearance', fields: [color('background', 'BackgroundColor3'), number('radius', 'CornerRadius', 0, 120), color('border', 'BorderColor3'), number('borderWidth', 'BorderSizePixel', 0, 30), ...commonAppearance] }
+  { title: 'Appearance', fields: [color('background', 'BackgroundColor3'), color('border', 'BorderColor3'), number('borderWidth', 'BorderSizePixel', 0, 30), ...commonAppearance] }
 ]});
 
 registerPropertySchema('ImageLabel', { sections: [
