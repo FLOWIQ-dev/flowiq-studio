@@ -16,6 +16,76 @@ const el = (tag, className, text) => {
   return node;
 };
 
+const FONT_CSS = Object.freeze({
+  Arial: 'Arial, sans-serif', ArialBold: 'Arial, sans-serif',
+  SourceSans: 'Arial, sans-serif', SourceSansBold: 'Arial, sans-serif',
+  Gotham: 'Arial, sans-serif', GothamMedium: 'Arial, sans-serif', GothamBold: 'Arial, sans-serif',
+  Roboto: 'Roboto, Arial, sans-serif', RobotoMono: 'ui-monospace, monospace',
+  Ubuntu: 'Ubuntu, Arial, sans-serif', Code: 'ui-monospace, monospace'
+});
+const FONT_WEIGHT = Object.freeze({ ArialBold: 700, SourceSansBold: 700, GothamMedium: 600, GothamBold: 700 });
+
+function rgbaColor(value, alpha = 1) {
+  const match = String(value || '#000000').match(/^#([0-9a-f]{3}|[0-9a-f]{6})$/i);
+  if (!match) return value || 'rgba(0,0,0,' + alpha + ')';
+  const hex = match[1].length === 3 ? match[1].split('').map(char => char + char).join('') : match[1];
+  const rgb = [0, 2, 4].map(index => parseInt(hex.slice(index, index + 2), 16));
+  return 'rgba(' + rgb.join(',') + ',' + Math.max(0, Math.min(1, alpha)) + ')';
+}
+
+function richTextFragment(source) {
+  const parsed = new DOMParser().parseFromString(String(source ?? ''), 'text/html');
+  const fragment = document.createDocumentFragment();
+  const allowed = new Set(['B', 'STRONG', 'I', 'EM', 'U', 'S', 'STRIKE', 'BR', 'FONT']);
+  const copy = (parent, node) => {
+    if (node.nodeType === Node.TEXT_NODE) { parent.append(document.createTextNode(node.nodeValue || '')); return; }
+    if (node.nodeType !== Node.ELEMENT_NODE) return;
+    if (!allowed.has(node.tagName)) { node.childNodes.forEach(child => copy(parent, child)); return; }
+    const element = document.createElement(node.tagName.toLowerCase());
+    if (node.tagName === 'FONT') {
+      const color = node.getAttribute('color') || '';
+      const size = Number(node.getAttribute('size'));
+      const face = node.getAttribute('face') || '';
+      if (/^#[0-9a-f]{3,8}$/i.test(color)) element.style.color = color;
+      if (Number.isFinite(size) && size >= 1 && size <= 100) element.style.fontSize = size + 'px';
+      if (/^[a-z0-9 ,_-]{1,48}$/i.test(face)) element.style.fontFamily = face;
+    }
+    parent.append(element);
+    node.childNodes.forEach(child => copy(element, child));
+  };
+  parsed.body.childNodes.forEach(node => copy(fragment, node));
+  return fragment;
+}
+
+function fitTextSize(textValue, fontFamily, maxSize, width, height, lineHeight, wrap) {
+  const canvas = document.createElement('canvas');
+  const context = canvas.getContext('2d');
+  if (!context) return maxSize;
+  const lines = String(textValue || '').split('\n');
+  const fits = size => {
+    context.font = size + 'px ' + fontFamily;
+    let count = 0, widest = 0;
+    for (const raw of lines) {
+      if (!wrap) { widest = Math.max(widest, context.measureText(raw).width); count++; continue; }
+      let line = '';
+      for (const word of raw.split(/\s+/)) {
+        const next = line ? line + ' ' + word : word;
+        if (line && context.measureText(next).width > width) { widest = Math.max(widest, context.measureText(line).width); count++; line = word; }
+        else line = next;
+      }
+      widest = Math.max(widest, context.measureText(line).width);
+      count++;
+    }
+    return widest <= width && count * size * lineHeight <= height;
+  };
+  let low = 1, high = Math.max(1, Math.min(100, maxSize));
+  for (let step = 0; step < 9; step++) {
+    const mid = (low + high) / 2;
+    if (fits(mid)) low = mid; else high = mid;
+  }
+  return Math.max(1, Math.floor(low));
+}
+
 
 export function renderScene(container, scene, { selectedId = null, preview = false, assets = [], onRun = () => {}, sceneSize = { width: 960, height: 640 }, zoom = 1, cameraOffset = { x: 0, y: 0 } } = {}) {
   const existingNodes = new Map(Array.from(container.querySelectorAll('.scene-world [data-node-id]')).map(item => [item.dataset.nodeId, item]));
@@ -74,6 +144,7 @@ export function renderScene(container, scene, { selectedId = null, preview = fal
     item.style.top = (layout.y + layout.height * p.anchorPoint.y) + 'px';
     item.style.width = layout.width + 'px';
     item.style.height = layout.height + 'px';
+    item.style.zIndex = String(Math.max(1, Math.min(10, Math.round(Number(p.zIndex) || 1))));
     item.style.transform = 'translate(' + (-p.anchorPoint.x * 100) + '%,' + (-p.anchorPoint.y * 100) + '%) rotate(' + (Number(p.rotation) || 0) + 'deg)';
     const isFrame = node.type === 'Frame';
     const backdropNode = isFrame ? node.children.map(childId => scene.get(childId)).find(child => child?.type === 'UIBackdrop') : null;
@@ -92,7 +163,6 @@ export function renderScene(container, scene, { selectedId = null, preview = fal
       if (p.style === 'ChatGreen') fillColor = 'rgba(35,112,75,' + alpha + ')';
       if (p.style === 'ChatRed') fillColor = 'rgba(137,48,55,' + alpha + ')';
       item.dataset.clipsDescendants = String(Boolean(p.clipsDescendants));
-      item.style.zIndex = String(Math.max(1, Math.min(10, Number(p.zIndex) || 1)));
       item.style.border = '0';
       item.style.outline = 'none';
       const frameRadius = Math.max(0, Math.min(400, Number(p.radius) || 0));
@@ -124,7 +194,7 @@ export function renderScene(container, scene, { selectedId = null, preview = fal
     } else {
       item.style.borderRadius = Math.max(0, Number(p.radius) || 0) + 'px';
       item.style.border = Math.max(0, Number(p.borderWidth) || 0) + 'px solid ' + (p.border || 'transparent');
-      if (node.type === 'ImageLabel') {
+      if (node.type === 'TextLabel' || node.type === 'ImageLabel') {
         const bg = String(p.backgroundColor3 || p.background || 'transparent');
         const alpha = 1 - Math.max(0, Math.min(1, Number(p.backgroundTransparency) || 0));
         const match = bg.match(/^#([0-9a-f]{3}|[0-9a-f]{6})$/i);
@@ -140,7 +210,8 @@ export function renderScene(container, scene, { selectedId = null, preview = fal
     item.style.fontWeight = p.fontWeight || '500';
     const existingChildContainer = item.querySelector(':scope > .scene-children');
     const preservedImageLayer = node.type === 'ImageLabel' ? existingChildContainer?.querySelector(':scope > .scene-image-layer') : null;
-    if (node.type !== 'ImageLabel') item.textContent = node.type === 'Frame' ? '' : (p.text || node.name);
+    if (node.type === 'TextLabel') item.replaceChildren();
+    else if (node.type !== 'ImageLabel') item.textContent = node.type === 'Frame' ? '' : (p.text || node.name);
     const childContainer = existingChildContainer || el('div', 'scene-children');
     childContainer.replaceChildren();
     if (preservedImageLayer) childContainer.append(preservedImageLayer);
@@ -148,8 +219,51 @@ export function renderScene(container, scene, { selectedId = null, preview = fal
     childContainer.style.inset = '0';
     childContainer.style.overflow = node.type === 'Frame' && p.clipsDescendants ? 'hidden' : 'visible';
     if (node.type === 'ImageLabel') childContainer.style.borderRadius = 'inherit';
-    if (isFrame) childContainer.style.zIndex = '2';
-    for (const child of Array.from(item.children)) if (child !== childContainer) child.remove();
+    childContainer.style.zIndex = '2';
+    for (const child of Array.from(item.children)) if (child !== childContainer && !(node.type === 'TextLabel' && child.classList.contains('scene-text-content'))) child.remove();
+    if (node.type === 'TextLabel') {
+      const content = el('span', 'scene-text-content');
+      const fontKey = p.font || 'Arial';
+      const fontFamily = FONT_CSS[fontKey] || 'Arial, sans-serif';
+      const weight = FONT_WEIGHT[fontKey] || 400;
+      let textValue = String(p.text ?? '');
+      const maxGraphemes = Number(p.maxVisibleGraphemes ?? -1);
+      if (!p.richText && maxGraphemes >= 0) textValue = Array.from(textValue).slice(0, maxGraphemes).join('');
+      const wrapped = Boolean(p.textWrapped || p.textScaled);
+      const horizontal = p.textXAlignment || 'Center';
+      const vertical = p.textYAlignment || 'Center';
+      const fontSize = Math.max(1, Math.min(100, Number(p.textSize ?? 14)));
+      const paddingX = 18, paddingY = 10;
+      const resolvedSize = p.textScaled
+        ? fitTextSize(textValue, fontFamily, fontSize, Math.max(1, layout.width - paddingX), Math.max(1, layout.height - paddingY), Number(p.lineHeight) || 1, wrapped)
+        : fontSize;
+      if (p.richText) content.append(richTextFragment(textValue));
+      else content.textContent = textValue;
+      content.style.fontFamily = fontFamily;
+      content.style.fontWeight = String(weight);
+      content.style.fontSize = resolvedSize + 'px';
+      content.style.lineHeight = String(Math.max(1, Math.min(3, Number(p.lineHeight) || 1)));
+      content.style.color = p.textColor3 || p.color || '#000000';
+      content.style.opacity = String(1 - Math.max(0, Math.min(1, Number(p.textTransparency) || 0)));
+      content.style.textAlign = horizontal.toLowerCase();
+      content.style.justifyContent = horizontal === 'Left' ? 'flex-start' : horizontal === 'Right' ? 'flex-end' : 'center';
+      content.style.alignItems = vertical === 'Top' ? 'flex-start' : vertical === 'Bottom' ? 'flex-end' : 'center';
+      content.style.whiteSpace = wrapped ? 'pre-wrap' : 'pre';
+      content.style.overflowWrap = wrapped ? 'anywhere' : 'normal';
+      content.style.direction = p.textDirection === 'RightToLeft' ? 'rtl' : p.textDirection === 'LeftToRight' ? 'ltr' : 'inherit';
+      content.style.overflow = 'hidden';
+      if (p.textTruncate !== 'None' && !wrapped) content.style.textOverflow = 'ellipsis';
+      const strokeAlpha = 1 - Math.max(0, Math.min(1, Number(p.textStrokeTransparency ?? 1)));
+      content.style.webkitTextStroke = strokeAlpha > 0 ? '1px ' + rgbaColor(p.textStrokeColor3 || '#000000', strokeAlpha) : '0 transparent';
+      content.style.padding = '5px 9px';
+      content.style.boxSizing = 'border-box';
+      content.style.width = '100%';
+      content.style.height = '100%';
+      content.style.minWidth = '0';
+      content.style.minHeight = '0';
+      content.style.pointerEvents = 'none';
+      item.append(content);
+    }
     item.append(childContainer);
     if (node.type === 'ImageLabel') {
       const asset = assetMap.get(p.assetId);
