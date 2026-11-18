@@ -181,7 +181,7 @@ export function renderTree(container, scene, selectedId, { search = '', expanded
   container.append(rootStart, list);
 }
 
-export function renderInspector(container, node, { onChange, onDelete, onDuplicate, assets = [], onAsset, events = [], nodes = [], onEventSave } = {}) {
+export function renderInspector(container, node, { onChange, onDelete, onDuplicate, onEditStart, onPreview, onCommit, assets = [], onAsset, events = [], nodes = [], onEventSave } = {}) {
   const previousScrollTop = container.scrollTop;
   container.replaceChildren();
   const toolbarHost = container.closest('.inspector-panel')?.querySelector('.inspector-toolbar-actions');
@@ -239,9 +239,18 @@ export function renderInspector(container, node, { onChange, onDelete, onDuplica
     if (type === 'checkbox') input.checked = Boolean(propertyValue);
     else input.value = String(propertyValue ?? descriptor.fallback ?? '');
     if (type === 'slider') {
-      const output = el('output', 'property-slider-value', Number(input.value).toFixed(descriptor.step < 1 ? 2 : 0));
-      input.addEventListener('input', () => { output.value = Number(input.value).toFixed(descriptor.step < 1 ? 2 : 0); output.textContent = output.value; });
-      input.addEventListener('change', () => onChange(key, Number(input.value)));
+      const format = value => Number(value).toFixed(descriptor.step < 1 ? 2 : 0);
+      const output = el('output', 'property-slider-value', format(input.value));
+      const begin = () => onEditStart?.(key);
+      input.addEventListener('pointerdown', begin);
+      input.addEventListener('focus', begin);
+      input.addEventListener('keydown', begin);
+      input.addEventListener('input', () => {
+        output.value = format(input.value);
+        output.textContent = output.value;
+        onPreview?.(key, Number(input.value));
+      });
+      input.addEventListener('change', () => onCommit ? onCommit(key, Number(input.value)) : onChange(key, Number(input.value)));
       wrap.append(input, output);
     } else {
       input.addEventListener('change', () => {
