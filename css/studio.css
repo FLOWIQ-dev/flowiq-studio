@@ -1294,3 +1294,8 @@ body[data-screen=editor]{
 .scene-backdrop-liquidglass{background:linear-gradient(145deg,rgba(255,255,255,.2),rgba(190,215,255,.12) 45%,rgba(255,255,255,.06));box-shadow:inset 0 1px 0 rgba(255,255,255,.42),inset 0 -1px 0 rgba(255,255,255,.16)}
 .scene-backdrop-frostedglass{background:rgba(220,232,255,.18)}
 .scene-backdrop-acrylic{background:linear-gradient(135deg,rgba(255,255,255,.1),rgba(170,195,225,.12))}
+
+
+/* Build 1.5.9: frame materials use the Frame surface as the backdrop-filter sampling plane. */
+.scene-node.scene-frame{isolation:auto;background-clip:padding-box}
+.scene-node.scene-frame>.scene-children{background:transparent}
