@@ -381,7 +381,7 @@ test('Frame backdrop filtering is applied to the translucent Frame surface, not 
   const view = await readFile(new URL('../js/editor/view.js', import.meta.url), 'utf8');
   assert.match(view, /item\.style\.backdropFilter = backdropVisible/);
   assert.match(view, /item\.style\.backgroundColor = fillColor/);
-  assert.match(view, /item\.style\.backgroundImage = 'linear-gradient/);
+  assert.match(view, /scene-glass-surface/);\n  assert.match(view, /feDisplacementMap/);\n  assert.match(view, /backdrop-filter', refractiveFilter/);
   assert.doesNotMatch(view, /el\('div', 'scene-backdrop-layer/);
 });
 
