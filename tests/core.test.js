@@ -353,7 +353,9 @@ test('UIBackdrop is a child pseudo-instance with effect settings and renders thr
   assert.ok(model.includes("UIBackdrop: { x: 0, y: 0, width: 1, height: 1"));
   assert.ok(model.includes("enabled: true, effect: 'Blur'"));
   assert.ok(schema.includes("registerPropertySchema('UIBackdrop'"));
-  assert.ok(schema.includes('LiquidGlass'));
+  assert.ok(schema.includes("{ value: 'Prism', label: 'Prism' }"));
+  assert.ok(schema.includes("{ value: 'Emboss', label: 'Emboss' }"));
+  assert.ok(schema.includes("{ value: 'Holographic', label: 'Holographic' }"));
   assert.ok(schema.includes("{ value: 'Blur', label: 'Blur' }"));
   assert.ok(!schema.includes("value: 'FrostedGlass'"));
   assert.ok(!schema.includes("value: 'Acrylic'"));
@@ -367,24 +369,22 @@ test('UIBackdrop is a child pseudo-instance with effect settings and renders thr
 });
 
 
-test('UIBackdrop exposes only Blur and LiquidGlass with a safe parent-clipped renderer', async () => {
+test('UIBackdrop exposes Blur, Prism, Emboss and Holographic with a clipped renderer', async () => {
   const model = await readFile(new URL('../js/data/model.js', import.meta.url), 'utf8');
   const schema = await readFile(new URL('../js/editor/property-schema.js', import.meta.url), 'utf8');
   const view = await readFile(new URL('../js/editor/view.js', import.meta.url), 'utf8');
   const effectBlock = schema.slice(schema.indexOf("registerPropertySchema('UIBackdrop'"));
-  assert.equal((effectBlock.match(/\{ value: 'Blur', label: 'Blur' \}/g) || []).length, 1);
-  assert.equal((effectBlock.match(/\{ value: 'LiquidGlass', label: 'LiquidGlass' \}/g) || []).length, 1);
-  assert.doesNotMatch(effectBlock, /Acrylic/);
+  for (const effect of ['Blur', 'Prism', 'Emboss', 'Holographic']) assert.ok(effectBlock.includes("value: '" + effect + "'"));
+  assert.doesNotMatch(effectBlock, /LiquidGlass|Acrylic/);
   assert.match(effectBlock, /slider\('blur', 'Blur', 0, 40, 0\.5\)/);
   assert.match(model, /effect: 'Blur', blur: 14/);
   assert.match(view, /item\.style\.backdropFilter = backdropVisible/);
-  assert.match(view, /item\.style\.boxShadow = 'none'/);
-  assert.match(view, /scene-glass-surface/);
-  assert.match(view, /lensIntensity/);
-  assert.doesNotMatch(view, /feDisplacementMap|feImage|createLensMapDataUrl|appendLensFilter/);
-  assert.doesNotMatch(view, /0 5px 16px/);
+  assert.match(view, /scene-effect-surface/);
+  assert.match(view, /scene-effect-prism/);
+  assert.match(view, /scene-effect-emboss/);
+  assert.match(view, /scene-effect-holographic/);
+  assert.doesNotMatch(view, /lensIntensity|feDisplacementMap|feImage/);
 });
-
 
 test('UIBackdrop can only exist once as a leaf child of a Frame', () => {
   const scene = new Scene();
@@ -399,14 +399,16 @@ test('UIBackdrop can only exist once as a leaf child of a Frame', () => {
 });
 
 
-test('Frame backdrop filtering is applied to the translucent Frame surface, not an isolated child layer', async () => {
+test('Frame materials render as clipped overlays above the Frame surface', async () => {
   const view = await readFile(new URL('../js/editor/view.js', import.meta.url), 'utf8');
-  assert.match(view, /item\.style\.backdropFilter = backdropVisible/);
+  const css = await readFile(new URL('../css/studio.css', import.meta.url), 'utf8');
   assert.match(view, /item\.style\.backgroundColor = fillColor/);
-  assert.match(view, /scene-glass-surface/);
-  assert.doesNotMatch(view, /feDisplacementMap/);
-  assert.doesNotMatch(view, /feTurbulence|fractalNoise/);
-  assert.doesNotMatch(view, /el\('div', 'scene-backdrop-layer/);
+  assert.match(view, /scene-effect-surface/);
+  assert.match(view, /glassSurface\.style\.borderRadius = frameRadius \+ 'px'/);
+  assert.match(css, /\.scene-effect-surface\{position:absolute;inset:0/);
+  assert.match(css, /pointer-events:none/);
+  assert.match(css, /flowiq-holographic-drift/);
+  assert.doesNotMatch(view, /feDisplacementMap|feTurbulence|fractalNoise/);
 });
 
 test('ImageLabel reuses object URLs and DOM nodes across scene renders', async () => {
@@ -433,15 +435,12 @@ test('Opening the mobile Inspector does not dim the editable stage', async () =>
   assert.match(css, /editor-shell\[data-panel="inspector"\]::before\{opacity:0;pointer-events:none\}/);
 });
 
-test('LiquidGlass stays inside the parent shape and keeps the full blur range', async () => {
-  const view = await readFile(new URL('../js/editor/view.js', import.meta.url), 'utf8');
-  assert.match(view, /scene-glass-surface/);
-  assert.match(view, /'blur\(' \+ blur \+ 'px\)'/);
-  assert.doesNotMatch(view, /createLensMapDataUrl/);
-  assert.match(view, /lensIntensity/);
-  assert.match(view, /item\.style\.borderRadius = frameRadius \+ 'px'/);
+test('Legacy LiquidGlass project materials are normalized to Blur', () => {
+  const scene = new Scene([{ type: 'Frame', children: [{ type: 'UIBackdrop', props: { effect: 'LiquidGlass' } }] }]);
+  const frame = scene.get(scene.roots[0]);
+  const material = scene.get(frame.children[0]);
+  assert.equal(material.props.effect, 'Blur');
 });
-
 
 test('Frame and ImageLabel share the exact same UDim2 and AnchorPoint layout controls', () => {
   const frame = getPropertySchema('Frame');
