@@ -365,3 +365,16 @@ test('UIBackdrop is a child pseudo-instance with effect settings and renders ben
   assert.ok(view.indexOf('item.append(layer)') < view.indexOf('item.append(fillLayer)'));
   assert.ok(view.includes('item.append(childContainer)'));
 });
+
+
+test('UIBackdrop can only exist once as a leaf child of a Frame', () => {
+  const scene = new Scene();
+  const frame = scene.create('Frame');
+  const modifier = scene.create('UIBackdrop', frame.id);
+  assert.equal(modifier.parentId, frame.id);
+  assert.throws(() => scene.create('UIBackdrop'), /filho de um Frame/);
+  assert.throws(() => scene.create('UIBackdrop', modifier.id), /não aceita objetos filhos/);
+  assert.throws(() => scene.create('UIBackdrop', frame.id), /já possui um UIBackdrop/);
+  const label = scene.create('TextLabel');
+  assert.throws(() => scene.reparent(modifier.id, label.id), /filho de um Frame/);
+});
