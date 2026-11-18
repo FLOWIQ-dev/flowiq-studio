@@ -253,11 +253,20 @@ export function renderInspector(container, node, { onChange, onDelete, onDuplica
       input.addEventListener('change', () => onCommit ? onCommit(key, Number(input.value)) : onChange(key, Number(input.value)));
       wrap.append(input, output);
     } else {
-      input.addEventListener('change', () => {
-        const value = type === 'number' ? Number(input.value) : type === 'checkbox' ? input.checked : input.value;
-        if (type === 'asset') onAsset?.(value);
-        else onChange(key, value);
-      });
+      if (type === 'number' || type === 'color') {
+        const begin = () => onEditStart?.(key);
+        input.addEventListener('pointerdown', begin);
+        input.addEventListener('focus', begin);
+        input.addEventListener('keydown', begin);
+        input.addEventListener('input', () => onPreview?.(key, type === 'number' ? Number(input.value) : input.value));
+        input.addEventListener('change', () => onCommit ? onCommit(key, type === 'number' ? Number(input.value) : input.value) : onChange(key, type === 'number' ? Number(input.value) : input.value));
+      } else {
+        input.addEventListener('change', () => {
+          const value = type === 'checkbox' ? input.checked : input.value;
+          if (type === 'asset') onAsset?.(value);
+          else onChange(key, value);
+        });
+      }
       wrap.append(input);
     }
     return wrap;
