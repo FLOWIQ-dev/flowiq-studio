@@ -181,19 +181,19 @@ registerPropertySchema('UIBackdrop', { sections: [
   { title: 'Instance', fields: [text('name', 'Name')] },
   { title: 'Behavior', fields: [checkbox('enabled', 'Enabled')] },
   { title: 'Effect', fields: [
-    select('effect', 'Effect', [
+    { ...select('effect', 'Effect', [
       { value: 'Blur', label: 'Blur' },
       { value: 'LiquidGlass', label: 'LiquidGlass' },
       { value: 'FrostedGlass', label: 'FrostedGlass' },
       { value: 'Acrylic', label: 'Acrylic' }
-    ]),
-    slider('blur', 'Strength', 0, 40, 0.5),
-    slider('saturation', 'Saturation', 0, 3, 0.01),
-    slider('brightness', 'Brightness', 0.5, 1.5, 0.01),
-    slider('contrast', 'Contrast', 0.5, 1.5, 0.01),
-    color('tintColor', 'TintColor3'),
-    slider('tintOpacity', 'TintTransparency', 0, 1, 0.01),
-    slider('refraction', 'Refraction', 0, 1, 0.01),
-    slider('highlight', 'Highlight', 0, 1, 0.01)
+    ]), enabledOnly: true },
+    { ...slider('blur', 'Strength', 0, 40, 0.5), enabledOnly: true },
+    { ...slider('saturation', 'Saturation', 0, 3, 0.01), enabledOnly: true, effectOnly: ['LiquidGlass', 'FrostedGlass', 'Acrylic'] },
+    { ...slider('brightness', 'Brightness', 0.5, 1.5, 0.01), enabledOnly: true, effectOnly: ['LiquidGlass', 'Acrylic'] },
+    { ...slider('contrast', 'Contrast', 0.5, 1.5, 0.01), enabledOnly: true, effectOnly: ['LiquidGlass', 'FrostedGlass', 'Acrylic'] },
+    { ...color('tintColor', 'TintColor3'), enabledOnly: true, effectOnly: ['LiquidGlass', 'FrostedGlass', 'Acrylic'] },
+    { ...slider('tintOpacity', 'TintTransparency', 0, 1, 0.01), enabledOnly: true, effectOnly: ['LiquidGlass', 'FrostedGlass', 'Acrylic'] },
+    { ...slider('refraction', 'Refraction', 0, 1, 0.01), enabledOnly: true, effectOnly: ['LiquidGlass'] },
+    { ...slider('highlight', 'Highlight', 0, 1, 0.01), enabledOnly: true, effectOnly: ['LiquidGlass'] }
   ]}
 ]});
