@@ -122,41 +122,6 @@ export function renderScene(container, scene, { selectedId = null, preview = fal
       item.onpointerleave = null;
       if (effectEnabled) item.style.boxShadow = 'none';
     } else {
-          const effectClass = effect === 'Prism' ? 'scene-effect-prism' : effect === 'Emboss' ? 'scene-effect-emboss' : 'scene-effect-holographic';
-          glassSurface = el('div', 'scene-effect-surface ' + effectClass);
-          glassSurface.setAttribute('aria-hidden', 'true');
-          glassSurface.style.borderRadius = frameRadius + 'px';
-          const intensityKey = effect === 'Prism' ? 'prismIntensity' : effect === 'Emboss' ? 'embossDepth' : 'holographicIntensity';
-          const angleKey = effect === 'Prism' ? 'prismAngle' : effect === 'Emboss' ? 'embossAngle' : 'holographicAngle';
-          glassSurface.style.setProperty('--effect-intensity', String(Math.max(0, Math.min(1, Number(backdrop[intensityKey]) || 0))));
-          const angle = Number(backdrop[angleKey]) || 0;
-          glassSurface.style.setProperty('--effect-angle', angle + 'deg');
-          if (effect === 'Prism') {
-            const scale = Math.max(0.5, Math.min(2, Number(backdrop.prismScale) || 1));
-            glassSurface.style.backgroundImage = [
-              'conic-gradient(from ' + angle + 'deg at 50% 50%, rgba(108,92,231,0), rgba(94,234,212,.34), rgba(251,191,36,.18), rgba(236,72,153,.3), rgba(129,140,248,.26), rgba(108,92,231,0))',
-              'radial-gradient(ellipse ' + (58 * scale) + '% ' + (48 * scale) + '% at 18% 12%, rgba(255,255,255,.24), transparent 72%)',
-              'linear-gradient(135deg, rgba(255,255,255,.10), transparent 42%, rgba(125,211,252,.12))'
-            ].join(',');
-            glassSurface.style.mixBlendMode = 'screen';
-          } else if (effect === 'Emboss') {
-            const softness = Math.max(0, Math.min(1, Number(backdrop.embossSoftness) || 0));
-            const depth = Math.max(0, Math.min(1, Number(backdrop.embossDepth) || 0));
-            glassSurface.style.backgroundImage = 'linear-gradient(' + angle + 'deg, rgba(255,255,255,' + (0.08 + depth * 0.3) + '), transparent ' + (28 + softness * 28) + '%, rgba(0,0,0,' + (0.06 + depth * 0.28) + '))';
-            glassSurface.style.boxShadow = 'inset 0 1px ' + (1 + softness * 5) + 'px rgba(255,255,255,' + (0.12 + depth * 0.22) + '), inset 0 -1px ' + (2 + softness * 7) + 'px rgba(0,0,0,' + (0.12 + depth * 0.24) + ')';
-            glassSurface.style.mixBlendMode = 'soft-light';
-          } else if (effect === 'Holographic') {
-            glassSurface.style.backgroundImage = [
-              'conic-gradient(from ' + angle + 'deg at 50% 50%, rgba(255,105,180,.28), rgba(100,220,255,.28), rgba(190,150,255,.32), rgba(255,220,140,.25), rgba(255,105,180,.28))',
-              'linear-gradient(115deg, rgba(255,255,255,.22), transparent 35%, rgba(255,255,255,.12) 65%, transparent)'
-            ].join(',');
-            glassSurface.style.backgroundSize = '180% 180%, 100% 100%';
-            glassSurface.style.animationDuration = (12 - Math.max(0, Math.min(1, Number(backdrop.holographicSpeed) || 0)) * 10) + 's';
-            glassSurface.style.mixBlendMode = 'screen';
-          }
-        }
-      }
-    } else {
       item.style.borderRadius = Math.max(0, Number(p.radius) || 0) + 'px';
       item.style.border = Math.max(0, Number(p.borderWidth) || 0) + 'px solid ' + (p.border || 'transparent');
     }
