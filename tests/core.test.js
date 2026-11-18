@@ -244,19 +244,26 @@ test('editor recalculates nested descendants during live parent transforms', asy
 });
 
 
-test('Inspector tracks the selected object inside the visible stage and preserves camera framing on close', async () => {
+test('Inspector camera tracks inside the adaptive stage and keeps the final framing', async () => {
   const app = await readFile(new URL('../js/app.js', import.meta.url), 'utf8');
-  assert.match(app, /this\.cameraOffset = \{ x: 0, y: 0 \}/);
-  assert.match(app, /trackSelectedObject\(\)/);
-  assert.match(app, /panelRect\.top - 10/);
-  assert.match(app, /this\.cameraOffset\.x \+= centerX/);
-  assert.match(app, /this\.cameraOffset\.y \+= centerY/);
-  assert.match(app, /this\.applyCameraOffset\(\)/);
-  assert.match(app, /else if \(next === 'inspector'\) setTimeout\(\(\) => this\.trackSelectedObject\(\), 300\)/);
+  const view = await readFile(new URL('../js/editor/view.js', import.meta.url), 'utf8');
+  const css = await readFile(new URL('../css/studio.css', import.meta.url), 'utf8');
+  assert.match(app, /this\\.cameraOffset = \\{ x: 0, y: 0 \\}/);
+  assert.match(app, /trackSelectedObject\\(\\)/);
+  assert.match(app, /panelRect\\.top - 10/);
+  assert.match(app, /this\\.cameraOffset\\.x \\+= centerX/);
+  assert.match(app, /this\\.cameraOffset\\.y \\+= centerY/);
+  assert.match(app, /const world = \\$('scene')\\.querySelector\\('.scene-world'\\)/);
+  assert.doesNotMatch(app, /const surface = \\$('scene-zoom')/);
+  assert.match(view, /cameraOffset = \\{ x: 0, y: 0 \}/);
+  assert.match(view, /translate3d\\(' \\+ offsetX \\+ 'px,' \\+ offsetY \\+ 'px,0\\) scale\\('/);
+  assert.match(css, /#screen-editor \\.stage-viewport\\{overflow:hidden\\}/);
+  assert.match(css, /#screen-editor #scene\\.is-camera-tracking \\.scene-world\\{[\\s\\S]*transition:transform 120ms linear/);
+  assert.match(app, /else if \\(next === 'inspector'\\) setTimeout\\(\\(\\) => this\\.trackSelectedObject\\(\\), 300\\)/);
   const closePanel = app.slice(app.indexOf('  setPanel(name)'), app.indexOf('  toggleAddMenu()'));
-  assert.match(closePanel, /if \(next === 'stage'\) requestAnimationFrame\(\(\) => this\.fitStage\(\)\)/);
-  assert.doesNotMatch(closePanel, /cameraOffset = \{ x: 0, y: 0 \}/);
+  assert.match(closePanel, /if \\(next === 'stage'\\) requestAnimationFrame\\(\\(\\) => this\\.fitStage\\(\\)\\)/);
+  assert.doesNotMatch(closePanel, /cameraOffset = \\{ x: 0, y: 0 \\}/);
   const reset = app.slice(app.indexOf('  fitStage(resetZoom'), app.indexOf('  setPanel(name)'));
-  assert.match(reset, /if \(resetZoom\)[\s\S]*cameraOffset = \{ x: 0, y: 0 \}/);
-  assert.match(app, /this\.trackSelectedObject\(\);/);
+  assert.match(reset, /if \\(resetZoom\\)[\\s\\S]*cameraOffset = \\{ x: 0, y: 0 \\}/);
+  assert.match(app, /this\\.trackSelectedObject\\(\\);/);
 });
