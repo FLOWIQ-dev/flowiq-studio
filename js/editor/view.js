@@ -6,6 +6,7 @@ const ICONS = {
   TextButton: '<rect x="3" y="5" width="18" height="14" rx="3"/><path d="M8 9h8M12 9v6m-3 0h6"/>',
   TextLabel: '<path d="M4 6h16M12 6v13M8 19h8"/>',
   ImageLabel: '<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9" r="1.5"/><path d="m4 17 5-5 3 3 3-4 5 6"/>'
+  UIBackdrop: '<path d="M12 2.8C9.2 6.5 5.8 10 5.8 14.2a6.2 6.2 0 0 0 12.4 0C18.2 10 14.8 6.5 12 2.8Z"/><path d="M9.2 15.1a3 3 0 0 0 2.7 2.8"/>',
 };
 const icon = type => '<svg viewBox="0 0 24 24" aria-hidden="true">' + (ICONS[type] || ICONS.Frame) + '</svg>';
 const el = (tag, className, text) => {
@@ -25,13 +26,6 @@ export function renderScene(container, scene, { selectedId = null, preview = fal
   const rootHeight = Math.max(1, Number(sceneSize.height) || container.clientHeight || 640);
   container.style.position = 'relative';
   const world = el('div', 'scene-world');
-  const svgNamespace = 'http://www.w3.org/2000/svg';
-  const filterSvg = document.createElementNS(svgNamespace, 'svg');
-  filterSvg.setAttribute('aria-hidden', 'true');
-  filterSvg.style.cssText = 'position:absolute;width:0;height:0;overflow:hidden;pointer-events:none';
-  const filterDefs = document.createElementNS(svgNamespace, 'defs');
-  filterSvg.append(filterDefs);
-  world.append(filterSvg);
   world.style.width = rootWidth + 'px';
   world.style.height = rootHeight + 'px';
   world.style.transformOrigin = preview ? 'top left' : '50% 50%';
@@ -104,64 +98,44 @@ export function renderScene(container, scene, { selectedId = null, preview = fal
       item.style.boxShadow = p.style === 'DropShadow' ? '0 5px 14px rgba(0,0,0,.28)' : 'none';
       const backdrop = backdropNode?.props || {};
       const backdropVisible = Boolean(backdrop.enabled) && backdropNode?.props.visible !== false && alpha < 1;
-      const liquidGlass = backdrop.effect === 'LiquidGlass';
-      const blurStrength = liquidGlass
-        ? Math.max(0, Math.min(12, Number(backdrop.blur) || 0)) * 0.32
-        : Math.max(0, Math.min(40, Number(backdrop.blur) || 0));
+      const effect = backdrop.effect === 'FrostedGlass' ? 'Blur' : backdrop.effect;
+      const liquidGlass = effect === 'LiquidGlass';
+      const blur = Math.max(0, Math.min(40, Number(backdrop.blur) || 0));
+      const saturation = Math.max(0, Math.min(3, Number(backdrop.saturation) || 1));
+      const brightness = Math.max(0.5, Math.min(1.5, Number(backdrop.brightness) || 1));
+      const contrast = Math.max(0.5, Math.min(1.5, Number(backdrop.contrast) || 1));
+      const tint = String(backdrop.tintColor || '#dbeafe');
+      const tintMatch = tint.match(/^#([0-9a-f]{6})$/i);
+      const tintHex = tintMatch ? tintMatch[1] : 'dbeafe';
+      const tintRgb = [0,2,4].map(index => parseInt(tintHex.slice(index,index+2),16)).join(',');
+      const tintAlpha = Math.max(0, Math.min(1, Number(backdrop.tintOpacity) || 0));
       item.style.backdropFilter = backdropVisible
-        ? 'blur(' + blurStrength + 'px) saturate(' + Math.max(0, Math.min(3, Number(backdrop.saturation) || 0)) + ') brightness(' + Math.max(0.5, Math.min(1.5, Number(backdrop.brightness) || 1)) + ') contrast(' + Math.max(0.5, Math.min(1.5, Number(backdrop.contrast) || 1)) + ')'
+        ? 'blur(' + (liquidGlass ? Math.min(3.5, blur * 0.12) : blur) + 'px) saturate(' + saturation + ') brightness(' + brightness + ') contrast(' + contrast + ')'
         : 'none';
       item.style.webkitBackdropFilter = item.style.backdropFilter;
       item.style.backgroundImage = 'none';
       if (backdropVisible) {
-        const tint = String(backdrop.tintColor || '#dbeafe');
-        const tintMatch = tint.match(/^#([0-9a-f]{6})$/i);
-        const tintHex = tintMatch ? tintMatch[1] : 'dbeafe';
-        const tintRgb = [0,2,4].map(index => parseInt(tintHex.slice(index,index+2),16)).join(',');
-        const tintAlpha = Math.max(0, Math.min(1, Number(backdrop.tintOpacity) || 0));
         if (liquidGlass) {
           const shine = Math.max(0, Math.min(1, Number(backdrop.highlight) || 0));
-          const refract = Math.max(0, Math.min(1, Number(backdrop.refraction) || 0));
+          const refraction = Math.max(0, Math.min(1, Number(backdrop.refraction) || 0));
           glassSurface = el('div', 'scene-glass-surface');
           glassSurface.setAttribute('aria-hidden', 'true');
-          const filterId = 'flowiq-liquid-glass-' + String(container.id || 'scene').replace(/[^a-z0-9_-]/gi, '-') + '-' + String(node.id).replace(/[^a-z0-9_-]/gi, '-');
-          const svgFilter = document.createElementNS(svgNamespace, 'filter');
-          svgFilter.setAttribute('id', filterId);
-          svgFilter.setAttribute('x', '-12%');
-          svgFilter.setAttribute('y', '-12%');
-          svgFilter.setAttribute('width', '124%');
-          svgFilter.setAttribute('height', '124%');
-          svgFilter.setAttribute('color-interpolation-filters', 'sRGB');
-          const turbulence = document.createElementNS(svgNamespace, 'feTurbulence');
-          turbulence.setAttribute('type', 'fractalNoise');
-          turbulence.setAttribute('baseFrequency', '0.012 0.019');
-          turbulence.setAttribute('numOctaves', '2');
-          turbulence.setAttribute('seed', '8');
-          turbulence.setAttribute('result', 'glassNoise');
-          const displacement = document.createElementNS(svgNamespace, 'feDisplacementMap');
-          displacement.setAttribute('in', 'SourceGraphic');
-          displacement.setAttribute('in2', 'glassNoise');
-          displacement.setAttribute('scale', String(4 + refract * 24));
-          displacement.setAttribute('xChannelSelector', 'R');
-          displacement.setAttribute('yChannelSelector', 'G');
-          svgFilter.append(turbulence, displacement);
-          filterDefs.append(svgFilter);
-          const refractiveFilter = 'url(#' + filterId + ') ' + item.style.backdropFilter;
-          if (globalThis.CSS?.supports?.('backdrop-filter', refractiveFilter)) {
-            item.style.backdropFilter = refractiveFilter;
-            item.style.webkitBackdropFilter = refractiveFilter;
-          }
-          glassSurface.style.setProperty('--glass-tint', 'rgba(' + tintRgb + ',' + Math.max(0.035, tintAlpha * 0.42) + ')');
-          glassSurface.style.setProperty('--glass-shine', String(shine));
-          glassSurface.style.setProperty('--glass-refraction', String(refract));
+          glassSurface.style.setProperty('--glass-tint', 'rgba(' + tintRgb + ',' + Math.max(0.025, tintAlpha * 0.28) + ')');
+          glassSurface.style.setProperty('--glass-highlight', String(shine));
+          glassSurface.style.setProperty('--glass-refraction', String(refraction));
           glassSurface.style.backgroundImage = [
-            'radial-gradient(125% 90% at var(--glass-x, 18%) var(--glass-y, 0%), rgba(255,255,255,' + (0.16 + shine * 0.34) + '), transparent 48%)',
-            'radial-gradient(85% 70% at 100% 100%, rgba(255,255,255,' + (0.06 + refract * 0.15) + '), transparent 62%)',
-            'linear-gradient(132deg, rgba(255,255,255,' + (0.18 + shine * 0.12) + ') 0%, var(--glass-tint) 38%, rgba(255,255,255,' + (0.015 + refract * 0.055) + ') 68%, rgba(255,255,255,' + (0.12 + shine * 0.12) + ') 100%)'
+            'radial-gradient(ellipse 78% 42% at var(--glass-x, 22%) var(--glass-y, 0%), rgba(255,255,255,' + (0.035 + shine * 0.16) + '), transparent 72%)',
+            'linear-gradient(155deg, rgba(255,255,255,' + (0.07 + shine * 0.12) + ') 0%, rgba(255,255,255,0) 27%, var(--glass-tint) 58%, rgba(255,255,255,0.018) 100%)'
           ].join(',');
-          glassSurface.style.border = '1px solid rgba(255,255,255,' + (0.24 + shine * 0.24) + ')';
-          glassSurface.style.boxShadow = 'inset 0 1px 1px rgba(255,255,255,' + (0.42 + shine * 0.28) + '), inset 0 -1px 2px rgba(255,255,255,' + (0.10 + refract * 0.16) + '), inset 1px 0 1px rgba(255,255,255,.14), 0 8px 22px rgba(8,18,32,.12)';
-          item.style.boxShadow = (p.style === 'DropShadow' ? '0 5px 14px rgba(0,0,0,.28),' : '') + '0 10px 26px rgba(10,24,42,.12)';
+          const rim = 0.10 + refraction * 0.16 + shine * 0.08;
+          glassSurface.style.border = '1px solid rgba(255,255,255,' + rim + ')';
+          glassSurface.style.boxShadow = [
+            'inset 0 1px 0 rgba(255,255,255,' + (0.16 + shine * 0.22) + ')',
+            'inset 0 -1px 0 rgba(12,24,42,' + (0.035 + refraction * 0.045) + ')',
+            'inset 1px 0 0 rgba(255,255,255,' + (0.035 + refraction * 0.07) + ')',
+            '0 7px 20px rgba(8,18,32,0.09)'
+          ].join(',');
+          item.style.boxShadow = (p.style === 'DropShadow' ? '0 5px 14px rgba(0,0,0,.28),' : '') + '0 7px 20px rgba(8,18,32,.09)';
           item.onpointermove = event => {
             const rect = item.getBoundingClientRect();
             if (!rect.width || !rect.height) return;
@@ -169,18 +143,18 @@ export function renderScene(container, scene, { selectedId = null, preview = fal
             glassSurface.style.setProperty('--glass-y', ((event.clientY - rect.top) / rect.height * 100).toFixed(1) + '%');
           };
           item.onpointerleave = () => {
-            glassSurface.style.setProperty('--glass-x', '18%');
+            glassSurface.style.setProperty('--glass-x', '22%');
             glassSurface.style.setProperty('--glass-y', '0%');
           };
         } else {
           item.onpointermove = null;
           item.onpointerleave = null;
-          if (backdrop.effect === 'FrostedGlass') {
-            item.style.backgroundImage = 'linear-gradient(rgba(' + tintRgb + ',' + Math.max(tintAlpha, 0.16) + '),rgba(' + tintRgb + ',' + Math.max(tintAlpha, 0.16) + '))';
-          } else if (backdrop.effect === 'Acrylic') {
+          const overlayAlpha = effect === 'Blur' ? Math.max(tintAlpha, 0.16) : tintAlpha;
+          if (overlayAlpha > 0) {
+            item.style.backgroundImage = 'linear-gradient(rgba(' + tintRgb + ',' + overlayAlpha + '),rgba(' + tintRgb + ',' + overlayAlpha + '))';
+          }
+          if (effect === 'Acrylic') {
             item.style.backgroundImage = 'linear-gradient(135deg,rgba(255,255,255,.09),rgba(' + tintRgb + ',' + tintAlpha + '))';
-          } else if (tintAlpha > 0) {
-            item.style.backgroundImage = 'linear-gradient(rgba(' + tintRgb + ',' + tintAlpha + '),rgba(' + tintRgb + ',' + tintAlpha + '))';
           }
         }
       } else {
