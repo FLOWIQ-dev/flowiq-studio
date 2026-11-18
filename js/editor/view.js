@@ -16,8 +16,9 @@ const el = (tag, className, text) => {
 };
 
 export function renderScene(container, scene, { selectedId = null, preview = false, assets = [], onRun = () => {}, sceneSize = { width: 960, height: 640 }, zoom = 1, cameraOffset = { x: 0, y: 0 } } = {}) {
-  for (const url of container._objectUrls || []) URL.revokeObjectURL(url);
-  container._objectUrls = [];
+  const existingNodes = new Map(Array.from(container.querySelectorAll('.scene-world [data-node-id]')).map(item => [item.dataset.nodeId, item]));
+  const assetUrls = container._assetObjectUrls || (container._assetObjectUrls = new Map());
+  const usedAssetIds = new Set();
   container.replaceChildren();
   // A viewport define o espaço lógico atual. A câmera aplica zoom apenas aos objetos.
   const rootWidth = Math.max(1, Number(sceneSize.width) || container.clientWidth || 960);
@@ -58,7 +59,11 @@ export function renderScene(container, scene, { selectedId = null, preview = fal
     const node = scene.get(id);
     if (!node || node.props.visible === false || node.type === 'UIBackdrop') return;
     const p = node.props;
-    const item = el(node.type === 'TextButton' && preview ? 'button' : 'div', 'scene-node scene-' + node.type.toLowerCase());
+    const existing = existingNodes.get(node.id);
+    const item = existing && existing.tagName.toLowerCase() === (node.type === 'TextButton' && preview ? 'button' : 'div')
+      ? existing
+      : el(node.type === 'TextButton' && preview ? 'button' : 'div', 'scene-node scene-' + node.type.toLowerCase());
+    item.className = 'scene-node scene-' + node.type.toLowerCase();
     item.dataset.nodeId = node.id;
     const layout = measureLayout(node, parentWidth, parentHeight);
     item.style.left = (layout.x + layout.width * p.anchorPoint.x) + 'px';
@@ -86,40 +91,34 @@ export function renderScene(container, scene, { selectedId = null, preview = fal
       item.style.zIndex = String(Math.max(1, Math.min(10, Number(p.zIndex) || 1)));
       item.style.border = '0';
       item.style.outline = 'none';
-      item.style.boxShadow = 'none';
-      if (p.style === 'DropShadow') item.style.boxShadow = '0 5px 14px rgba(0,0,0,.28)';
+      item.style.backgroundColor = fillColor;
+      item.style.backgroundImage = 'none';
+      item.style.boxShadow = p.style === 'DropShadow' ? '0 5px 14px rgba(0,0,0,.28)' : 'none';
       const backdrop = backdropNode?.props || {};
-      if (backdrop.enabled && alpha < 1) {
-        const layer = el('div', 'scene-backdrop-layer scene-backdrop-' + String(backdrop.effect || 'Blur').toLowerCase());
-        layer.setAttribute('aria-hidden', 'true');
-        const blur = Math.max(0, Math.min(40, Number(backdrop.blur) || 0));
-        const saturation = Math.max(0, Math.min(3, Number(backdrop.saturation) || 0));
-        const brightness = Math.max(0.5, Math.min(1.5, Number(backdrop.brightness) || 1));
-        const contrast = Math.max(0.5, Math.min(1.5, Number(backdrop.contrast) || 1));
-        layer.style.backdropFilter = 'blur(' + blur + 'px) saturate(' + saturation + ') brightness(' + brightness + ') contrast(' + contrast + ')';
-        layer.style.webkitBackdropFilter = layer.style.backdropFilter;
+      const backdropVisible = Boolean(backdrop.enabled) && backdropNode?.props.visible !== false && alpha < 1;
+      item.style.backdropFilter = backdropVisible
+        ? 'blur(' + Math.max(0, Math.min(40, Number(backdrop.blur) || 0)) + 'px) saturate(' + Math.max(0, Math.min(3, Number(backdrop.saturation) || 0)) + ') brightness(' + Math.max(0.5, Math.min(1.5, Number(backdrop.brightness) || 1)) + ') contrast(' + Math.max(0.5, Math.min(1.5, Number(backdrop.contrast) || 1)) + ')'
+        : 'none';
+      item.style.webkitBackdropFilter = item.style.backdropFilter;
+      if (backdropVisible) {
         const tint = String(backdrop.tintColor || '#dbeafe');
         const tintMatch = tint.match(/^#([0-9a-f]{6})$/i);
         const tintHex = tintMatch ? tintMatch[1] : 'dbeafe';
         const tintRgb = [0,2,4].map(index => parseInt(tintHex.slice(index,index+2),16)).join(',');
         const tintAlpha = Math.max(0, Math.min(1, Number(backdrop.tintOpacity) || 0));
-        layer.style.background = 'rgba(' + tintRgb + ',' + tintAlpha + ')';
         if (backdrop.effect === 'LiquidGlass') {
           const shine = Math.max(0, Math.min(1, Number(backdrop.highlight) || 0));
           const refract = Math.max(0, Math.min(1, Number(backdrop.refraction) || 0));
-          layer.style.background = 'linear-gradient(145deg,rgba(255,255,255,' + (0.12 + shine * 0.2) + '),rgba(' + tintRgb + ',' + tintAlpha + ') 42%,rgba(255,255,255,' + (0.025 + refract * 0.07) + '))';
-          layer.style.boxShadow = 'inset 0 1px 0 rgba(255,255,255,' + (0.25 + shine * 0.45) + '),inset 0 -1px 0 rgba(255,255,255,' + (0.08 + refract * 0.12) + ')';
+          item.style.backgroundImage = 'linear-gradient(145deg,rgba(255,255,255,' + (0.12 + shine * 0.2) + '),rgba(' + tintRgb + ',' + tintAlpha + ') 42%,rgba(255,255,255,' + (0.025 + refract * 0.07) + '))';
+          item.style.boxShadow = (p.style === 'DropShadow' ? '0 5px 14px rgba(0,0,0,.28),' : '') + 'inset 0 1px 0 rgba(255,255,255,' + (0.25 + shine * 0.45) + '),inset 0 -1px 0 rgba(255,255,255,' + (0.08 + refract * 0.12) + ')';
         } else if (backdrop.effect === 'FrostedGlass') {
-          layer.style.background = 'rgba(' + tintRgb + ',' + Math.max(tintAlpha, 0.16) + ')';
+          item.style.backgroundImage = 'linear-gradient(rgba(' + tintRgb + ',' + Math.max(tintAlpha, 0.16) + '),rgba(' + tintRgb + ',' + Math.max(tintAlpha, 0.16) + '))';
         } else if (backdrop.effect === 'Acrylic') {
-          layer.style.background = 'linear-gradient(135deg,rgba(255,255,255,.09),rgba(' + tintRgb + ',' + tintAlpha + '))';
+          item.style.backgroundImage = 'linear-gradient(135deg,rgba(255,255,255,.09),rgba(' + tintRgb + ',' + tintAlpha + '))';
+        } else if (tintAlpha > 0) {
+          item.style.backgroundImage = 'linear-gradient(rgba(' + tintRgb + ',' + tintAlpha + '),rgba(' + tintRgb + ',' + tintAlpha + '))';
         }
-        item.append(layer);
       }
-      const fillLayer = el('div', 'scene-frame-fill');
-      fillLayer.style.background = fillColor;
-      fillLayer.setAttribute('aria-hidden', 'true');
-      item.append(fillLayer);
     } else {
       item.style.borderRadius = Math.max(0, Number(p.radius) || 0) + 'px';
       item.style.border = Math.max(0, Number(p.borderWidth) || 0) + 'px solid ' + (p.border || 'transparent');
@@ -129,21 +128,33 @@ export function renderScene(container, scene, { selectedId = null, preview = fal
     item.style.textAlign = p.textAlign || 'center';
     item.style.fontWeight = p.fontWeight || '500';
     item.textContent = node.type === 'Frame' ? '' : (p.text || (node.type === 'ImageLabel' ? '' : node.name));
-    const childContainer = el('div', 'scene-children');
+    const childContainer = item.querySelector(':scope > .scene-children') || el('div', 'scene-children');
+    childContainer.replaceChildren();
     childContainer.style.position = 'absolute';
     childContainer.style.inset = '0';
     childContainer.style.overflow = node.type === 'Frame' && p.clipsDescendants ? 'hidden' : 'visible';
     if (isFrame) childContainer.style.zIndex = '2';
+    for (const child of Array.from(item.children)) if (child !== childContainer) child.remove();
     item.append(childContainer);
     if (node.type === 'ImageLabel') {
       const asset = assetMap.get(p.assetId);
       if (asset?.blob) {
-        const url = URL.createObjectURL(asset.blob);
-        container._objectUrls.push(url);
-        item.style.backgroundImage = 'url("' + url + '")';
+        usedAssetIds.add(asset.id);
+        let cached = assetUrls.get(asset.id);
+        if (!cached || cached.blob !== asset.blob) {
+          if (cached?.url) URL.revokeObjectURL(cached.url);
+          cached = { blob: asset.blob, url: URL.createObjectURL(asset.blob) };
+          assetUrls.set(asset.id, cached);
+        }
+        const imageUrl = 'url("' + cached.url + '")';
+        if (item.style.backgroundImage !== imageUrl && !item.style.backgroundImage.includes('linear-gradient')) item.style.backgroundImage = imageUrl;
         item.style.backgroundSize = p.fit || 'cover';
         item.style.backgroundPosition = 'center';
-        item.dataset.objectUrl = url;
+        item.style.backgroundRepeat = 'no-repeat';
+        item.dataset.assetId = asset.id;
+      } else {
+        item.style.backgroundImage = 'none';
+        delete item.dataset.assetId;
       }
       item.setAttribute('aria-label', node.name);
     }
@@ -164,6 +175,12 @@ export function renderScene(container, scene, { selectedId = null, preview = fal
     }
   };
   for (const id of scene.roots) build(id, world, rootWidth, rootHeight);
+  for (const [assetId, cached] of assetUrls) {
+    if (!usedAssetIds.has(assetId)) {
+      URL.revokeObjectURL(cached.url);
+      assetUrls.delete(assetId);
+    }
+  }
 }
 
 export function updateSceneLayout(container, scene, sceneSize = { width: 960, height: 640 }) {
