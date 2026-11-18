@@ -58,7 +58,7 @@ const textAppearance = [
   ])
 ];
 
-export const PROPERTY_SCHEMA_VERSION = 5;
+export const PROPERTY_SCHEMA_VERSION = 6;
 
 export function registerPropertySchema(className, schema, { replace = false } = {}) {
   if (typeof className !== 'string' || (className !== '*' && !/^[A-Z][A-Za-z0-9]*$/.test(className))) {
@@ -134,23 +134,6 @@ registerPropertySchema('Frame', { sections: [
     slider('opacity', 'Opacity', 0, 1, 0.01),
     slider('rotation', 'Rotation', -360, 360, 1)
   ]},
-  { title: 'UIBackdrop', fields: [
-    { ...checkbox('uiBackdrop.enabled', 'Enabled'), backdropSetting: 'enabled' },
-    { ...select('uiBackdrop.effect', 'Effect', [
-      { value: 'Blur', label: 'Blur' },
-      { value: 'LiquidGlass', label: 'LiquidGlass' },
-      { value: 'FrostedGlass', label: 'FrostedGlass' },
-      { value: 'Acrylic', label: 'Acrylic' }
-    ]), backdropSetting: 'effect' },
-    { ...slider('uiBackdrop.blur', 'Blur strength', 0, 40, 0.5), backdropSetting: 'effect', effectOnly: ['Blur', 'LiquidGlass', 'FrostedGlass', 'Acrylic'] },
-    { ...slider('uiBackdrop.saturation', 'Saturation', 0, 3, 0.01), backdropSetting: 'effect', effectOnly: ['LiquidGlass', 'FrostedGlass', 'Acrylic'] },
-    { ...slider('uiBackdrop.brightness', 'Brightness', 0.5, 1.5, 0.01), backdropSetting: 'effect', effectOnly: ['LiquidGlass', 'Acrylic'] },
-    { ...slider('uiBackdrop.contrast', 'Contrast', 0.5, 1.5, 0.01), backdropSetting: 'effect', effectOnly: ['LiquidGlass', 'FrostedGlass', 'Acrylic'] },
-    { ...color('uiBackdrop.tintColor', 'Tint color'), backdropSetting: 'effect', effectOnly: ['LiquidGlass', 'FrostedGlass', 'Acrylic'] },
-    { ...slider('uiBackdrop.tintOpacity', 'Tint opacity', 0, 1, 0.01), backdropSetting: 'effect', effectOnly: ['LiquidGlass', 'FrostedGlass', 'Acrylic'] },
-    { ...slider('uiBackdrop.refraction', 'Refraction feel', 0, 1, 0.01), backdropSetting: 'effect', effectOnly: ['LiquidGlass'] },
-    { ...slider('uiBackdrop.highlight', 'Edge highlight', 0, 1, 0.01), backdropSetting: 'effect', effectOnly: ['LiquidGlass'] }
-  ]},
   { title: 'Behavior', fields: [
     checkbox('visible', 'Visible'),
     checkbox('clipsDescendants', 'ClipsDescendants'),
@@ -191,5 +174,26 @@ registerPropertySchema('ImageLabel', { sections: [
     number('borderWidth', 'Espessura da borda', 0, 30),
     number('rotation', 'Rotação', -360, 360),
     checkbox('visible', 'Visível')
+  ]}
+]});
+
+registerPropertySchema('UIBackdrop', { sections: [
+  { title: 'Instance', fields: [text('name', 'Name')] },
+  { title: 'Behavior', fields: [checkbox('enabled', 'Enabled')] },
+  { title: 'Effect', fields: [
+    select('effect', 'Effect', [
+      { value: 'Blur', label: 'Blur' },
+      { value: 'LiquidGlass', label: 'LiquidGlass' },
+      { value: 'FrostedGlass', label: 'FrostedGlass' },
+      { value: 'Acrylic', label: 'Acrylic' }
+    ]),
+    slider('blur', 'Strength', 0, 40, 0.5),
+    slider('saturation', 'Saturation', 0, 3, 0.01),
+    slider('brightness', 'Brightness', 0.5, 1.5, 0.01),
+    slider('contrast', 'Contrast', 0.5, 1.5, 0.01),
+    color('tintColor', 'TintColor3'),
+    slider('tintOpacity', 'TintTransparency', 0, 1, 0.01),
+    slider('refraction', 'Refraction', 0, 1, 0.01),
+    slider('highlight', 'Highlight', 0, 1, 0.01)
   ]}
 ]});
