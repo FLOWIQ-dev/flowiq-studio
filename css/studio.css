@@ -1207,3 +1207,13 @@ body[data-screen=editor]{
   accent-color:#6ea9ed;
   touch-action:pan-y;
 }
+
+
+/* Build 1.5.1: camera movement stays clipped to the adaptive stage surface. */
+#screen-editor .stage-viewport{overflow:hidden}
+#screen-editor #scene-zoom{transform:none!important;position:relative;max-width:100%;max-height:100%}
+#screen-editor #scene{position:relative;overflow:hidden}
+#screen-editor #scene.is-camera-tracking .scene-world{
+  transition:transform 120ms linear;
+  will-change:transform;
+}
