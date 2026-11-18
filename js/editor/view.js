@@ -209,7 +209,7 @@ export function renderScene(container, scene, { selectedId = null, preview = fal
     item.style.textAlign = p.textAlign || 'center';
     item.style.fontWeight = p.fontWeight || '500';
     const existingChildContainer = item.querySelector(':scope > .scene-children');
-    const preservedImageLayer = node.type === 'ImageLabel' ? existingChildContainer?.querySelector(':scope > .scene-image-layer') : null;
+    const preservedImageLayer = node.type === 'ImageLabel' ? item.querySelector(':scope > .scene-image-layer') : null;
     if (node.type === 'TextLabel') item.replaceChildren();
     else if (node.type !== 'ImageLabel') item.textContent = node.type === 'Frame' ? '' : (p.text || node.name);
     const childContainer = existingChildContainer || el('div', 'scene-children');
@@ -219,7 +219,7 @@ export function renderScene(container, scene, { selectedId = null, preview = fal
     childContainer.style.overflow = node.type === 'Frame' && p.clipsDescendants ? 'hidden' : 'visible';
     if (node.type === 'ImageLabel') childContainer.style.borderRadius = 'inherit';
     childContainer.style.zIndex = '2';
-    for (const child of Array.from(item.children)) if (child !== childContainer && !(node.type === 'TextLabel' && child.classList.contains('scene-text-content'))) child.remove();
+    for (const child of Array.from(item.children)) if (child !== childContainer && child !== preservedImageLayer && !(node.type === 'TextLabel' && child.classList.contains('scene-text-content'))) child.remove();
     if (node.type === 'TextLabel') {
       const content = el('span', 'scene-text-content');
       const fontKey = p.fontFace || p.font || 'Arial';
