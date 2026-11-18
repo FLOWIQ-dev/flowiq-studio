@@ -155,7 +155,7 @@ test('service worker precaches every module used by the new application', async 
 
 
 test('Inspector property schemas are class-based and extensible', () => {
-  assert.equal(PROPERTY_SCHEMA_VERSION, 11);
+  assert.equal(PROPERTY_SCHEMA_VERSION, 12);
   const frame = getPropertySchema('Frame');
   assert.ok(frame.sections.some(section => section.title === 'Data'));
   const frameKeys = frame.sections.flatMap(section => section.fields.map(field => field.key));
@@ -171,7 +171,7 @@ test('Inspector property schemas are class-based and extensible', () => {
   assert.ok(frameFields.some(field => field.key === 'position' && field.type === 'udim2'));
   assert.ok(frameFields.some(field => field.key === 'size' && field.type === 'udim2'));
   assert.ok(frameFields.some(field => field.key === 'anchorPoint' && field.type === 'vector2'));
-  assert.ok(!frameFields.some(field => /border/i.test(field.key)), 'Frame border properties are intentionally omitted');
+  assert.ok(!frameFields.some(field => /border|radius|corner/i.test(field.key)), 'Frame border and corner controls are intentionally omitted');
   registerPropertySchema('FutureWidget', { sections: [
     { title: 'Dados', fields: [{ key: 'value', label: 'Valor', type: 'number', min: 0, max: 10 }] }
   ]});
@@ -353,10 +353,10 @@ test('UIBackdrop is a child pseudo-instance with effect settings and renders thr
   assert.ok(model.includes("UIBackdrop: { x: 0, y: 0, width: 1, height: 1"));
   assert.ok(model.includes("enabled: true, effect: 'Blur'"));
   assert.ok(schema.includes("registerPropertySchema('UIBackdrop'"));
-  assert.ok(schema.includes("{ value: 'Prism', label: 'Prism' }"));
-  assert.ok(schema.includes("{ value: 'Emboss', label: 'Emboss' }"));
-  assert.ok(schema.includes("{ value: 'Holographic', label: 'Holographic' }"));
-  assert.ok(schema.includes("{ value: 'Blur', label: 'Blur' }"));
+  assert.ok(schema.includes("slider('blur', 'Blur amount'"));
+  assert.ok(!schema.includes("value: 'Prism'"));
+  assert.ok(!schema.includes("value: 'Emboss'"));
+  assert.ok(!schema.includes("value: 'Holographic'"));
   assert.ok(!schema.includes("value: 'FrostedGlass'"));
   assert.ok(!schema.includes("value: 'Acrylic'"));
   assert.ok(view.includes("child?.type === 'UIBackdrop'"));
@@ -369,21 +369,19 @@ test('UIBackdrop is a child pseudo-instance with effect settings and renders thr
 });
 
 
-test('UIBackdrop exposes Blur, Prism, Emboss and Holographic with a clipped renderer', async () => {
+test('UIBackdrop is a single powerful Blur material with clipped parent rendering', async () => {
   const model = await readFile(new URL('../js/data/model.js', import.meta.url), 'utf8');
   const schema = await readFile(new URL('../js/editor/property-schema.js', import.meta.url), 'utf8');
   const view = await readFile(new URL('../js/editor/view.js', import.meta.url), 'utf8');
   const effectBlock = schema.slice(schema.indexOf("registerPropertySchema('UIBackdrop'"));
-  for (const effect of ['Blur', 'Prism', 'Emboss', 'Holographic']) assert.ok(effectBlock.includes("value: '" + effect + "'"));
-  assert.doesNotMatch(effectBlock, /LiquidGlass|Acrylic/);
-  assert.match(effectBlock, /slider\('blur', 'Blur', 0, 40, 0\.5\)/);
-  assert.match(model, /effect: 'Blur', blur: 14/);
-  assert.match(view, /item\.style\.backdropFilter = backdropVisible/);
-  assert.match(view, /scene-effect-surface/);
-  assert.match(view, /scene-effect-prism/);
-  assert.match(view, /scene-effect-emboss/);
-  assert.match(view, /scene-effect-holographic/);
-  assert.doesNotMatch(view, /lensIntensity|feDisplacementMap|feImage/);
+  assert.match(effectBlock, /slider\('blur', 'Blur amount', 0, 64, 0\.5\)/);
+  for (const key of ['saturation', 'brightness', 'contrast', 'tintColor', 'tintOpacity']) assert.ok(effectBlock.includes(key));
+  assert.doesNotMatch(effectBlock, /Prism|Emboss|Holographic|LiquidGlass|Acrylic/);
+  assert.match(model, /effect: 'Blur', blur: 22/);
+  assert.match(view, /item\.style\.backdropFilter = backdropVisible \? filter : 'none'/);
+  assert.match(view, /brightness\(' \+ brightness \+ '\) contrast\('/);
+  assert.doesNotMatch(view, /scene-effect-surface|scene-effect-prism|scene-effect-emboss|scene-effect-holographic/);
+  assert.doesNotMatch(schema, /CornerRadius|Arredondamento/);
 });
 
 test('UIBackdrop can only exist once as a leaf child of a Frame', () => {
@@ -404,11 +402,11 @@ test('Frame materials render as clipped overlays above the Frame surface', async
   const css = await readFile(new URL('../css/studio.css', import.meta.url), 'utf8');
   assert.match(view, /item\.style\.backgroundColor = fillColor/);
   assert.match(view, /scene-effect-surface/);
-  assert.match(view, /glassSurface\.style\.borderRadius = frameRadius \+ 'px'/);
-  assert.match(css, /\.scene-effect-surface\{position:absolute;inset:0/);
+  
+  assert.match(view, /item\.style\.webkitBackdropFilter = item\.style\.backdropFilter/);
   assert.match(css, /pointer-events:none/);
-  assert.match(css, /flowiq-holographic-drift/);
-  assert.doesNotMatch(view, /feDisplacementMap|feTurbulence|fractalNoise/);
+  assert.match(css, /Blur is rendered directly on its owning Frame/);
+  assert.doesNotMatch(view, /scene-effect-surface|feDisplacementMap|feTurbulence|fractalNoise/);
 });
 
 test('ImageLabel reuses object URLs and DOM nodes across scene renders', async () => {
