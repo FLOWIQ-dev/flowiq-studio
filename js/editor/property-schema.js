@@ -106,12 +106,8 @@ registerPropertySchema('Frame', { sections: [
     slider('backgroundTransparency', 'BackgroundTransparency', 0, 1, 0.01),
     ...commonAppearance
   ]},
-  instanceSection,
-  { title: 'Behavior', fields: [
-    checkbox('clipsDescendants', 'ClipsDescendants'), checkbox('active', 'Active'),
-    checkbox('interactable', 'Interactable'), checkbox('selectable', 'Selectable')
-  ]},
   { title: 'Data', fields: [
+    text('name', 'Name'),
     select('automaticSize', 'AutomaticSize', [
       { value: 'None', label: 'None' }, { value: 'X', label: 'X' },
       { value: 'Y', label: 'Y' }, { value: 'XY', label: 'XY' }
@@ -123,21 +119,25 @@ registerPropertySchema('Frame', { sections: [
     number('layoutOrder', 'LayoutOrder', -1000, 1000), number('zIndex', 'ZIndex', 1, 10),
     number('selectionOrder', 'SelectionOrder', 0, 1000)
   ]},
+  { title: 'Behavior', fields: [
+    checkbox('clipsDescendants', 'ClipsDescendants'), checkbox('active', 'Active'),
+    checkbox('interactable', 'Interactable'), checkbox('selectable', 'Selectable')
+  ]},
   { title: 'Layout', fields: frameLayout }
 ]});
 
 registerPropertySchema('TextButton', { sections: [
-  
-  ...layout,
-{ title: 'Text', fields: [...textAppearance] },
-  { title: 'Appearance', fields: [color('background', 'BackgroundColor3'), color('border', 'BorderColor3'), number('borderWidth', 'BorderSizePixel', 0, 30), ...commonAppearance] }
+  { title: 'Appearance', fields: [color('background', 'BackgroundColor3'), color('border', 'BorderColor3'), number('borderWidth', 'BorderSizePixel', 0, 30), ...commonAppearance] },
+  { title: 'Text', fields: [...textAppearance] },
+  instanceSection,
+  ...layout
 ]});
 
 registerPropertySchema('TextLabel', { sections: [
-  
-  ...layout,
-{ title: 'Text', fields: [...textAppearance] },
-  { title: 'Appearance', fields: [color('background', 'BackgroundColor3'), color('border', 'BorderColor3'), number('borderWidth', 'BorderSizePixel', 0, 30), ...commonAppearance] }
+  { title: 'Appearance', fields: [color('background', 'BackgroundColor3'), color('border', 'BorderColor3'), number('borderWidth', 'BorderSizePixel', 0, 30), ...commonAppearance] },
+  { title: 'Text', fields: [...textAppearance] },
+  instanceSection,
+  ...layout
 ]});
 
 registerPropertySchema('ImageLabel', { sections: [
