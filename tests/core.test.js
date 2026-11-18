@@ -325,7 +325,7 @@ test('Frame Position and Size use editable four-value UDim2 tuples', async () =>
   assert.match(schema, /udim2\('position', 'Position'/);
   assert.match(schema, /udim2\('size', 'Size'/);
   assert.match(view, /0, 30, 0, 20/);
-  assert.match(view, /parts\.length !== 4/);
+  assert.match(view, /const expected = type === 'udim2' \? 4 : 2/);
   assert.match(app, /\['position', 'size'\]\.includes\(key\)/);
 });
 
