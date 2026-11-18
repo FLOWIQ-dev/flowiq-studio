@@ -70,6 +70,7 @@ export function renderScene(container, scene, { selectedId = null, preview = fal
     item.style.background = isFrame
       ? (p.backgroundColor3 || p.background || 'transparent')
       : (p.background || 'transparent');
+    item.style.opacity = String(Math.max(0, Math.min(1, Number(p.opacity ?? 1))));
     if (isFrame) {
       const bg = String(p.backgroundColor3 || p.background || 'transparent');
       const alpha = 1 - Math.max(0, Math.min(1, Number(p.backgroundTransparency) || 0));
@@ -80,19 +81,15 @@ export function renderScene(container, scene, { selectedId = null, preview = fal
       }
       item.dataset.clipsDescendants = String(Boolean(p.clipsDescendants));
       item.style.zIndex = String(Math.max(1, Math.min(10, Number(p.zIndex) || 1)));
-      const borderSize = Math.max(0, Math.min(20, Number(p.borderSizePixel) || 0));
-      const borderColor = p.borderColor3 || p.border || 'transparent';
-      item.style.border = p.borderMode === 'Middle' && borderSize ? borderSize + 'px solid ' + borderColor : '0';
-      item.style.outline = p.borderMode === 'Outline' && borderSize ? borderSize + 'px solid ' + borderColor : 'none';
-      item.style.outlineOffset = p.borderMode === 'Outline' ? '0' : '';
-      item.style.boxShadow = p.borderMode === 'Inset' && borderSize ? 'inset 0 0 0 ' + borderSize + 'px ' + borderColor : 'none';
+      item.style.border = '0';
+      item.style.outline = 'none';
+      item.style.boxShadow = 'none';
       if (p.style === 'DropShadow') item.style.boxShadow = '0 5px 14px rgba(0,0,0,.28)';
       if (p.style === 'ChatBlue') item.style.backgroundColor = 'rgba(36,84,135,' + alpha + ')';
       if (p.style === 'ChatGreen') item.style.backgroundColor = 'rgba(35,112,75,' + alpha + ')';
       if (p.style === 'ChatRed') item.style.backgroundColor = 'rgba(137,48,55,' + alpha + ')';
     } else {
       item.style.borderRadius = Math.max(0, Number(p.radius) || 0) + 'px';
-      item.style.opacity = String(Math.max(0, Math.min(1, Number(p.opacity ?? 1))));
       item.style.border = Math.max(0, Number(p.borderWidth) || 0) + 'px solid ' + (p.border || 'transparent');
     }
     item.style.color = p.color || '#ffffff';
@@ -280,9 +277,41 @@ export function renderInspector(container, node, { onChange, onDelete, onDuplica
       }
     }
     const propertyValue = readValue(key);
-    if (type === 'checkbox') input.checked = Boolean(propertyValue);
+    if (type === 'udim2') {
+      input.type = 'text';
+      input.inputMode = 'decimal';
+      input.autocomplete = 'off';
+      input.spellcheck = false;
+      input.placeholder = '0, 30, 0, 20';
+      const tuple = value => [value?.x?.scale ?? 0, value?.x?.offset ?? 0, value?.y?.scale ?? 0, value?.y?.offset ?? 0].map(number => Number(number)).join(', ');
+      input.value = tuple(propertyValue);
+      input.classList.add('udim2-input');
+      const parse = raw => {
+        const parts = raw.trim().split(/[;,\\s]+/).filter(Boolean);
+        if (parts.length !== 4 || parts.some(part => !Number.isFinite(Number(part)))) return null;
+        return { x: { scale: Number(parts[0]), offset: Number(parts[1]) }, y: { scale: Number(parts[2]), offset: Number(parts[3]) } };
+      };
+      const preview = () => {
+        const value = parse(input.value);
+        input.setAttribute('aria-invalid', String(!value));
+        if (value) onPreview?.(key, value);
+      };
+      const begin = () => onEditStart?.(key);
+      input.addEventListener('pointerdown', begin);
+      input.addEventListener('focus', begin);
+      input.addEventListener('keydown', begin);
+      input.addEventListener('input', preview);
+      input.addEventListener('change', () => {
+        const value = parse(input.value);
+        if (!value) { input.value = tuple(readValue(key)); input.removeAttribute('aria-invalid'); return; }
+        input.removeAttribute('aria-invalid');
+        if (onCommit) onCommit(key, value); else onChange(key, value);
+      });
+    } else if (type === 'checkbox') input.checked = Boolean(propertyValue);
     else input.value = String(propertyValue ?? descriptor.fallback ?? '');
-    if (type === 'slider') {
+    if (type === 'udim2') {
+      wrap.append(input);
+    } else if (type === 'slider') {
       const format = value => Number(value).toFixed(descriptor.step < 1 ? 2 : 0);
       const output = el('output', 'property-slider-value', format(input.value));
       const begin = () => onEditStart?.(key);
