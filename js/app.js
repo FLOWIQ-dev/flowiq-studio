@@ -17,6 +17,8 @@ class FlowiqStudio {
     this.history = new History({ onChange: status => this.updateHistory(status) });
     this.runtime = new Runtime({ onLog: (message, type) => this.log(message, type) });
     this.assets = [];
+    this.assetPickerCallback = null;
+    this.libraryAssetUrls = new Map();
     this.saveTimer = 0;
     this.savePromise = null;
     this.savePending = false;
@@ -115,8 +117,8 @@ class FlowiqStudio {
       this.updateProperty(key, value);
     });
     $('inspector').addEventListener('click', event => {
-      const asset = event.target.closest('[data-asset-picker]');
-      if (asset) $('image-picker').click();
+      const asset = event.target.closest('[data-open-asset-picker]');
+      if (asset) this.openImagePicker();
     });
     $('image-picker').addEventListener('change', async event => {
       const file = event.target.files?.[0];
@@ -124,9 +126,18 @@ class FlowiqStudio {
       try {
         const record = await this.db.saveAsset({ id: makeId(), name: file.name, blob: file });
         this.assets = await this.db.listAssets();
-        this.updateProperty('assetId', record.id);
+        if (this.assetPickerCallback) this.assetPickerCallback(record.id);
+        else this.updateProperty('assetId', record.id);
+        this.closeImagePicker();
+        if (this.store.state.screen === 'library') this.renderAssets();
       } catch (error) { this.toast(error.message, 'error'); }
       event.target.value = '';
+    });
+    $('image-picker-modal').addEventListener('click', event => {
+      if (event.target === $('image-picker-modal') || event.target.closest('[data-close-image-picker]')) { this.closeImagePicker(); return; }
+      const choose = event.target.closest('[data-choose-asset]');
+      if (choose) { this.assetPickerCallback?.(choose.dataset.chooseAsset); this.closeImagePicker(); }
+      if (event.target.closest('[data-upload-image-picker]')) $('image-picker').click();
     });
     $('undo').addEventListener('click', () => this.undo());
     $('redo').addEventListener('click', () => this.redo());
@@ -141,7 +152,9 @@ class FlowiqStudio {
     $('asset-upload').addEventListener('change', guarded(event => this.uploadAssets(event.target.files)));
     $('asset-list').addEventListener('click', event => {
       const remove = event.target.closest('[data-remove-asset]');
+      const rename = event.target.closest('[data-rename-asset]');
       if (remove) guarded(() => this.removeAsset(remove.dataset.removeAsset))();
+      if (rename) guarded(() => this.renameAsset(rename.dataset.renameAsset))();
     });
     $('export-backup').addEventListener('click', () => this.exportBackup());
     $('import-backup').addEventListener('click', () => $('backup-input').click());
@@ -1153,19 +1166,58 @@ class FlowiqStudio {
   renderAssets() {
     const list = $('asset-list');
     list.replaceChildren();
+    for (const url of this.libraryAssetUrls.values()) URL.revokeObjectURL(url);
+    this.libraryAssetUrls.clear();
     if (!this.assets.length) { list.append(this.empty('Sua biblioteca ainda está vazia.')); return; }
     for (const asset of this.assets) {
-      const row = document.createElement('div');
-      row.className = 'asset-row';
-      const name = document.createElement('strong');
-      name.textContent = asset.name;
-      const meta = document.createElement('small');
-      meta.textContent = asset.mime + ' · ' + this.formatBytes(asset.size);
-      const remove = this.button('Excluir', 'button subtle danger-text');
-      remove.dataset.removeAsset = asset.id;
-      row.append(name, meta, remove);
-      list.append(row);
+      const row = document.createElement('article'); row.className = 'asset-card';
+      const preview = document.createElement('div'); preview.className = 'asset-preview';
+      if (asset.mime?.startsWith('image/')) {
+        const image = document.createElement('img'); const url = URL.createObjectURL(asset.blob);
+        this.libraryAssetUrls.set(asset.id, url); image.src = url; image.alt = asset.name; image.loading = 'lazy'; preview.append(image);
+      } else preview.textContent = asset.mime?.startsWith('video/') ? '▶' : asset.mime?.startsWith('audio/') ? '♫' : '▤';
+      const details = document.createElement('div'); details.className = 'asset-card-details';
+      const name = document.createElement('strong'); name.textContent = asset.name;
+      const meta = document.createElement('small'); meta.textContent = (asset.mime || 'Arquivo') + ' · ' + this.formatBytes(asset.size);
+      details.append(name, meta);
+      const actions = document.createElement('div'); actions.className = 'asset-card-actions';
+      const rename = this.button('Renomear', 'button subtle'); rename.dataset.renameAsset = asset.id;
+      const remove = this.button('Excluir', 'button subtle danger-text'); remove.dataset.removeAsset = asset.id;
+      actions.append(rename, remove); row.append(preview, details, actions); list.append(row);
     }
+  }
+
+  async renameAsset(id) {
+    const asset = this.assets.find(item => item.id === id);
+    if (!asset) return;
+    const name = await this.dialog({ title: 'Renomear arquivo', label: 'Nome do arquivo', value: asset.name, confirm: 'Salvar' });
+    if (!name || name.trim() === asset.name) return;
+    await this.db.renameAsset(id, name.trim());
+    this.assets = await this.db.listAssets(); this.renderAssets(); this.toast('Arquivo renomeado.');
+  }
+
+  openImagePicker() {
+    const modal = $('image-picker-modal'), list = $('image-picker-grid');
+    list.replaceChildren();
+    const images = this.assets.filter(asset => asset.mime?.startsWith('image/'));
+    const none = document.createElement('button'); none.type = 'button'; none.className = 'image-picker-card image-picker-none'; none.dataset.chooseAsset = '';
+    const nonePreview = document.createElement('span'); nonePreview.className = 'image-picker-none-preview'; nonePreview.textContent = '∅';
+    const noneName = document.createElement('span'); noneName.textContent = 'Nenhuma imagem';
+    none.append(nonePreview, noneName); list.append(none);
+    for (const asset of images) {
+      const card = document.createElement('button'); card.type = 'button'; card.className = 'image-picker-card'; card.dataset.chooseAsset = asset.id;
+      const image = document.createElement('img'); const url = URL.createObjectURL(asset.blob);
+      this.libraryAssetUrls.set('picker-' + asset.id, url); image.src = url; image.alt = asset.name;
+      const name = document.createElement('span'); name.textContent = asset.name; card.append(image, name); list.append(card);
+    }
+    this.assetPickerCallback = id => this.updateProperty('assetId', id);
+    modal.hidden = false; requestAnimationFrame(() => modal.classList.add('visible'));
+  }
+
+  closeImagePicker() {
+    const modal = $('image-picker-modal'); modal.classList.remove('visible'); modal.hidden = true;
+    this.assetPickerCallback = null;
+    for (const [key, url] of this.libraryAssetUrls) if (key.startsWith('picker-')) { URL.revokeObjectURL(url); this.libraryAssetUrls.delete(key); }
   }
 
   async uploadAssets(files) {
@@ -1225,7 +1277,7 @@ class FlowiqStudio {
 
   keydown(event) {
     const editing = ['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement?.tagName);
-    if (event.key === 'Escape') { this.stopPreview(false); this.closeAddMenu(); this.resolveDialog(null); }
+    if (event.key === 'Escape') { this.stopPreview(false); this.closeAddMenu(); this.closeImagePicker(); this.resolveDialog(null); }
     if (editing) return;
     if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 's') { event.preventDefault(); this.saveProject().catch(() => {}); }
     if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'z') { event.preventDefault(); event.shiftKey ? this.redo() : this.undo(); }

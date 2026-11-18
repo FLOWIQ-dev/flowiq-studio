@@ -88,6 +88,22 @@ export class Database {
     return this.#run(ASSETS, 'readwrite', tx => tx.objectStore(ASSETS).put(record));
   }
 
+  async renameAsset(id, name) {
+    const db = await this.open();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(ASSETS, 'readwrite');
+      const store = tx.objectStore(ASSETS);
+      const request = store.get(id);
+      request.onsuccess = () => {
+        if (!request.result) { tx.abort(); reject(new Error('Arquivo não encontrado.')); return; }
+        store.put({ ...request.result, name: String(name || 'Arquivo').trim().slice(0, 180) || 'Arquivo' });
+      };
+      tx.oncomplete = resolve;
+      tx.onerror = () => reject(tx.error || new Error('Não foi possível renomear o arquivo.'));
+      tx.onabort = () => reject(tx.error || new Error('Renomeação cancelada.'));
+    });
+  }
+
   deleteAsset(id) {
     return this.#run(ASSETS, 'readwrite', tx => tx.objectStore(ASSETS).delete(id));
   }

@@ -51,7 +51,7 @@ const textAppearance = [
   ])
 ];
 
-export const PROPERTY_SCHEMA_VERSION = 12;
+export const PROPERTY_SCHEMA_VERSION = 13;
 
 export function registerPropertySchema(className, schema, { replace = false } = {}) {
   if (typeof className !== 'string' || (className !== '*' && !/^[A-Z][A-Za-z0-9]*$/.test(className))) {
@@ -148,14 +148,19 @@ registerPropertySchema('ImageLabel', { sections: [
   instanceSection,
   ...layout,
   { title: 'Image', fields: [
-    { key: 'assetId', label: 'Asset', type: 'asset', accept: 'image/*' },
+    { key: 'assetId', label: 'Imagem', type: 'asset', accept: 'image/*' },
     select('fit', 'ScaleType', [
-      { value: 'cover', label: 'Cover' },
-      { value: 'contain', label: 'Contain' },
-      { value: 'fill', label: 'Stretch' }
-    ])
+      { value: 'fill', label: 'Stretch' }, { value: 'contain', label: 'Fit' },
+      { value: 'cover', label: 'Crop' }, { value: 'tile', label: 'Tile' }
+    ]),
+    { ...udim2('tileSize', 'TileSize', 'TileSize'), visibleWhen: { key: 'fit', value: 'tile' } },
+    slider('imageTransparency', 'ImageTransparency', 0, 1, 0.01)
   ]},
-  { title: 'Appearance', fields: [color('background', 'BackgroundColor3'), color('border', 'BorderColor3'), number('borderWidth', 'BorderSizePixel', 0, 30), ...commonAppearance] }
+  { title: 'Appearance', fields: [
+    color('backgroundColor3', 'BackgroundColor3'),
+    slider('backgroundTransparency', 'BackgroundTransparency', 0, 1, 0.01),
+    color('border', 'BorderColor3'), number('borderWidth', 'BorderSizePixel', 0, 30), ...commonAppearance
+  ]}
 ]});
 
 registerPropertySchema('UIBackdrop', { sections: [
