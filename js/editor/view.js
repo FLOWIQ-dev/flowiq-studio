@@ -139,11 +139,11 @@ export function renderScene(container, scene, { selectedId = null, preview = fal
     item.style.textAlign = p.textAlign || 'center';
     item.style.fontWeight = p.fontWeight || '500';
     const existingChildContainer = item.querySelector(':scope > .scene-children');
-    const preservedImage = node.type === 'ImageLabel' ? existingChildContainer?.querySelector(':scope > .scene-image-content') : null;
+    const preservedImageLayer = node.type === 'ImageLabel' ? existingChildContainer?.querySelector(':scope > .scene-image-layer') : null;
     if (node.type !== 'ImageLabel') item.textContent = node.type === 'Frame' ? '' : (p.text || node.name);
     const childContainer = existingChildContainer || el('div', 'scene-children');
     childContainer.replaceChildren();
-    if (preservedImage) childContainer.append(preservedImage);
+    if (preservedImageLayer) childContainer.append(preservedImageLayer);
     childContainer.style.position = 'absolute';
     childContainer.style.inset = '0';
     childContainer.style.overflow = node.type === 'Frame' && p.clipsDescendants ? 'hidden' : 'visible';
@@ -153,7 +153,6 @@ export function renderScene(container, scene, { selectedId = null, preview = fal
     item.append(childContainer);
     if (node.type === 'ImageLabel') {
       const asset = assetMap.get(p.assetId);
-      item.style.backgroundImage = 'none';
       if (asset?.blob) {
         usedAssetIds.add(asset.id);
         let cached = assetUrls.get(asset.id);
@@ -162,29 +161,43 @@ export function renderScene(container, scene, { selectedId = null, preview = fal
           cached = { blob: asset.blob, url: URL.createObjectURL(asset.blob) };
           assetUrls.set(asset.id, cached);
         }
-        const image = preservedImage || el('img', 'scene-image-content');
-        if (image.dataset.assetUrl !== cached.url) {
-          image.src = cached.url;
-          image.dataset.assetUrl = cached.url;
-        }
+        const layer = preservedImageLayer || el('div', 'scene-image-layer');
+        layer.replaceChildren();
+        layer.style.position = 'absolute';
+        layer.style.inset = '0';
+        layer.style.overflow = 'hidden';
+        layer.style.borderRadius = 'inherit';
+        layer.style.pointerEvents = 'none';
+        layer.style.zIndex = '0';
+        // ImageTransparency belongs to the complete image composite, never to the background.
+        const imageAlpha = 1 - Math.max(0, Math.min(1, Number(p.imageTransparency) || 0));
+        layer.style.opacity = String(imageAlpha);
+        layer.style.backgroundImage = 'none';
+        layer.style.backgroundRepeat = 'no-repeat';
+        layer.style.backgroundSize = '100% 100%';
+        const image = el('img', 'scene-image-content');
+        image.src = cached.url;
         image.alt = node.name;
         image.draggable = false;
-        const imageAlpha = 1 - Math.max(0, Math.min(1, Number(p.imageTransparency) || 0));
         image.style.objectFit = p.fit === 'fill' ? 'fill' : p.fit === 'contain' ? 'contain' : p.fit === 'tile' ? 'none' : 'cover';
-        image.style.opacity = String(imageAlpha);
+        image.style.zIndex = '0';
         const tint = el('div', 'scene-image-tint');
+        tint.style.position = 'absolute';
+        tint.style.inset = '0';
+        tint.style.zIndex = '1';
+        tint.style.pointerEvents = 'none';
         tint.style.backgroundColor = p.imageColor3 || '#ffffff';
-        tint.style.opacity = '1';
+        tint.style.mixBlendMode = 'multiply';
         tint.style.maskImage = 'url("' + cached.url + '")';
         tint.style.webkitMaskImage = tint.style.maskImage;
         if (p.fit === 'tile') {
           image.style.display = 'none';
-          childContainer.style.backgroundImage = 'url("' + cached.url + '")';
-          childContainer.style.backgroundRepeat = 'repeat';
+          layer.style.backgroundImage = 'url("' + cached.url + '")';
+          layer.style.backgroundRepeat = 'repeat';
           const tile = p.tileSize || {};
           const tileWidth = Math.max(1, Number(tile.x?.scale || 0) * layout.width + Number(tile.x?.offset || 64));
           const tileHeight = Math.max(1, Number(tile.y?.scale || 0) * layout.height + Number(tile.y?.offset || 64));
-          childContainer.style.backgroundSize = tileWidth + 'px ' + tileHeight + 'px';
+          layer.style.backgroundSize = tileWidth + 'px ' + tileHeight + 'px';
           tint.style.maskRepeat = 'repeat';
           tint.style.webkitMaskRepeat = 'repeat';
           tint.style.maskSize = tileWidth + 'px ' + tileHeight + 'px';
@@ -193,7 +206,7 @@ export function renderScene(container, scene, { selectedId = null, preview = fal
           tint.style.backgroundSize = tint.style.maskSize;
         } else {
           image.style.display = 'block';
-          childContainer.style.backgroundImage = 'none';
+          layer.style.backgroundImage = 'none';
           tint.style.maskRepeat = 'no-repeat';
           tint.style.webkitMaskRepeat = 'no-repeat';
           tint.style.maskSize = '100% 100%';
@@ -201,12 +214,12 @@ export function renderScene(container, scene, { selectedId = null, preview = fal
           tint.style.backgroundRepeat = 'no-repeat';
           tint.style.backgroundSize = '100% 100%';
         }
-        childContainer.prepend(tint);
-        childContainer.prepend(image);
+        layer.append(image, tint);
+        childContainer.prepend(layer);
         item.dataset.assetId = asset.id;
       } else {
         childContainer.style.backgroundImage = 'none';
-        preservedImage?.remove();
+        preservedImageLayer?.remove();
         delete item.dataset.assetId;
         delete item.dataset.imageUrl;
       }
