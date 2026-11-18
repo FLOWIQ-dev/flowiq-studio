@@ -505,5 +505,6 @@ test('ImageLabel renderer applies image tint without changing the background', a
   const view = await readFile(new URL('../js/editor/view.js', import.meta.url), 'utf8');
   assert.match(view, /scene-image-tint/);
   assert.match(view, /p\.imageColor3/);
-  assert.match(view, /mix-blend-mode:multiply/);
+  const css = await readFile(new URL('../css/studio.css', import.meta.url), 'utf8');
+  assert.match(css, /mix-blend-mode:multiply/);
 });
