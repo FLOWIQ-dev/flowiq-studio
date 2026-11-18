@@ -979,3 +979,116 @@ body[data-screen=editor]{
  .inspector-toolbar-button{width:32px;height:32px;min-width:32px;min-height:32px}
  .inspector-filter{margin:8px 0}
 }
+
+
+/* Build 1.4.6: Inspector clean layout, inspired by Roblox Studio's property list. */
+#screen-editor .inspector-panel{border-left:1px solid rgba(145,160,181,.09)}
+#screen-editor .inspector-panel-title{border-bottom:1px solid rgba(145,160,181,.09)}
+#screen-editor .inspector-toolbar-button{
+  border:0;
+  border-radius:6px;
+  background:transparent;
+  color:#aebdd0;
+}
+#screen-editor .inspector-toolbar-button:hover{background:rgba(145,170,205,.1);color:var(--text)}
+#screen-editor .inspector-toolbar-button.danger-text{color:#e58c94}
+#screen-editor .inspector-content{padding:8px 12px 20px}
+#screen-editor .inspector-heading{
+  padding:7px 0 9px;
+  border:0;
+  background:transparent;
+}
+#screen-editor .inspector-heading .eyebrow{font-size:9px;color:#8194ad}
+#screen-editor .inspector-heading strong{font-size:12px;font-weight:600;color:#d5dfec}
+#screen-editor .inspector-filter{
+  position:relative;
+  margin:4px 0 8px;
+  height:30px;
+  padding:0 4px;
+  border:0;
+  border-bottom:1px solid rgba(145,160,181,.2);
+  border-radius:0;
+  background:transparent;
+}
+#screen-editor .inspector-filter:focus-within{border-bottom-color:var(--accent)}
+#screen-editor .property-group{
+  padding:0 0 3px;
+  border:0;
+}
+#screen-editor .property-group-toggle{
+  min-height:32px;
+  padding:0 1px;
+  color:#aebdd0;
+  font-size:10px;
+  letter-spacing:.045em;
+  text-transform:uppercase;
+}
+#screen-editor .property-group-toggle svg{width:11px;height:11px;color:#8295ad}
+#screen-editor .property-group-body{
+  display:grid;
+  grid-template-columns:minmax(0,1fr);
+  gap:0;
+  padding:0 0 5px;
+}
+#screen-editor .property-group-body .property-field{
+  display:grid;
+  grid-template-columns:minmax(0,42%) minmax(0,1fr);
+  align-items:center;
+  gap:8px;
+  min-height:34px;
+  padding:2px 0;
+}
+#screen-editor .property-group-body .property-field>span{
+  overflow:hidden;
+  color:#aebdd0;
+  font-size:11px;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+#screen-editor .property-group-body .property-field input:not([type="range"]):not([type="checkbox"]),
+#screen-editor .property-group-body .property-field select{
+  height:28px;
+  padding:0 7px;
+  border:1px solid transparent;
+  border-radius:4px;
+  background:#172335;
+  color:#e2eaf5;
+  font-size:11px;
+}
+#screen-editor .property-group-body .property-field input:not([type="range"]):not([type="checkbox"]):hover,
+#screen-editor .property-group-body .property-field select:hover{background:#1b2a40}
+#screen-editor .property-group-body .property-field input:not([type="range"]):not([type="checkbox"]):focus,
+#screen-editor .property-group-body .property-field select:focus{border-color:rgba(101,167,255,.65);outline:0}
+#screen-editor .property-group-body .property-field input[type="color"]{height:26px;padding:2px}
+#screen-editor .property-group-body .property-field input[type="checkbox"]{
+  justify-self:start;
+  width:16px;height:16px;
+  margin:0;
+}
+#screen-editor .property-group-body .property-field:has(input[type="text"]){grid-column:auto}
+#screen-editor .property-group-body .property-field:has(input[type="range"]){
+  grid-column:auto;
+  grid-template-columns:minmax(0,42%) minmax(0,1fr);
+  gap:8px;
+}
+#screen-editor .property-group-body .property-field:has(input[type="range"])>span{grid-column:auto}
+#screen-editor .property-group-body .property-field input[type="range"]{
+  grid-column:2;
+  grid-row:1;
+  height:22px;
+  padding:0;
+}
+#screen-editor .property-group-body .property-slider-value{
+  display:none;
+}
+#screen-editor .property-group-body .property-field:has(input[type="checkbox"]){
+  grid-template-columns:minmax(0,1fr) auto;
+}
+#screen-editor .inspector-content>.property-group:first-of-type{margin-top:0}
+@media(max-width:680px){
+  #screen-editor .inspector-panel{border-left:0}
+  #screen-editor .inspector-panel-title{border-bottom:1px solid rgba(145,160,181,.1)}
+  #screen-editor .inspector-toolbar-button{width:32px;height:32px;min-width:32px;min-height:32px}
+  #screen-editor .inspector-content{padding:7px 15px max(24px,env(safe-area-inset-bottom))}
+  #screen-editor .property-group-body .property-field{min-height:36px}
+}
