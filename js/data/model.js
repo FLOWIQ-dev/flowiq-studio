@@ -1,5 +1,5 @@
 const ID = () => globalThis.crypto?.randomUUID?.() || 'node_' + Date.now().toString(36) + Math.random().toString(36).slice(2);
-const TYPES = new Set(['Frame', 'TextButton', 'TextLabel', 'ImageLabel']);
+const TYPES = new Set(['Frame', 'TextButton', 'TextLabel', 'ImageLabel', 'UIBackdrop']);
 const finite = (value, fallback = 0) => Number.isFinite(Number(value)) ? Number(value) : fallback;
 export const UDim = (scale = 0, offset = 0) => ({ scale: finite(scale), offset: finite(offset) });
 export const UDim2 = (xScale = 0, xOffset = 0, yScale = 0, yOffset = 0) => ({
@@ -7,7 +7,8 @@ export const UDim2 = (xScale = 0, xOffset = 0, yScale = 0, yOffset = 0) => ({
   y: UDim(yScale, yOffset)
 });
 const DEFAULTS = Object.freeze({
-  Frame: { uiBackdrop: { enabled: false, effect: 'Blur', blur: 14, saturation: 1.35, brightness: 1.05, contrast: 1.08, tintColor: '#dbeafe', tintOpacity: 0.12, refraction: 0.25, highlight: 0.22 }, x: 24, y: 24, width: 320, height: 220, position: UDim2(0, 24, 0, 24), size: UDim2(0, 320, 0, 220), anchorPoint: { x: 0, y: 0 }, background: '#1b2940', backgroundColor3: '#1b2940', backgroundTransparency: 0, opacity: 1, border: '#334155', borderColor3: '#334155', borderWidth: 0, borderSizePixel: 0, borderMode: 'Outline', rotation: 0, visible: true, archivable: true, clipsDescendants: false, active: false, interactable: true, selectable: false, selectionOrder: 0, layoutOrder: 0, zIndex: 1, automaticSize: 'None', sizeConstraint: 'RelativeXY', style: 'Custom' },
+  Frame: { x: 24, y: 24, width: 320, height: 220, position: UDim2(0, 24, 0, 24), size: UDim2(0, 320, 0, 220), anchorPoint: { x: 0, y: 0 }, background: '#1b2940', backgroundColor3: '#1b2940', backgroundTransparency: 0, opacity: 1, border: '#334155', borderColor3: '#334155', borderWidth: 0, borderSizePixel: 0, borderMode: 'Outline', rotation: 0, visible: true, archivable: true, clipsDescendants: false, active: false, interactable: true, selectable: false, selectionOrder: 0, layoutOrder: 0, zIndex: 1, automaticSize: 'None', sizeConstraint: 'RelativeXY', style: 'Custom' },
+  UIBackdrop: { x: 0, y: 0, width: 1, height: 1, position: UDim2(0, 0, 0, 0), size: UDim2(0, 1, 0, 1), anchorPoint: { x: 0, y: 0 }, enabled: true, effect: 'Blur', blur: 14, saturation: 1.35, brightness: 1.05, contrast: 1.08, tintColor: '#dbeafe', tintOpacity: 0.12, refraction: 0.25, highlight: 0.22, visible: true },
   TextButton: { x: 24, y: 24, width: 160, height: 48, position: UDim2(0, 24, 0, 24), size: UDim2(0, 160, 0, 48), anchorPoint: { x: 0, y: 0 }, background: '#2563eb', color: '#ffffff', radius: 10, fontSize: 15, text: 'Botão', opacity: 1, visible: true, border: '#334155', borderWidth: 0 },
   TextLabel: { x: 24, y: 24, width: 220, height: 42, position: UDim2(0, 24, 0, 24), size: UDim2(0, 220, 0, 42), anchorPoint: { x: 0, y: 0 }, background: '#121e2e', color: '#f8fafc', radius: 0, fontSize: 16, text: 'Texto', opacity: 1, visible: true, border: '#334155', borderWidth: 0 },
   ImageLabel: { x: 24, y: 24, width: 140, height: 120, position: UDim2(0, 24, 0, 24), size: UDim2(0, 140, 0, 120), anchorPoint: { x: 0, y: 0 }, background: '#24344c', color: '#ffffff', radius: 10, opacity: 1, visible: true, border: '#334155', borderWidth: 0, assetId: '', fit: 'cover' }
@@ -18,23 +19,6 @@ const cleanProps = value => {
   const out = Object.create(null);
   for (const [key, item] of Object.entries(value)) {
     if (['__proto__', 'prototype', 'constructor'].includes(key)) continue;
-    if (key === 'uiBackdrop' && item && typeof item === 'object' && !Array.isArray(item)) {
-      const source = item;
-      const effects = new Set(['Blur', 'LiquidGlass', 'FrostedGlass', 'Acrylic']);
-      out.uiBackdrop = {
-        enabled: Boolean(source.enabled),
-        effect: effects.has(source.effect) ? source.effect : 'Blur',
-        blur: Math.max(0, Math.min(40, finite(source.blur, 14))),
-        saturation: Math.max(0, Math.min(3, finite(source.saturation, 1.35))),
-        brightness: Math.max(0, Math.min(2, finite(source.brightness, 1.05))),
-        contrast: Math.max(0, Math.min(2, finite(source.contrast, 1.08))),
-        tintColor: /^#[0-9a-f]{6}$/i.test(String(source.tintColor || '')) ? source.tintColor : '#dbeafe',
-        tintOpacity: Math.max(0, Math.min(1, finite(source.tintOpacity, 0.12))),
-        refraction: Math.max(0, Math.min(1, finite(source.refraction, 0.25))),
-        highlight: Math.max(0, Math.min(1, finite(source.highlight, 0.22)))
-      };
-      continue;
-    }
     if (['position', 'size', 'anchorPoint'].includes(key) && item && typeof item === 'object' && !Array.isArray(item)) {
       const pair = {};
       for (const axis of ['x', 'y']) {
@@ -228,6 +212,7 @@ export class Scene {
 
 export const COMPONENTS = Object.freeze([
   { type: 'Frame', label: 'Frame', category: 'Contêineres', detail: 'Container para outros elementos' },
+  { type: 'UIBackdrop', label: 'UIBackdrop', category: 'Aparência', detail: 'Material e efeitos atrás do fundo do Frame' },
   { type: 'TextButton', label: 'TextButton', category: 'Interação', detail: 'Botão interativo' },
   { type: 'TextLabel', label: 'TextLabel', category: 'Texto', detail: 'Texto e títulos' },
   { type: 'ImageLabel', label: 'ImageLabel', category: 'Mídia', detail: 'Imagem e mídia' }
