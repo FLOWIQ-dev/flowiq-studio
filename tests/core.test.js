@@ -347,8 +347,11 @@ test('UIBackdrop is a child pseudo-instance with effect settings and renders ben
   const model = await readFile(new URL('../js/data/model.js', import.meta.url), 'utf8');
   const schema = await readFile(new URL('../js/editor/property-schema.js', import.meta.url), 'utf8');
   const view = await readFile(new URL('../js/editor/view.js', import.meta.url), 'utf8');
-  assert.match(model, /uiBackdrop: \{ enabled: false, effect: 'Blur'/);
-  assert.match(model, /key === 'uiBackdrop'/);
+  const app = await readFile(new URL('../js/app.js', import.meta.url), 'utf8');
+  const html = await readFile(new URL('../index.html', import.meta.url), 'utf8');
+  assert.match(model, /'UIBackdrop'/);
+  assert.match(model, /UIBackdrop: \\{[\\s\\S]*enabled: true, effect: 'Blur'/);
+  assert.match(model, /type: 'UIBackdrop'/);
   assert.match(schema, /registerPropertySchema\\('UIBackdrop'/);
   assert.match(schema, /LiquidGlass/);
   assert.match(schema, /FrostedGlass/);
@@ -357,8 +360,8 @@ test('UIBackdrop is a child pseudo-instance with effect settings and renders ben
   assert.match(view, /scene-frame-fill/);
   assert.match(app, /type === 'UIBackdrop'/);
   assert.match(html, /data-add-type="UIBackdrop"/);
-  assert.match(view, /layer\.style\.backdropFilter/);
-  assert.match(view, /layer\.style\.webkitBackdropFilter/);
+  assert.match(view, /layer\\.style\\.backdropFilter/);
+  assert.match(view, /layer\\.style\\.webkitBackdropFilter/);
   assert.ok(view.indexOf("item.append(layer)") < view.indexOf("item.append(fillLayer)"));
-  assert.match(view, /item\.append\(childContainer\)/);
+  assert.match(view, /item\\.append\\(childContainer\\)/);
 });
