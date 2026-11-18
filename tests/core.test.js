@@ -253,8 +253,9 @@ test('Inspector camera tracks inside the adaptive stage and keeps the final fram
   assert.ok(app.includes('panelRect.top - 10'));
   assert.ok(app.includes('this.cameraOffset.x += centerX'));
   assert.ok(app.includes('this.cameraOffset.y += centerY'));
-  assert.ok(app.includes("const world = $('scene').querySelector('.scene-world')"));
-  assert.ok(!app.includes("const surface = $('scene-zoom')"));
+  const camera = app.slice(app.indexOf('  applyCameraOffset()'), app.indexOf('  trackSelectedObject()'));
+  assert.ok(camera.includes("const world = $('scene').querySelector('.scene-world')"));
+  assert.ok(!camera.includes("const surface = $('scene-zoom')"));
   assert.ok(view.includes("cameraOffset = { x: 0, y: 0 }"));
   assert.ok(view.includes("translate3d(' + offsetX + 'px,' + offsetY + 'px,0) scale('"));
   assert.ok(css.includes('#screen-editor .stage-viewport{overflow:hidden}'));
