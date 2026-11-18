@@ -244,27 +244,23 @@ test('editor recalculates nested descendants during live parent transforms', asy
 });
 
 
-test('Inspector camera tracks inside the adaptive stage and keeps the final framing', async () => {
+test('Explorer camera tracking is independent from Inspector and preserves the final framing', async () => {
   const app = await readFile(new URL('../js/app.js', import.meta.url), 'utf8');
   const view = await readFile(new URL('../js/editor/view.js', import.meta.url), 'utf8');
   const css = await readFile(new URL('../css/studio.css', import.meta.url), 'utf8');
-  assert.ok(app.includes('this.cameraOffset = { x: 0, y: 0 }'));
-  assert.ok(app.includes('trackSelectedObject()'));
-  assert.ok(app.includes('panelRect.top - 10'));
-  assert.ok(app.includes('this.cameraOffset.x += centerX'));
-  assert.ok(app.includes('this.cameraOffset.y += centerY'));
-  const camera = app.slice(app.indexOf('  applyCameraOffset()'), app.indexOf('  trackSelectedObject()'));
-  assert.ok(camera.includes("const world = $('scene').querySelector('.scene-world')"));
-  assert.ok(!camera.includes("const surface = $('scene-zoom')"));
-  assert.ok(view.includes("cameraOffset = { x: 0, y: 0 }"));
+  assert.ok(app.includes('this.cameraTracking = false'));
+  assert.ok(app.includes("['track-camera', trackingLabel]"));
+  assert.ok(app.includes("if (action === 'track-camera')"));
+  assert.ok(app.includes("this.cameraTrackingId = stop ? null : id"));
+  assert.ok(app.includes("if (!this.cameraTracking || this.store.state.screen !== 'editor'"));
+  assert.ok(app.includes('if (this.cameraTracking && this.cameraTrackingId === current.id) this.trackSelectedObject()'));
+  assert.ok(app.includes("this.cameraTracking ? 'A câmera acompanhando ' + node.name"));
   assert.ok(view.includes("translate3d(' + offsetX + 'px,' + offsetY + 'px,0) scale('"));
   assert.ok(css.includes('#screen-editor .stage-viewport{overflow:hidden}'));
   assert.ok(css.includes('transition:transform 120ms linear'));
-  assert.ok(app.includes("else if (next === 'inspector') setTimeout(() => this.trackSelectedObject(), 300)"));
   const closePanel = app.slice(app.indexOf('  setPanel(name)'), app.indexOf('  toggleAddMenu()'));
-  assert.ok(closePanel.includes("if (next === 'stage') requestAnimationFrame(() => this.fitStage())"));
-  assert.ok(!closePanel.includes('cameraOffset = { x: 0, y: 0 }'));
+  assert.ok(closePanel.includes("this.cameraTracking"));
+  assert.ok(!closePanel.includes("this.cameraTracking = false"));
   const reset = app.slice(app.indexOf('  fitStage(resetZoom'), app.indexOf('  setPanel(name)'));
   assert.ok(reset.includes('cameraOffset = { x: 0, y: 0 }'));
-  assert.ok(app.includes('this.trackSelectedObject();'));
 });
