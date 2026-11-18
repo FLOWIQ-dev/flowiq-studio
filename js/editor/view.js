@@ -147,6 +147,7 @@ export function renderScene(container, scene, { selectedId = null, preview = fal
     childContainer.style.position = 'absolute';
     childContainer.style.inset = '0';
     childContainer.style.overflow = node.type === 'Frame' && p.clipsDescendants ? 'hidden' : 'visible';
+    if (node.type === 'ImageLabel') childContainer.style.borderRadius = 'inherit';
     if (isFrame) childContainer.style.zIndex = '2';
     for (const child of Array.from(item.children)) if (child !== childContainer) child.remove();
     item.append(childContainer);
