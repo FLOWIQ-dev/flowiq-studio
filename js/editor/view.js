@@ -102,45 +102,58 @@ export function renderScene(container, scene, { selectedId = null, preview = fal
       item.style.backgroundImage = 'none';
       item.style.boxShadow = p.style === 'DropShadow' ? '0 5px 14px rgba(0,0,0,.28)' : 'none';
       const backdrop = backdropNode?.props || {};
-      const backdropVisible = Boolean(backdrop.enabled) && backdropNode?.props.visible !== false && alpha < 1;
-      const effect = ['FrostedGlass', 'Acrylic'].includes(backdrop.effect) ? 'Blur' : backdrop.effect;
-      const liquidGlass = effect === 'LiquidGlass';
+      const effect = ['FrostedGlass', 'Acrylic', 'LiquidGlass'].includes(backdrop.effect) ? 'Blur' : (backdrop.effect || 'Blur');
+      const effectEnabled = Boolean(backdrop.enabled) && backdropNode?.props.visible !== false;
+      const backdropVisible = effectEnabled && alpha < 1 && effect === 'Blur';
       const blur = Math.max(0, Math.min(40, Number(backdrop.blur) || 0));
-      const saturation = Math.max(0, Math.min(3, Number(backdrop.saturation) || 1));
-      const brightness = Math.max(0.5, Math.min(1.5, Number(backdrop.brightness) || 1));
-      const contrast = Math.max(0.5, Math.min(1.5, Number(backdrop.contrast) || 1));
+      const saturation = Math.max(0, Math.min(3, Number(backdrop.saturation ?? 1)));
       const tint = String(backdrop.tintColor || '#dbeafe');
       const tintMatch = tint.match(/^#([0-9a-f]{6})$/i);
       const tintHex = tintMatch ? tintMatch[1] : 'dbeafe';
       const tintRgb = [0,2,4].map(index => parseInt(tintHex.slice(index,index+2),16)).join(',');
       const tintAlpha = Math.max(0, Math.min(1, Number(backdrop.tintOpacity) || 0));
-      const filterList = [
-        'blur(' + blur + 'px)',
-        'saturate(' + saturation + ')',
-        'brightness(' + brightness + ')',
-        'contrast(' + contrast + ')'
-      ].join(' ');
-      item.style.backdropFilter = backdropVisible ? filterList : 'none';
+      item.style.backdropFilter = backdropVisible ? 'blur(' + blur + 'px) saturate(' + saturation + ')' : 'none';
       item.style.webkitBackdropFilter = item.style.backdropFilter;
       item.style.backgroundImage = 'none';
       item.onpointermove = null;
       item.onpointerleave = null;
-      if (backdropVisible) {
-        // Native backdrop filters avoid the browser-specific artifacts from SVG displacement.
+      if (effectEnabled) {
         item.style.boxShadow = 'none';
-        if (liquidGlass) {
-          const shine = Math.max(0, Math.min(1, Number(backdrop.highlight) || 0));
-          const lens = Math.max(0, Math.min(1, Number(backdrop.lensIntensity ?? backdrop.refraction) || 0));
-          glassSurface = el('div', 'scene-glass-surface');
+        if (effect === 'Blur') {
+          if (backdropVisible && tintAlpha > 0) item.style.backgroundImage = 'linear-gradient(rgba(' + tintRgb + ',' + tintAlpha + '),rgba(' + tintRgb + ',' + tintAlpha + '))';
+        } else {
+          const effectClass = effect === 'Prism' ? 'scene-effect-prism' : effect === 'Emboss' ? 'scene-effect-emboss' : 'scene-effect-holographic';
+          glassSurface = el('div', 'scene-effect-surface ' + effectClass);
           glassSurface.setAttribute('aria-hidden', 'true');
           glassSurface.style.borderRadius = frameRadius + 'px';
-          glassSurface.style.backgroundImage = [
-            'radial-gradient(ellipse 90% 58% at 50% 0%, rgba(255,255,255,' + (shine * 0.14) + '), transparent 76%)',
-            'linear-gradient(145deg, rgba(255,255,255,' + (0.025 + lens * 0.07) + ') 0%, rgba(255,255,255,0) 38%, rgba(' + tintRgb + ',' + (tintAlpha * 0.22) + ') 100%)'
-          ].join(',');
-          glassSurface.style.border = '1px solid rgba(255,255,255,' + (0.045 + lens * 0.10 + shine * 0.035) + ')';
-        } else if (tintAlpha > 0) {
-          item.style.backgroundImage = 'linear-gradient(rgba(' + tintRgb + ',' + tintAlpha + '),rgba(' + tintRgb + ',' + tintAlpha + '))';
+          const intensityKey = effect === 'Prism' ? 'prismIntensity' : effect === 'Emboss' ? 'embossDepth' : 'holographicIntensity';
+          const angleKey = effect === 'Prism' ? 'prismAngle' : effect === 'Emboss' ? 'embossAngle' : 'holographicAngle';
+          glassSurface.style.setProperty('--effect-intensity', String(Math.max(0, Math.min(1, Number(backdrop[intensityKey]) || 0))));
+          const angle = Number(backdrop[angleKey]) || 0;
+          glassSurface.style.setProperty('--effect-angle', angle + 'deg');
+          if (effect === 'Prism') {
+            const scale = Math.max(0.5, Math.min(2, Number(backdrop.prismScale) || 1));
+            glassSurface.style.backgroundImage = [
+              'conic-gradient(from ' + angle + 'deg at 50% 50%, rgba(108,92,231,0), rgba(94,234,212,.34), rgba(251,191,36,.18), rgba(236,72,153,.3), rgba(129,140,248,.26), rgba(108,92,231,0))',
+              'radial-gradient(ellipse ' + (58 * scale) + '% ' + (48 * scale) + '% at 18% 12%, rgba(255,255,255,.24), transparent 72%)',
+              'linear-gradient(135deg, rgba(255,255,255,.10), transparent 42%, rgba(125,211,252,.12))'
+            ].join(',');
+            glassSurface.style.mixBlendMode = 'screen';
+          } else if (effect === 'Emboss') {
+            const softness = Math.max(0, Math.min(1, Number(backdrop.embossSoftness) || 0));
+            const depth = Math.max(0, Math.min(1, Number(backdrop.embossDepth) || 0));
+            glassSurface.style.backgroundImage = 'linear-gradient(' + angle + 'deg, rgba(255,255,255,' + (0.08 + depth * 0.3) + '), transparent ' + (28 + softness * 28) + '%, rgba(0,0,0,' + (0.06 + depth * 0.28) + '))';
+            glassSurface.style.boxShadow = 'inset 0 1px ' + (1 + softness * 5) + 'px rgba(255,255,255,' + (0.12 + depth * 0.22) + '), inset 0 -1px ' + (2 + softness * 7) + 'px rgba(0,0,0,' + (0.12 + depth * 0.24) + ')';
+            glassSurface.style.mixBlendMode = 'soft-light';
+          } else if (effect === 'Holographic') {
+            glassSurface.style.backgroundImage = [
+              'conic-gradient(from ' + angle + 'deg at 50% 50%, rgba(255,105,180,.28), rgba(100,220,255,.28), rgba(190,150,255,.32), rgba(255,220,140,.25), rgba(255,105,180,.28))',
+              'linear-gradient(115deg, rgba(255,255,255,.22), transparent 35%, rgba(255,255,255,.12) 65%, transparent)'
+            ].join(',');
+            glassSurface.style.backgroundSize = '180% 180%, 100% 100%';
+            glassSurface.style.animationDuration = (12 - Math.max(0, Math.min(1, Number(backdrop.holographicSpeed) || 0)) * 10) + 's';
+            glassSurface.style.mixBlendMode = 'screen';
+          }
         }
       }
     } else {

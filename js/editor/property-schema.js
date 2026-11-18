@@ -52,7 +52,7 @@ const textAppearance = [
   ])
 ];
 
-export const PROPERTY_SCHEMA_VERSION = 10;
+export const PROPERTY_SCHEMA_VERSION = 11;
 
 export function registerPropertySchema(className, schema, { replace = false } = {}) {
   if (typeof className !== 'string' || (className !== '*' && !/^[A-Z][A-Za-z0-9]*$/.test(className))) {
@@ -165,16 +165,21 @@ registerPropertySchema('UIBackdrop', { sections: [
   { title: 'Behavior', fields: [checkbox('enabled', 'Enabled')] },
   { title: 'Effect', fields: [
     { ...select('effect', 'Effect', [
-      { value: 'Blur', label: 'Blur' },
-      { value: 'LiquidGlass', label: 'LiquidGlass' },
+      { value: 'Blur', label: 'Blur' }, { value: 'Prism', label: 'Prism' },
+      { value: 'Emboss', label: 'Emboss' }, { value: 'Holographic', label: 'Holographic' }
     ]), enabledOnly: true },
-    { ...slider('blur', 'Blur', 0, 40, 0.5), enabledOnly: true },
-    { ...slider('saturation', 'Saturation', 0, 3, 0.01), enabledOnly: true, effectOnly: ['LiquidGlass', 'Blur'] },
-    { ...slider('brightness', 'Brightness', 0.5, 1.5, 0.01), enabledOnly: true, effectOnly: ['LiquidGlass'] },
-    { ...slider('contrast', 'Contrast', 0.5, 1.5, 0.01), enabledOnly: true, effectOnly: ['LiquidGlass', 'Blur'] },
-    { ...color('tintColor', 'TintColor3'), enabledOnly: true, effectOnly: ['LiquidGlass', 'Blur'] },
-    { ...slider('tintOpacity', 'TintOpacity', 0, 1, 0.01), enabledOnly: true, effectOnly: ['LiquidGlass', 'Blur'] },
-    { ...slider('lensIntensity', 'LensIntensity', 0, 1, 0.01), enabledOnly: true, effectOnly: ['LiquidGlass'] },
-    { ...slider('highlight', 'Highlight', 0, 1, 0.01), enabledOnly: true, effectOnly: ['LiquidGlass'] }
+    { ...slider('blur', 'Blur', 0, 40, 0.5), enabledOnly: true, effectOnly: ['Blur'] },
+    { ...slider('saturation', 'Saturation', 0, 3, 0.01), enabledOnly: true, effectOnly: ['Blur'] },
+    { ...color('tintColor', 'Tint color'), enabledOnly: true, effectOnly: ['Blur'] },
+    { ...slider('tintOpacity', 'Tint opacity', 0, 1, 0.01), enabledOnly: true, effectOnly: ['Blur'] },
+    { ...slider('prismIntensity', 'Prism intensity', 0, 1, 0.01), enabledOnly: true, effectOnly: ['Prism'] },
+    { ...slider('prismAngle', 'Prism angle', 0, 360, 1), enabledOnly: true, effectOnly: ['Prism'] },
+    { ...slider('prismScale', 'Prism scale', 0.5, 2, 0.01), enabledOnly: true, effectOnly: ['Prism'] },
+    { ...slider('embossDepth', 'Depth', 0, 1, 0.01), enabledOnly: true, effectOnly: ['Emboss'] },
+    { ...slider('embossAngle', 'Light angle', 0, 360, 1), enabledOnly: true, effectOnly: ['Emboss'] },
+    { ...slider('embossSoftness', 'Softness', 0, 1, 0.01), enabledOnly: true, effectOnly: ['Emboss'] },
+    { ...slider('holographicIntensity', 'Holographic intensity', 0, 1, 0.01), enabledOnly: true, effectOnly: ['Holographic'] },
+    { ...slider('holographicAngle', 'Holographic angle', 0, 360, 1), enabledOnly: true, effectOnly: ['Holographic'] },
+    { ...slider('holographicSpeed', 'Animation speed', 0, 1, 0.01), enabledOnly: true, effectOnly: ['Holographic'] }
   ]}
 ]});
