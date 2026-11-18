@@ -912,8 +912,8 @@ class FlowiqStudio {
       if (availableHeight < 40) return;
       let rect = target.getBoundingClientRect();
       const fit = Math.min(1, (availableWidth - 24) / Math.max(1, rect.width), (availableHeight - 24) / Math.max(1, rect.height));
-      if (fit < 0.995 && this.zoom * fit >= 0.25) {
-        this.setZoom(this.zoom * fit);
+      if (fit < 0.995 && this.zoom > 0.25) {
+        this.setZoom(Math.max(0.25, this.zoom * fit));
         rect = target.getBoundingClientRect();
       }
       const centerX = (visible.left + visible.right) / 2;
