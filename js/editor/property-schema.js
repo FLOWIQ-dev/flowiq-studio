@@ -12,20 +12,20 @@ const checkbox = (key, label) => ({ key, label, type: 'checkbox' });
 
 const layout = [
   { title: 'Position · UDim2', fields: [
-    number('position.x.scale', 'X · Scale', -10, 10, 0.01),
-    number('position.x.offset', 'X · Offset', -4000, 4000),
-    number('position.y.scale', 'Y · Scale', -10, 10, 0.01),
-    number('position.y.offset', 'Y · Offset', -4000, 4000)
+    { ...number('position.x.scale', 'X · Scale', -10, 10, 0.01), subgroup: 'Position' },
+    { ...number('position.x.offset', 'X · Offset', -4000, 4000), subgroup: 'Position' },
+    { ...number('position.y.scale', 'Y · Scale', -10, 10, 0.01), subgroup: 'Position' },
+    { ...number('position.y.offset', 'Y · Offset', -4000, 4000), subgroup: 'Position' }
   ]},
   { title: 'Size · UDim2', fields: [
-    number('size.x.scale', 'Largura · Scale', -10, 10, 0.01),
-    number('size.x.offset', 'Largura · Offset', 1, 4000),
-    number('size.y.scale', 'Altura · Scale', -10, 10, 0.01),
-    number('size.y.offset', 'Altura · Offset', 1, 4000)
+    { ...number('size.x.scale', 'X · Scale', -10, 10, 0.01), subgroup: 'Size' },
+    { ...number('size.x.offset', 'X · Offset', 1, 4000), subgroup: 'Size' },
+    { ...number('size.y.scale', 'Y · Scale', -10, 10, 0.01), subgroup: 'Size' },
+    { ...number('size.y.offset', 'Y · Offset', 1, 4000), subgroup: 'Size' }
   ]},
   { title: 'AnchorPoint', fields: [
-    number('anchorPoint.x', 'X', 0, 1, 0.01),
-    number('anchorPoint.y', 'Y', 0, 1, 0.01)
+    { ...number('anchorPoint.x', 'X', 0, 1, 0.01), subgroup: 'AnchorPoint' },
+    { ...number('anchorPoint.y', 'Y', 0, 1, 0.01), subgroup: 'AnchorPoint' }
   ]}
 ];
 
@@ -105,8 +105,8 @@ registerPropertySchema('*', { sections: [
 
 registerPropertySchema('Frame', { sections: [
   { title: 'Instance', fields: [text('name', 'Name')] },
+  { title: 'Layout', fields: layout.flatMap(section => section.fields) },
   { title: 'Data', fields: [
-    ...layout.flatMap(section => section.fields),
     select('automaticSize', 'AutomaticSize', [
       { value: 'None', label: 'None' }, { value: 'X', label: 'X' },
       { value: 'Y', label: 'Y' }, { value: 'XY', label: 'XY' }
