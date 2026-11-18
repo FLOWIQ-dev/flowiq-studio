@@ -8,7 +8,7 @@ export const UDim2 = (xScale = 0, xOffset = 0, yScale = 0, yOffset = 0) => ({
 });
 const DEFAULTS = Object.freeze({
   Frame: { x: 24, y: 24, width: 320, height: 220, position: UDim2(0, 24, 0, 24), size: UDim2(0, 320, 0, 220), anchorPoint: { x: 0, y: 0 }, background: '#1b2940', backgroundColor3: '#1b2940', backgroundTransparency: 0, radius: 0, opacity: 1, border: '#334155', borderColor3: '#334155', borderWidth: 0, borderSizePixel: 0, borderMode: 'Outline', rotation: 0, visible: true, archivable: true, clipsDescendants: false, active: false, interactable: true, selectable: false, selectionOrder: 0, layoutOrder: 0, zIndex: 1, automaticSize: 'None', sizeConstraint: 'RelativeXY', style: 'Custom' },
-  UIBackdrop: { x: 0, y: 0, width: 1, height: 1, position: UDim2(0, 0, 0, 0), size: UDim2(0, 1, 0, 1), anchorPoint: { x: 0, y: 0 }, enabled: true, effect: 'Blur', blur: 14, saturation: 1.2, tintColor: '#dbeafe', tintOpacity: 0.12, prismIntensity: 0.58, prismAngle: 32, prismScale: 1, embossDepth: 0.48, embossAngle: 135, embossSoftness: 0.52, holographicIntensity: 0.52, holographicAngle: 28, holographicSpeed: 0.3, visible: true },
+  UIBackdrop: { x: 0, y: 0, width: 1, height: 1, position: UDim2(0, 0, 0, 0), size: UDim2(0, 1, 0, 1), anchorPoint: { x: 0, y: 0 }, enabled: true, effect: 'Blur', blur: 22, saturation: 1.35, brightness: 1.08, contrast: 1.08, tintColor: '#dbeafe', tintOpacity: 0.08, visible: true },
   TextButton: { x: 24, y: 24, width: 160, height: 48, position: UDim2(0, 24, 0, 24), size: UDim2(0, 160, 0, 48), anchorPoint: { x: 0, y: 0 }, background: '#2563eb', color: '#ffffff', radius: 10, fontSize: 15, text: 'Botão', opacity: 1, visible: true, border: '#334155', borderWidth: 0 },
   TextLabel: { x: 24, y: 24, width: 220, height: 42, position: UDim2(0, 24, 0, 24), size: UDim2(0, 220, 0, 42), anchorPoint: { x: 0, y: 0 }, background: '#121e2e', color: '#f8fafc', radius: 0, fontSize: 16, text: 'Texto', opacity: 1, visible: true, border: '#334155', borderWidth: 0 },
   ImageLabel: { x: 24, y: 24, width: 140, height: 120, position: UDim2(0, 24, 0, 24), size: UDim2(0, 140, 0, 120), anchorPoint: { x: 0, y: 0 }, background: '#24344c', color: '#ffffff', radius: 10, opacity: 1, visible: true, border: '#334155', borderWidth: 0, assetId: '', fit: 'cover' }
@@ -79,8 +79,8 @@ export class SceneNode {
     this.name = cleanName(name, type);
     const clean = cleanProps(props);
     const merged = { rotation: 0, ...DEFAULTS[type], ...clean };
-    // Legacy materials are normalized to the two supported effects.
-    if (type === 'UIBackdrop' && ['FrostedGlass', 'Acrylic', 'LiquidGlass'].includes(merged.effect)) merged.effect = 'Blur';
+    // Blur is the only supported material. Older effect values migrate safely.
+    if (type === 'UIBackdrop') merged.effect = 'Blur';
     if (!Object.hasOwn(clean, 'position')) merged.position = {
       x: { scale: 0, offset: finite(clean.x, DEFAULTS[type].x) },
       y: { scale: 0, offset: finite(clean.y, DEFAULTS[type].y) }
