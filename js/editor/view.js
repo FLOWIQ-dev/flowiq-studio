@@ -42,7 +42,7 @@ export function renderScene(container, scene, { selectedId = null, preview = fal
       let contentHeight = 0;
       for (const childId of node.children) {
         const child = scene.get(childId);
-        if (!child) continue;
+        if (!child || child.type === 'UIBackdrop') continue;
         const bounds = measureLayout(child, layout.width, layout.height);
         contentWidth = Math.max(contentWidth, bounds.x + bounds.width);
         contentHeight = Math.max(contentHeight, bounds.y + bounds.height);
@@ -56,7 +56,7 @@ export function renderScene(container, scene, { selectedId = null, preview = fal
   };
   const build = (id, parent, parentWidth, parentHeight) => {
     const node = scene.get(id);
-    if (!node || node.props.visible === false) return;
+    if (!node || node.props.visible === false || node.type === 'UIBackdrop') return;
     const p = node.props;
     const item = el(node.type === 'TextButton' && preview ? 'button' : 'div', 'scene-node scene-' + node.type.toLowerCase());
     item.dataset.nodeId = node.id;
@@ -67,6 +67,7 @@ export function renderScene(container, scene, { selectedId = null, preview = fal
     item.style.height = layout.height + 'px';
     item.style.transform = 'translate(' + (-p.anchorPoint.x * 100) + '%,' + (-p.anchorPoint.y * 100) + '%) rotate(' + (Number(p.rotation) || 0) + 'deg)';
     const isFrame = node.type === 'Frame';
+    const backdropNode = isFrame ? node.children.map(childId => scene.get(childId)).find(child => child?.type === 'UIBackdrop') : null;
     item.style.background = isFrame ? 'transparent' : (p.background || 'transparent');
     item.style.opacity = String(Math.max(0, Math.min(1, Number(p.opacity ?? 1))));
     if (isFrame) {
@@ -87,7 +88,7 @@ export function renderScene(container, scene, { selectedId = null, preview = fal
       item.style.outline = 'none';
       item.style.boxShadow = 'none';
       if (p.style === 'DropShadow') item.style.boxShadow = '0 5px 14px rgba(0,0,0,.28)';
-      const backdrop = p.uiBackdrop || {};
+      const backdrop = backdropNode?.props || {};
       if (backdrop.enabled && alpha < 1) {
         const layer = el('div', 'scene-backdrop-layer scene-backdrop-' + String(backdrop.effect || 'Blur').toLowerCase());
         layer.setAttribute('aria-hidden', 'true');
@@ -409,6 +410,9 @@ export function renderInspector(container, node, { onChange, onDelete, onDuplica
   filterWrap.append(filter);
   container.append(filterWrap);
   const schema = getPropertySchema(node.type);
+  if (node.type === 'UIBackdrop') {
+    const effectSelect = null;
+  }
   const groups = [];
   schema.sections.forEach(definition => {
     const group = el('section', 'property-group');
@@ -422,18 +426,6 @@ export function renderInspector(container, node, { onChange, onDelete, onDuplica
     definition.fields.forEach(descriptor => {
       const control = field(descriptor);
       control.dataset.propertySearch = (descriptor.label + ' ' + descriptor.key + ' ' + definition.title + ' ' + (descriptor.subgroup || '')).toLocaleLowerCase('pt-BR');
-      if (descriptor.backdropSetting) {
-        control.dataset.backdropSetting = descriptor.backdropSetting;
-        if (descriptor.effectOnly) control.dataset.effectOnly = descriptor.effectOnly.join(',');
-        const updateBackdropVisibility = () => {
-          const config = node.props.uiBackdrop || {};
-          const enabled = Boolean(config.enabled);
-          const effect = config.effect || 'Blur';
-          const setting = control.dataset.backdropSetting;
-          control.hidden = setting !== 'enabled' && setting !== 'effect' && (!enabled || (control.dataset.effectOnly && !control.dataset.effectOnly.split(',').includes(effect)));
-        };
-        updateBackdropVisibility();
-      }
       if (descriptor.subgroup) {
         let subgroup = subgroups.get(descriptor.subgroup);
         if (!subgroup) {
