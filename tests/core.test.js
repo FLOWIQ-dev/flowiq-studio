@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
-import { Scene, UDim2, resolveNodeLayout } from '../js/data/model.js';
+import { Scene, UDim2, resolveNodeLayout, COMPONENTS } from '../js/data/model.js';
 import { History } from '../js/core/history.js';
 import { Store } from '../js/core/store.js';
 import { Runtime } from '../js/runtime/runtime.js';
@@ -155,7 +155,7 @@ test('service worker precaches every module used by the new application', async 
 
 
 test('Inspector property schemas are class-based and extensible', () => {
-  assert.equal(PROPERTY_SCHEMA_VERSION, 14);
+  assert.equal(PROPERTY_SCHEMA_VERSION, 15);
   const frame = getPropertySchema('Frame');
   assert.ok(frame.sections.some(section => section.title === 'Data'));
   const frameKeys = frame.sections.flatMap(section => section.fields.map(field => field.key));
@@ -519,4 +519,32 @@ test('ImageLabel composites tint and image transparency in one isolated image la
   assert.match(view, /layer\.style\.backgroundImage = 'url\("/);
   assert.match(css, /scene-image-layer\{isolation:isolate\}/);
   assert.match(css, /scene-image-layer>\.scene-image-tint[\s\S]*?mix-blend-mode:multiply/);
+});
+
+
+test('ZIndex is available on every GuiObject and remains bounded to the Roblox layer range', () => {
+  const scene = new Scene();
+  for (const type of ['Frame', 'TextButton', 'TextLabel', 'ImageLabel']) {
+    const node = scene.create(type);
+    assert.equal(node.props.zIndex, 1, type + ' should default to ZIndex 1');
+    const fields = getPropertySchema(type).sections.flatMap(section => section.fields);
+    assert.equal(fields.find(field => field.key === 'zIndex')?.max, 10, type + ' should expose ZIndex');
+  }
+  assert.ok(COMPONENTS.some(component => component.type === 'TextLabel'), 'TextLabel must be available in Insert Object');
+});
+
+test('TextLabel exposes Roblox text properties and hierarchy-aware rendering', async () => {
+  const schema = getPropertySchema('TextLabel');
+  const fields = schema.sections.flatMap(section => section.fields);
+  for (const key of ['text','textColor3','textTransparency','font','textSize','textScaled','textWrapped','textXAlignment','textYAlignment','richText','textStrokeColor3','textStrokeTransparency','lineHeight','maxVisibleGraphemes','textTruncate','textDirection','zIndex']) {
+    assert.ok(fields.some(field => field.key === key), 'TextLabel should expose ' + key);
+  }
+  assert.equal(fields.find(field => field.key === 'text')?.type, 'textarea');
+  const view = await readFile(new URL('../js/editor/view.js', import.meta.url), 'utf8');
+  const css = await readFile(new URL('../css/studio.css', import.meta.url), 'utf8');
+  assert.match(view, /item\.style\.zIndex = String\(Math\.max\(1, Math\.min\(10/);
+  assert.match(view, /childContainer\.style\.zIndex = '2'/);
+  assert.match(view, /fitTextSize\(/);
+  assert.match(view, /richTextFragment\(/);
+  assert.match(css, /scene-node\{isolation:isolate\}/);
 });
