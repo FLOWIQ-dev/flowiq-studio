@@ -164,9 +164,10 @@ test('Inspector property schemas are class-based and extensible', () => {
     assert.ok(frameKeys.includes(key), 'Frame should expose ' + key);
   }
   const frameFields = frame.sections.flatMap(section => section.fields);
-  for (const unused of ['archivable','automaticSize','layoutOrder','style','active','interactable','selectable','selectionOrder']) assert.ok(!frameKeys.includes(unused), unused + ' should not clutter the Frame inspector');
+  for (const useful of ['automaticSize','layoutOrder','active','interactable','selectable','selectionOrder']) assert.ok(frameKeys.includes(useful), useful + ' should be available on Frame');
   assert.equal(frameFields.find(field => field.key === 'backgroundTransparency')?.type, 'slider');
   assert.equal(frameFields.find(field => field.key === 'borderSizePixel')?.type, 'slider');
+  assert.equal(frameFields.find(field => field.key === 'rotation')?.type, 'slider');
   registerPropertySchema('FutureWidget', { sections: [
     { title: 'Dados', fields: [{ key: 'value', label: 'Valor', type: 'number', min: 0, max: 10 }] }
   ]});
@@ -208,4 +209,17 @@ test('selection handles are visually compact and half transparent', async () => 
   assert.match(css, /width:8px;height:8px;min-width:8px;min-height:8px/);
   assert.match(css, /opacity:\.5/);
   assert.match(css, /width:22px;height:22px;min-width:22px;min-height:22px/);
+});
+
+
+test('Inspector actions live in the panel title bar and property groups are searchable and collapsible', async () => {
+  const html = await readFile(new URL('../index.html', import.meta.url), 'utf8');
+  const view = await readFile(new URL('../js/editor/view.js', import.meta.url), 'utf8');
+  const css = await readFile(new URL('../css/studio.css', import.meta.url), 'utf8');
+  assert.match(html, /inspector-toolbar-actions/);
+  assert.match(view, /makeAction\('Duplicar instância'/);
+  assert.match(view, /makeAction\('Excluir instância'/);
+  assert.match(view, /Filtrar propriedades/);
+  assert.match(view, /aria-expanded/);
+  assert.match(css, /inspector-panel-title\{display:grid;grid-template-columns:minmax\(0,1fr\) auto auto/);
 });
