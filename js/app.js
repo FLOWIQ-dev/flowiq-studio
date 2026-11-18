@@ -22,6 +22,8 @@ class FlowiqStudio {
     this.savePending = false;
     this.drag = null;
     this.cameraOffset = { x: 0, y: 0 };
+    this.cameraTracking = false;
+    this.cameraTrackingId = null;
     this.cameraTrackFrame = 0;
     this.previewScene = null;
     this.dialogResolve = null;
@@ -379,6 +381,7 @@ class FlowiqStudio {
     if (id) { let parent = this.scene.get(id)?.parentId; while (parent) { this.treeExpanded.add(parent); parent = this.scene.get(parent)?.parentId; } }
     this.store.set({ selectedId: id });
     this.renderEditor();
+    if (this.cameraTracking) this.trackSelectedObject();
   }
 
   beginPropertyEdit(key) {
@@ -582,7 +585,8 @@ class FlowiqStudio {
     document.querySelector('.tree-context-menu')?.remove();
     const menu = document.createElement('div');
     menu.className = 'tree-context-menu';
-    for (const [action, label] of [['move', 'Mover'], ['rename', 'Renomear'], ['add', 'Adicionar instância'], ['duplicate', 'Duplicar'], ['delete', 'Excluir']]) {
+    const trackingLabel = this.cameraTracking && this.cameraTrackingId === id ? 'Parar rastreamento' : 'Rastrear câmera';
+    for (const [action, label] of [['track-camera', trackingLabel], ['move', 'Mover'], ['rename', 'Renomear'], ['add', 'Adicionar instância'], ['duplicate', 'Duplicar'], ['delete', 'Excluir']]) {
       const button = document.createElement('button');
       button.type = 'button';
       button.textContent = label;
@@ -606,6 +610,17 @@ class FlowiqStudio {
     const node = this.scene.get(id);
     if (!node) return;
     if (action === 'add') { this.openAddMenu(id); return; }
+    if (action === 'track-camera') {
+      const stop = this.cameraTracking && this.cameraTrackingId === id;
+      this.select(id);
+      this.cameraTracking = !stop;
+      this.cameraTrackingId = stop ? null : id;
+      $('scene').classList.toggle('is-camera-tracking', this.cameraTracking);
+      this.renderTreePanel();
+      if (this.cameraTracking) this.trackSelectedObject();
+      this.toast(this.cameraTracking ? 'Câmera acompanhando ' + node.name + '.' : 'Rastreamento da câmera pausado.');
+      return;
+    }
     if (action === 'move') { this.startTreeMoveMode(id); return; }
     this.select(id);
     if (action === 'rename') {
@@ -834,6 +849,7 @@ class FlowiqStudio {
       const liveWidth = drag.parentWidth * current.props.size.x.scale + current.props.size.x.offset;
       const liveHeight = drag.parentHeight * current.props.size.y.scale + current.props.size.y.offset;
       updateSceneLayout($('scene'), this.scene, this.getStageSize());
+      if (this.cameraTracking && this.cameraTrackingId === current.id) this.trackSelectedObject();
       const liveTarget = $('scene').querySelector('[data-node-id="' + CSS.escape(current.id) + '"]');
       const rotateHandle = liveTarget?.querySelector('.rotate-handle');
       if (rotateHandle) rotateHandle.style.transform = 'rotate(' + (-(Number(current.props.rotation) || 0)) + 'deg)';
@@ -892,14 +908,14 @@ class FlowiqStudio {
   }
 
   trackSelectedObject() {
-    if (this.store.state.screen !== 'editor' || this.store.state.panel !== 'inspector' || !this.store.state.selectedId) return;
+    if (!this.cameraTracking || this.store.state.screen !== 'editor' || !this.store.state.selectedId || this.cameraTrackingId !== this.store.state.selectedId) return;
     if (this.cameraTrackFrame) cancelAnimationFrame(this.cameraTrackFrame);
     this.cameraTrackFrame = requestAnimationFrame(() => {
       this.cameraTrackFrame = 0;
       const viewport = $('stage-viewport');
-      const panel = document.querySelector('#screen-editor .inspector-panel');
+      const panel = this.store.state.panel === 'inspector' ? document.querySelector('#screen-editor .inspector-panel') : null;
       const target = $('scene').querySelector('[data-node-id="' + CSS.escape(this.store.state.selectedId) + '"]');
-      if (!viewport || !target || this.store.state.panel !== 'inspector') return;
+      if (!viewport || !target || !this.cameraTracking || this.cameraTrackingId !== this.store.state.selectedId) return;
       const stageRect = viewport.getBoundingClientRect();
       const visible = { left: stageRect.left + 10, right: stageRect.right - 10, top: stageRect.top + 10, bottom: stageRect.bottom - 10 };
       if (panel) {
@@ -941,7 +957,7 @@ class FlowiqStudio {
         zoom: this.zoom,
         cameraOffset: this.cameraOffset
       });
-      if (this.store.state.panel === 'inspector') this.trackSelectedObject();
+      if (this.cameraTracking) this.trackSelectedObject();
     }
   }
 
@@ -952,12 +968,12 @@ class FlowiqStudio {
     if (!['stage', 'explorer', 'inspector'].includes(name)) return;
     this.store.set({ panel: next });
     shell.dataset.panel = next;
-    $('scene').classList.toggle('is-camera-tracking', next === 'inspector');
+    $('scene').classList.toggle('is-camera-tracking', this.cameraTracking);
     document.querySelectorAll('[data-panel]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.panel === next)));
     $('panel-close')?.setAttribute('aria-expanded', String(next === 'inspector'));
     $('explorer-close')?.setAttribute('aria-expanded', String(next === 'explorer'));
     if (next === 'stage') requestAnimationFrame(() => this.fitStage());
-    else if (next === 'inspector') setTimeout(() => this.trackSelectedObject(), 300);
+    else if (this.cameraTracking) setTimeout(() => this.trackSelectedObject(), 120);
   }
 
   toggleAddMenu() {
