@@ -21,6 +21,8 @@ class FlowiqStudio {
     this.savePromise = null;
     this.savePending = false;
     this.drag = null;
+    this.cameraOffset = { x: 0, y: 0 };
+    this.cameraTrackFrame = 0;
     this.previewScene = null;
     this.dialogResolve = null;
     this.search = '';
@@ -389,6 +391,7 @@ class FlowiqStudio {
     this.updateProperty(key, value, { checkpoint: false, render: false, save: false });
     const stageSize = this.getStageSize();
     renderScene($('scene'), this.scene, { selectedId: this.store.state.selectedId, assets: this.assets, sceneSize: stageSize, zoom: this.zoom });
+    this.trackSelectedObject();
   }
 
   commitPropertyEdit(key, value) {
@@ -400,6 +403,7 @@ class FlowiqStudio {
     this.updateProperty(key, value, { checkpoint: false, render: false, save: true });
     const stageSize = this.getStageSize();
     renderScene($('scene'), this.scene, { selectedId: this.store.state.selectedId, assets: this.assets, sceneSize: stageSize, zoom: this.zoom });
+    this.trackSelectedObject();
   }
 
   updateProperty(key, value, { checkpoint = true, render = true, save = true } = {}) {
@@ -434,7 +438,10 @@ class FlowiqStudio {
     else if (key === 'radius') node.props[key] = Math.max(0, Math.min(160, Number(value) || 0));
     else node.props[key] = value;
     if (save) this.scheduleSave();
-    if (render) this.renderEditor();
+    if (render) {
+      this.renderEditor();
+      this.trackSelectedObject();
+    }
   }
 
   saveButtonAction(nodeId, actions) {
@@ -877,9 +884,53 @@ class FlowiqStudio {
     $('zoom-value').textContent = Math.round(this.zoom * 100) + '%';
   }
 
+  applyCameraOffset() {
+    const surface = $('scene-zoom');
+    if (!surface) return;
+    surface.style.transformOrigin = 'top left';
+    surface.style.transform = 'translate3d(' + this.cameraOffset.x + 'px,' + this.cameraOffset.y + 'px,0)';
+  }
+
+  trackSelectedObject() {
+    if (this.store.state.screen !== 'editor' || this.store.state.panel !== 'inspector' || !this.store.state.selectedId) return;
+    if (this.cameraTrackFrame) cancelAnimationFrame(this.cameraTrackFrame);
+    this.cameraTrackFrame = requestAnimationFrame(() => {
+      this.cameraTrackFrame = 0;
+      const viewport = $('stage-viewport');
+      const panel = $('screen-editor .inspector-panel');
+      const target = $('scene').querySelector('[data-node-id="' + CSS.escape(this.store.state.selectedId) + '"]');
+      if (!viewport || !target || this.store.state.panel !== 'inspector') return;
+      const stageRect = viewport.getBoundingClientRect();
+      const visible = { left: stageRect.left + 10, right: stageRect.right - 10, top: stageRect.top + 10, bottom: stageRect.bottom - 10 };
+      if (panel) {
+        const panelRect = panel.getBoundingClientRect();
+        const overlapsStage = panelRect.left < stageRect.right && panelRect.right > stageRect.left && panelRect.top < stageRect.bottom && panelRect.bottom > stageRect.top;
+        if (overlapsStage) visible.bottom = Math.min(visible.bottom, panelRect.top - 10);
+      }
+      const availableWidth = Math.max(1, visible.right - visible.left);
+      const availableHeight = Math.max(1, visible.bottom - visible.top);
+      if (availableHeight < 40) return;
+      let rect = target.getBoundingClientRect();
+      const fit = Math.min(1, (availableWidth - 24) / Math.max(1, rect.width), (availableHeight - 24) / Math.max(1, rect.height));
+      if (fit < 0.995 && this.zoom * fit >= 0.25) {
+        this.setZoom(this.zoom * fit);
+        rect = target.getBoundingClientRect();
+      }
+      const centerX = (visible.left + visible.right) / 2;
+      const centerY = (visible.top + visible.bottom) / 2;
+      this.cameraOffset.x += centerX - (rect.left + rect.right) / 2;
+      this.cameraOffset.y += centerY - (rect.top + rect.bottom) / 2;
+      this.applyCameraOffset();
+    });
+  }
+
   fitStage(resetZoom = false) {
     if (this.store.state.screen !== 'editor') return;
-    if (resetZoom) this.zoom = 1;
+    if (resetZoom) {
+      this.zoom = 1;
+      this.cameraOffset = { x: 0, y: 0 };
+      this.applyCameraOffset();
+    }
     const size = this.getStageSize();
     this.applyStageBounds(size);
     if (this.project) {
@@ -903,6 +954,7 @@ class FlowiqStudio {
     $('panel-close')?.setAttribute('aria-expanded', String(next === 'inspector'));
     $('explorer-close')?.setAttribute('aria-expanded', String(next === 'explorer'));
     if (next === 'stage') requestAnimationFrame(() => this.fitStage());
+    else if (next === 'inspector') setTimeout(() => this.trackSelectedObject(), 300);
   }
 
   toggleAddMenu() {
