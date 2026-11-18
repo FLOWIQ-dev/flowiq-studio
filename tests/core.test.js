@@ -155,7 +155,7 @@ test('service worker precaches every module used by the new application', async 
 
 
 test('Inspector property schemas are class-based and extensible', () => {
-  assert.equal(PROPERTY_SCHEMA_VERSION, 7);
+  assert.equal(PROPERTY_SCHEMA_VERSION, 8);
   const frame = getPropertySchema('Frame');
   assert.ok(frame.sections.some(section => section.title === 'Data'));
   const frameKeys = frame.sections.flatMap(section => section.fields.map(field => field.key));
@@ -354,7 +354,8 @@ test('UIBackdrop is a child pseudo-instance with effect settings and renders thr
   assert.ok(model.includes("enabled: true, effect: 'Blur'"));
   assert.ok(schema.includes("registerPropertySchema('UIBackdrop'"));
   assert.ok(schema.includes('LiquidGlass'));
-  assert.ok(schema.includes('FrostedGlass'));
+  assert.ok(schema.includes("{ value: 'Blur', label: 'Blur' }"));
+  assert.ok(!schema.includes("value: 'FrostedGlass'"));
   assert.ok(view.includes("child?.type === 'UIBackdrop'"));
   assert.ok(view.includes('backdropVisible'));
   assert.ok(view.includes('item.style.backdropFilter'));
@@ -362,6 +363,20 @@ test('UIBackdrop is a child pseudo-instance with effect settings and renders thr
   assert.ok(view.includes('item.style.backgroundColor = fillColor'));
   assert.ok(app.includes("type === 'UIBackdrop'"));
   assert.ok(html.includes('data-add-type="UIBackdrop"'));
+});
+
+
+test('UIBackdrop renames FrostedGlass to Blur and uses the former FrostedGlass material settings', async () => {
+  const model = await readFile(new URL('../js/data/model.js', import.meta.url), 'utf8');
+  const schema = await readFile(new URL('../js/editor/property-schema.js', import.meta.url), 'utf8');
+  const view = await readFile(new URL('../js/editor/view.js', import.meta.url), 'utf8');
+  const html = await readFile(new URL('../index.html', import.meta.url), 'utf8');
+  assert.match(model, /merged\.effect === 'FrostedGlass'\) merged\.effect = 'Blur'/);
+  assert.match(schema, /value: 'Blur', label: 'Blur'/);
+  assert.match(schema, /effectOnly: \['LiquidGlass', 'Blur', 'Acrylic'\]/);
+  assert.match(view, /effect === 'Blur' \? Math\.max\(tintAlpha, 0\.16\)/);
+  assert.match(view, /UIBackdrop: '<path d="M12 2\.8/);
+  assert.match(html, /data-add-type="UIBackdrop"><b><svg viewBox="0 0 24 24"><path d="M12 2\.8/);
 });
 
 test('UIBackdrop can only exist once as a leaf child of a Frame', () => {
@@ -382,8 +397,7 @@ test('Frame backdrop filtering is applied to the translucent Frame surface, not 
   assert.match(view, /item\.style\.backdropFilter = backdropVisible/);
   assert.match(view, /item\.style\.backgroundColor = fillColor/);
   assert.match(view, /scene-glass-surface/);
-  assert.match(view, /feDisplacementMap/);
-  assert.match(view, /backdrop-filter', refractiveFilter/);
+  assert.doesNotMatch(view, /feDisplacementMap|feTurbulence|refractiveFilter/);
   assert.doesNotMatch(view, /el\('div', 'scene-backdrop-layer/);
 });
 
@@ -414,7 +428,7 @@ test('Opening the mobile Inspector does not dim the editable stage', async () =>
 test('LiquidGlass uses a distinct low-blur layered surface with touch-responsive highlights', async () => {
   const view = await readFile(new URL('../js/editor/view.js', import.meta.url), 'utf8');
   assert.match(view, /scene-glass-surface/);
-  assert.match(view, /Math\.min\(12, Number\(backdrop\.blur\)/);
+  assert.match(view, /Math\.min\(3\.5, blur \* 0\.12\)/);
   assert.match(view, /item\.onpointermove/);
   assert.match(view, /--glass-x/);
   assert.match(view, /--glass-y/);
