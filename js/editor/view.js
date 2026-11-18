@@ -67,27 +67,58 @@ export function renderScene(container, scene, { selectedId = null, preview = fal
     item.style.height = layout.height + 'px';
     item.style.transform = 'translate(' + (-p.anchorPoint.x * 100) + '%,' + (-p.anchorPoint.y * 100) + '%) rotate(' + (Number(p.rotation) || 0) + 'deg)';
     const isFrame = node.type === 'Frame';
-    item.style.background = isFrame
-      ? (p.backgroundColor3 || p.background || 'transparent')
-      : (p.background || 'transparent');
+    item.style.background = isFrame ? 'transparent' : (p.background || 'transparent');
     item.style.opacity = String(Math.max(0, Math.min(1, Number(p.opacity ?? 1))));
     if (isFrame) {
       const bg = String(p.backgroundColor3 || p.background || 'transparent');
       const alpha = 1 - Math.max(0, Math.min(1, Number(p.backgroundTransparency) || 0));
       const match = bg.match(/^#([0-9a-f]{3}|[0-9a-f]{6})$/i);
+      let fillColor = bg;
       if (match) {
         const hex = match[1].length === 3 ? match[1].split('').map(char => char + char).join('') : match[1];
-        item.style.backgroundColor = 'rgba(' + [0,2,4].map(index => parseInt(hex.slice(index,index+2),16)).join(',') + ',' + alpha + ')';
+        fillColor = 'rgba(' + [0,2,4].map(index => parseInt(hex.slice(index,index+2),16)).join(',') + ',' + alpha + ')';
       }
+      if (p.style === 'ChatBlue') fillColor = 'rgba(36,84,135,' + alpha + ')';
+      if (p.style === 'ChatGreen') fillColor = 'rgba(35,112,75,' + alpha + ')';
+      if (p.style === 'ChatRed') fillColor = 'rgba(137,48,55,' + alpha + ')';
       item.dataset.clipsDescendants = String(Boolean(p.clipsDescendants));
       item.style.zIndex = String(Math.max(1, Math.min(10, Number(p.zIndex) || 1)));
       item.style.border = '0';
       item.style.outline = 'none';
       item.style.boxShadow = 'none';
       if (p.style === 'DropShadow') item.style.boxShadow = '0 5px 14px rgba(0,0,0,.28)';
-      if (p.style === 'ChatBlue') item.style.backgroundColor = 'rgba(36,84,135,' + alpha + ')';
-      if (p.style === 'ChatGreen') item.style.backgroundColor = 'rgba(35,112,75,' + alpha + ')';
-      if (p.style === 'ChatRed') item.style.backgroundColor = 'rgba(137,48,55,' + alpha + ')';
+      const backdrop = p.uiBackdrop || {};
+      if (backdrop.enabled && alpha < 1) {
+        const layer = el('div', 'scene-backdrop-layer scene-backdrop-' + String(backdrop.effect || 'Blur').toLowerCase());
+        layer.setAttribute('aria-hidden', 'true');
+        const blur = Math.max(0, Math.min(40, Number(backdrop.blur) || 0));
+        const saturation = Math.max(0, Math.min(3, Number(backdrop.saturation) || 0));
+        const brightness = Math.max(0.5, Math.min(1.5, Number(backdrop.brightness) || 1));
+        const contrast = Math.max(0.5, Math.min(1.5, Number(backdrop.contrast) || 1));
+        layer.style.backdropFilter = 'blur(' + blur + 'px) saturate(' + saturation + ') brightness(' + brightness + ') contrast(' + contrast + ')';
+        layer.style.webkitBackdropFilter = layer.style.backdropFilter;
+        const tint = String(backdrop.tintColor || '#dbeafe');
+        const tintMatch = tint.match(/^#([0-9a-f]{6})$/i);
+        const tintHex = tintMatch ? tintMatch[1] : 'dbeafe';
+        const tintRgb = [0,2,4].map(index => parseInt(tintHex.slice(index,index+2),16)).join(',');
+        const tintAlpha = Math.max(0, Math.min(1, Number(backdrop.tintOpacity) || 0));
+        layer.style.background = 'rgba(' + tintRgb + ',' + tintAlpha + ')';
+        if (backdrop.effect === 'LiquidGlass') {
+          const shine = Math.max(0, Math.min(1, Number(backdrop.highlight) || 0));
+          const refract = Math.max(0, Math.min(1, Number(backdrop.refraction) || 0));
+          layer.style.background = 'linear-gradient(145deg,rgba(255,255,255,' + (0.12 + shine * 0.2) + '),rgba(' + tintRgb + ',' + tintAlpha + ') 42%,rgba(255,255,255,' + (0.025 + refract * 0.07) + '))';
+          layer.style.boxShadow = 'inset 0 1px 0 rgba(255,255,255,' + (0.25 + shine * 0.45) + '),inset 0 -1px 0 rgba(255,255,255,' + (0.08 + refract * 0.12) + ')';
+        } else if (backdrop.effect === 'FrostedGlass') {
+          layer.style.background = 'rgba(' + tintRgb + ',' + Math.max(tintAlpha, 0.16) + ')';
+        } else if (backdrop.effect === 'Acrylic') {
+          layer.style.background = 'linear-gradient(135deg,rgba(255,255,255,.09),rgba(' + tintRgb + ',' + tintAlpha + '))';
+        }
+        item.append(layer);
+      }
+      const fillLayer = el('div', 'scene-frame-fill');
+      fillLayer.style.background = fillColor;
+      fillLayer.setAttribute('aria-hidden', 'true');
+      item.append(fillLayer);
     } else {
       item.style.borderRadius = Math.max(0, Number(p.radius) || 0) + 'px';
       item.style.border = Math.max(0, Number(p.borderWidth) || 0) + 'px solid ' + (p.border || 'transparent');
@@ -101,6 +132,7 @@ export function renderScene(container, scene, { selectedId = null, preview = fal
     childContainer.style.position = 'absolute';
     childContainer.style.inset = '0';
     childContainer.style.overflow = node.type === 'Frame' && p.clipsDescendants ? 'hidden' : 'visible';
+    if (isFrame) childContainer.style.zIndex = '2';
     item.append(childContainer);
     if (node.type === 'ImageLabel') {
       const asset = assetMap.get(p.assetId);
@@ -390,6 +422,18 @@ export function renderInspector(container, node, { onChange, onDelete, onDuplica
     definition.fields.forEach(descriptor => {
       const control = field(descriptor);
       control.dataset.propertySearch = (descriptor.label + ' ' + descriptor.key + ' ' + definition.title + ' ' + (descriptor.subgroup || '')).toLocaleLowerCase('pt-BR');
+      if (descriptor.backdropSetting) {
+        control.dataset.backdropSetting = descriptor.backdropSetting;
+        if (descriptor.effectOnly) control.dataset.effectOnly = descriptor.effectOnly.join(',');
+        const updateBackdropVisibility = () => {
+          const config = node.props.uiBackdrop || {};
+          const enabled = Boolean(config.enabled);
+          const effect = config.effect || 'Blur';
+          const setting = control.dataset.backdropSetting;
+          control.hidden = setting !== 'enabled' && setting !== 'effect' && (!enabled || (control.dataset.effectOnly && !control.dataset.effectOnly.split(',').includes(effect)));
+        };
+        updateBackdropVisibility();
+      }
       if (descriptor.subgroup) {
         let subgroup = subgroups.get(descriptor.subgroup);
         if (!subgroup) {
