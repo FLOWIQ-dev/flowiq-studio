@@ -536,7 +536,7 @@ test('ZIndex is available on every GuiObject and remains bounded to the Roblox l
 test('TextLabel exposes Roblox text properties and hierarchy-aware rendering', async () => {
   const schema = getPropertySchema('TextLabel');
   const fields = schema.sections.flatMap(section => section.fields);
-  for (const key of ['text','textColor3','textTransparency','font','textSize','textScaled','textWrapped','textXAlignment','textYAlignment','richText','textStrokeColor3','textStrokeTransparency','lineHeight','maxVisibleGraphemes','textTruncate','textDirection','zIndex']) {
+  for (const key of ['text','textColor3','textTransparency','fontFace','openTypeFeatures','textSize','textScaled','textWrapped','textXAlignment','textYAlignment','richText','textStrokeColor3','textStrokeTransparency','lineHeight','maxVisibleGraphemes','textTruncate','textDirection','zIndex']) {
     assert.ok(fields.some(field => field.key === key), 'TextLabel should expose ' + key);
   }
   assert.equal(fields.find(field => field.key === 'text')?.type, 'textarea');
