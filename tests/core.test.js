@@ -155,7 +155,7 @@ test('service worker precaches every module used by the new application', async 
 
 
 test('Inspector property schemas are class-based and extensible', () => {
-  assert.equal(PROPERTY_SCHEMA_VERSION, 13);
+  assert.equal(PROPERTY_SCHEMA_VERSION, 14);
   const frame = getPropertySchema('Frame');
   assert.ok(frame.sections.some(section => section.title === 'Data'));
   const frameKeys = frame.sections.flatMap(section => section.fields.map(field => field.key));
@@ -489,4 +489,21 @@ test('Image picker is visual and asset library supports rename and thumbnails', 
   assert.match(app, /data-rename-asset/);
   assert.match(app, /asset-preview/);
   assert.match(html, /image-picker-grid/);
+});
+
+
+test('ImageLabel follows Roblox-style property groups and exposes ImageColor3', () => {
+  const schema = getPropertySchema('ImageLabel');
+  assert.equal(schema.sections[0].title, 'Appearance');
+  const image = schema.sections.find(section => section.title === 'Image');
+  assert.ok(image.fields.some(field => field.key === 'imageColor3' && field.type === 'color'));
+  assert.ok(image.fields.some(field => field.key === 'imageTransparency'));
+  assert.equal(schema.sections.findIndex(section => section.title === 'Appearance'), 0);
+});
+
+test('ImageLabel renderer applies image tint without changing the background', async () => {
+  const view = await readFile(new URL('../js/editor/view.js', import.meta.url), 'utf8');
+  assert.match(view, /scene-image-tint/);
+  assert.match(view, /p\.imageColor3/);
+  assert.match(view, /mix-blend-mode:multiply/);
 });
