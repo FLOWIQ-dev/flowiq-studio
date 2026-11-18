@@ -4,12 +4,12 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#101827">
-  <meta name="flowiq-build" content="2026.11.17.121">
+  <meta name="flowiq-build" content="2026.11.17.122">
   <meta name="description" content="Flowiq Studio, editor mobile-first de interfaces 2D.">
   <title>Flowiq Studio</title>
   <link rel="manifest" href="./manifest.json">
   <link rel="icon" href="./assets/icon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="./css/studio.css?v=2026.11.17.121">
+  <link rel="stylesheet" href="./css/studio.css?v=2026.11.17.122">
 </head>
 <body>
   <main id="screen-home" class="screen home-screen">
@@ -106,12 +106,12 @@
       });
       window.addEventListener('load', async () => {
         try {
-          const registration = await navigator.serviceWorker.register('./sw.js?v=2026.11.17.121', { updateViaCache: 'none' });
+          const registration = await navigator.serviceWorker.register('./sw.js?v=2026.11.17.122', { updateViaCache: 'none' });
           await registration.update();
         } catch (error) { console.warn('Flowiq: cache offline indisponível.', error); }
       });
     }
   </script>
-  <script type="module" src="./js/app.js?v=2026.11.17.121"></script>
+  <script type="module" src="./js/app.js?v=2026.11.17.122"></script>
 </body>
 </html>
