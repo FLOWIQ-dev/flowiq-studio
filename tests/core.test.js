@@ -155,7 +155,7 @@ test('service worker precaches every module used by the new application', async 
 
 
 test('Inspector property schemas are class-based and extensible', () => {
-  assert.equal(PROPERTY_SCHEMA_VERSION, 5);
+  assert.equal(PROPERTY_SCHEMA_VERSION, 6);
   const frame = getPropertySchema('Frame');
   assert.ok(frame.sections.some(section => section.title === 'Data'));
   const frameKeys = frame.sections.flatMap(section => section.fields.map(field => field.key));
@@ -343,17 +343,20 @@ test('Frame AnchorPoint uses a compact editable two-value tuple and sliders have
 });
 
 
-test('Frame UIBackdrop pseudo-instance has independent effect settings and preserves the Frame background layer order', async () => {
+test('UIBackdrop is a child pseudo-instance with effect settings and renders beneath the Frame fill', async () => {
   const model = await readFile(new URL('../js/data/model.js', import.meta.url), 'utf8');
   const schema = await readFile(new URL('../js/editor/property-schema.js', import.meta.url), 'utf8');
   const view = await readFile(new URL('../js/editor/view.js', import.meta.url), 'utf8');
   assert.match(model, /uiBackdrop: \{ enabled: false, effect: 'Blur'/);
   assert.match(model, /key === 'uiBackdrop'/);
-  assert.match(schema, /title: 'UIBackdrop'/);
+  assert.match(schema, /registerPropertySchema\\('UIBackdrop'/);
   assert.match(schema, /LiquidGlass/);
   assert.match(schema, /FrostedGlass/);
+  assert.match(view, /child\\?\\.type === 'UIBackdrop'/);
   assert.match(view, /scene-backdrop-layer/);
   assert.match(view, /scene-frame-fill/);
+  assert.match(app, /type === 'UIBackdrop'/);
+  assert.match(html, /data-add-type="UIBackdrop"/);
   assert.match(view, /layer\.style\.backdropFilter/);
   assert.match(view, /layer\.style\.webkitBackdropFilter/);
   assert.ok(view.indexOf("item.append(layer)") < view.indexOf("item.append(fillLayer)"));
