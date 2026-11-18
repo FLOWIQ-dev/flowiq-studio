@@ -242,3 +242,21 @@ test('editor recalculates nested descendants during live parent transforms', asy
   parent.props.size.y.offset = 500;
   assert.deepEqual(resolveNodeLayout(child, 600, 500), { x: 300, y: 250, width: 300, height: 250 });
 });
+
+
+test('Inspector tracks the selected object inside the visible stage and preserves camera framing on close', async () => {
+  const app = await readFile(new URL('../js/app.js', import.meta.url), 'utf8');
+  assert.match(app, /this\.cameraOffset = \{ x: 0, y: 0 \}/);
+  assert.match(app, /trackSelectedObject\(\)/);
+  assert.match(app, /panelRect\.top - 10/);
+  assert.match(app, /this\.cameraOffset\.x \+= centerX/);
+  assert.match(app, /this\.cameraOffset\.y \+= centerY/);
+  assert.match(app, /this\.applyCameraOffset\(\)/);
+  assert.match(app, /else if \(next === 'inspector'\) setTimeout\(\(\) => this\.trackSelectedObject\(\), 300\)/);
+  const closePanel = app.slice(app.indexOf('  setPanel(name)'), app.indexOf('  toggleAddMenu()'));
+  assert.match(closePanel, /if \(next === 'stage'\) requestAnimationFrame\(\(\) => this\.fitStage\(\)\)/);
+  assert.doesNotMatch(closePanel, /cameraOffset = \{ x: 0, y: 0 \}/);
+  const reset = app.slice(app.indexOf('  fitStage(resetZoom'), app.indexOf('  setPanel(name)'));
+  assert.match(reset, /if \(resetZoom\)[\s\S]*cameraOffset = \{ x: 0, y: 0 \}/);
+  assert.match(app, /this\.trackSelectedObject\(\);/);
+});
