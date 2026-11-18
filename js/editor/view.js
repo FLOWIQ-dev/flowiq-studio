@@ -255,7 +255,7 @@ export function renderInspector(container, node, { onChange, onDelete, onDuplica
   const field = descriptor => {
     const { key, label: labelText, type = 'number' } = descriptor;
     const wrap = el('label', 'property-field');
-    wrap.append(el('span', '', labelText));
+    if (type !== 'udim2' && type !== 'vector2') wrap.append(el('span', '', labelText));
     let input;
     if (type === 'select' || type === 'asset') {
       input = el('select');
@@ -277,19 +277,20 @@ export function renderInspector(container, node, { onChange, onDelete, onDuplica
       }
     }
     const propertyValue = readValue(key);
-    if (type === 'udim2') {
+    if (type === 'udim2' || type === 'vector2') {
       input.type = 'text';
       input.inputMode = 'decimal';
       input.autocomplete = 'off';
       input.spellcheck = false;
-      input.placeholder = '0, 30, 0, 20';
-      const tuple = value => [value?.x?.scale ?? 0, value?.x?.offset ?? 0, value?.y?.scale ?? 0, value?.y?.offset ?? 0].map(number => Number(number)).join(', ');
+      input.placeholder = type === 'udim2' ? '0, 30, 0, 20' : '0, 0';
+      const tuple = value => (type === 'udim2' ? [value?.x?.scale ?? 0, value?.x?.offset ?? 0, value?.y?.scale ?? 0, value?.y?.offset ?? 0] : [value?.x ?? 0, value?.y ?? 0]).map(number => Number(number)).join(', ');
       input.value = tuple(propertyValue);
       input.classList.add('udim2-input');
       const parse = raw => {
         const parts = raw.trim().split(/[;,\\s]+/).filter(Boolean);
-        if (parts.length !== 4 || parts.some(part => !Number.isFinite(Number(part)))) return null;
-        return { x: { scale: Number(parts[0]), offset: Number(parts[1]) }, y: { scale: Number(parts[2]), offset: Number(parts[3]) } };
+        const expected = type === 'udim2' ? 4 : 2;
+        if (parts.length !== expected || parts.some(part => !Number.isFinite(Number(part)))) return null;
+        return type === 'udim2' ? { x: { scale: Number(parts[0]), offset: Number(parts[1]) }, y: { scale: Number(parts[2]), offset: Number(parts[3]) } } : { x: Number(parts[0]), y: Number(parts[1]) };
       };
       const preview = () => {
         const value = parse(input.value);
@@ -309,22 +310,44 @@ export function renderInspector(container, node, { onChange, onDelete, onDuplica
       });
     } else if (type === 'checkbox') input.checked = Boolean(propertyValue);
     else input.value = String(propertyValue ?? descriptor.fallback ?? '');
-    if (type === 'udim2') {
+    if (type === 'udim2' || type === 'vector2') {
       wrap.append(input);
     } else if (type === 'slider') {
       const format = value => Number(value).toFixed(descriptor.step < 1 ? 2 : 0);
-      const output = el('output', 'property-slider-value', format(input.value));
+      const valueInput = el('input', 'property-slider-value');
+      valueInput.type = 'number';
+      valueInput.inputMode = 'decimal';
+      valueInput.min = input.min;
+      valueInput.max = input.max;
+      valueInput.step = input.step;
+      valueInput.value = format(input.value);
+      valueInput.setAttribute('aria-label', labelText + ' valor');
       const begin = () => onEditStart?.(key);
-      input.addEventListener('pointerdown', begin);
-      input.addEventListener('focus', begin);
-      input.addEventListener('keydown', begin);
+      const preview = raw => {
+        if (raw === '' || !Number.isFinite(Number(raw))) return;
+        const next = Math.max(Number(input.min), Math.min(Number(input.max), Number(raw)));
+        input.value = String(next);
+        valueInput.value = format(next);
+        onPreview?.(key, next);
+      };
+      for (const control of [input, valueInput]) {
+        control.addEventListener('pointerdown', begin);
+        control.addEventListener('focus', begin);
+        control.addEventListener('keydown', begin);
+      }
       input.addEventListener('input', () => {
-        output.value = format(input.value);
-        output.textContent = output.value;
+        valueInput.value = format(input.value);
         onPreview?.(key, Number(input.value));
       });
-      input.addEventListener('change', () => onCommit ? onCommit(key, Number(input.value)) : onChange(key, Number(input.value)));
-      wrap.append(input, output);
+      valueInput.addEventListener('input', () => preview(valueInput.value));
+      const commit = () => {
+        const next = Number(input.value);
+        valueInput.value = format(next);
+        if (onCommit) onCommit(key, next); else onChange(key, next);
+      };
+      input.addEventListener('change', commit);
+      valueInput.addEventListener('change', commit);
+      wrap.append(input, valueInput);
     } else {
       if (type === 'number' || type === 'color') {
         const begin = () => onEditStart?.(key);
