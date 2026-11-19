@@ -128,8 +128,30 @@ registerPropertySchema('Frame', { sections: [
 ]});
 
 registerPropertySchema('TextButton', { sections: [
-  { title: 'Appearance', fields: [color('background', 'BackgroundColor3'), color('border', 'BorderColor3'), number('borderWidth', 'BorderSizePixel', 0, 30), ...commonAppearance] },
-  { title: 'Text', fields: [...textAppearance] },
+  { title: 'Appearance', fields: [
+    color('backgroundColor3', 'BackgroundColor3'), slider('backgroundTransparency', 'BackgroundTransparency', 0, 1, 0.01),
+    color('borderColor3', 'BorderColor3'), number('borderSizePixel', 'BorderSizePixel', 0, 30), ...commonAppearance
+  ]},
+  { title: 'Text', fields: [
+    textarea('text', 'Text'), color('textColor3', 'TextColor3'), slider('textTransparency', 'TextTransparency', 0, 1, 0.01),
+    select('fontFace', 'Fonte', [
+      { value: 'Arial', label: 'Arial' }, { value: 'Inter', label: 'Inter' }, { value: 'Roboto', label: 'Roboto' },
+      { value: 'Georgia', label: 'Georgia' }, { value: 'Monospace', label: 'Monoespaçada' }
+    ]),
+    select('fontWeight', 'Espessura', [
+      { value: '400', label: 'Regular' }, { value: '500', label: 'Média' },
+      { value: '600', label: 'Seminegrito' }, { value: '700', label: 'Negrito' }
+    ]),
+    number('textSize', 'TextSize', 1, 100), checkbox('textScaled', 'TextScaled'), checkbox('textWrapped', 'TextWrapped'),
+    select('textXAlignment', 'TextXAlignment', [
+      { value: 'Left', label: 'Left' }, { value: 'Center', label: 'Center' }, { value: 'Right', label: 'Right' }
+    ]),
+    select('textYAlignment', 'TextYAlignment', [
+      { value: 'Top', label: 'Top' }, { value: 'Center', label: 'Center' }, { value: 'Bottom', label: 'Bottom' }
+    ]),
+    checkbox('richText', 'RichText'), slider('lineHeight', 'Altura da linha', 1, 2, 0.05)
+  ]},
+  { title: 'Behavior', fields: [checkbox('autoButtonColor', 'AutoButtonColor'), checkbox('interactable', 'Interactable')] },
   { title: 'Data', fields: [text('name', 'Name'), number('zIndex', 'ZIndex', -2147483648, 2147483647)] },
   ...layout
 ]});
@@ -193,6 +215,27 @@ registerPropertySchema('ImageLabel', { sections: [
   { title: 'Layout', fields: frameLayout }
 ]});
 
+registerPropertySchema('ImageButton', { sections: [
+  { title: 'Appearance', fields: [
+    color('backgroundColor3', 'BackgroundColor3'), slider('backgroundTransparency', 'BackgroundTransparency', 0, 1, 0.01),
+    color('borderColor3', 'BorderColor3'), number('borderSizePixel', 'BorderSizePixel', 0, 30), ...commonAppearance
+  ]},
+  { title: 'Image', fields: [
+    { key: 'assetId', label: 'Image', type: 'asset', accept: 'image/*' },
+    { key: 'hoverAssetId', label: 'HoverImage', type: 'asset', accept: 'image/*' },
+    { key: 'pressedAssetId', label: 'PressedImage', type: 'asset', accept: 'image/*' },
+    color('imageColor3', 'ImageColor3'), slider('imageTransparency', 'ImageTransparency', 0, 1, 0.01),
+    select('fit', 'ScaleType', [
+      { value: 'fill', label: 'Stretch' }, { value: 'contain', label: 'Fit' },
+      { value: 'cover', label: 'Crop' }, { value: 'tile', label: 'Tile' }
+    ]),
+    { ...udim2('tileSize', 'TileSize', 'TileSize'), visibleWhen: { key: 'fit', value: 'tile' } }
+  ]},
+  { title: 'Behavior', fields: [checkbox('autoButtonColor', 'AutoButtonColor'), checkbox('interactable', 'Interactable')] },
+  { title: 'Data', fields: [text('name', 'Name'), number('zIndex', 'ZIndex', -2147483648, 2147483647)] },
+  ...layout
+]});
+
 registerPropertySchema('UIBackdrop', { sections: [
   instanceSection,
   { title: 'Behavior', fields: [checkbox('enabled', 'Enabled')] },
@@ -203,6 +246,5 @@ registerPropertySchema('UIBackdrop', { sections: [
     { ...slider('contrast', 'Contrast', 0.5, 1.5, 0.01), enabledOnly: true },
     { ...color('tintColor', 'Tint color'), enabledOnly: true },
     { ...slider('tintOpacity', 'Tint strength', 0, 0.5, 0.01), enabledOnly: true },
-    { ...checkbox('glassBorder', 'Borda de vidro'), enabledOnly: true }
   ]}
 ]});
