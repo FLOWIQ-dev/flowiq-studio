@@ -1,5 +1,5 @@
 const ID = () => globalThis.crypto?.randomUUID?.() || 'node_' + Date.now().toString(36) + Math.random().toString(36).slice(2);
-const TYPES = new Set(['Frame', 'TextButton', 'TextLabel', 'ImageLabel', 'UIBackdrop']);
+const TYPES = new Set(['Frame', 'TextButton', 'ImageButton', 'TextLabel', 'ImageLabel', 'UIBackdrop']);
 const finite = (value, fallback = 0) => Number.isFinite(Number(value)) ? Number(value) : fallback;
 export const normalizeZIndex = value => Math.max(-2147483648, Math.min(2147483647, Math.round(finite(value, 1))));
 export const UDim = (scale = 0, offset = 0) => ({ scale: finite(scale), offset: finite(offset) });
@@ -9,8 +9,9 @@ export const UDim2 = (xScale = 0, xOffset = 0, yScale = 0, yOffset = 0) => ({
 });
 const DEFAULTS = Object.freeze({
   Frame: { x: 24, y: 24, width: 320, height: 220, position: UDim2(0, 24, 0, 24), size: UDim2(0, 320, 0, 220), anchorPoint: { x: 0, y: 0 }, background: '#1b2940', backgroundColor3: '#1b2940', backgroundTransparency: 0, radius: 0, opacity: 1, border: '#334155', borderColor3: '#334155', borderWidth: 0, borderSizePixel: 0, borderMode: 'Outline', rotation: 0, visible: true, archivable: true, clipsDescendants: false, active: false, interactable: true, selectable: false, selectionOrder: 0, layoutOrder: 0, zIndex: 1, automaticSize: 'None', sizeConstraint: 'RelativeXY', style: 'Custom' },
-  UIBackdrop: { x: 0, y: 0, width: 1, height: 1, position: UDim2(0, 0, 0, 0), size: UDim2(0, 1, 0, 1), anchorPoint: { x: 0, y: 0 }, enabled: true, effect: 'Blur', blur: 22, saturation: 1.35, brightness: 1.08, contrast: 1.08, tintColor: '#dbeafe', tintOpacity: 0.08, glassBorder: false, visible: true },
-  TextButton: { x: 24, y: 24, width: 160, height: 48, position: UDim2(0, 24, 0, 24), size: UDim2(0, 160, 0, 48), anchorPoint: { x: 0, y: 0 }, background: '#2563eb', color: '#ffffff', radius: 10, fontSize: 15, text: 'Botão', opacity: 1, visible: true, border: '#334155', borderWidth: 0, zIndex: 1 },
+  UIBackdrop: { x: 0, y: 0, width: 1, height: 1, position: UDim2(0, 0, 0, 0), size: UDim2(0, 1, 0, 1), anchorPoint: { x: 0, y: 0 }, enabled: true, effect: 'Blur', blur: 22, saturation: 1.35, brightness: 1.08, contrast: 1.08, tintColor: '#dbeafe', tintOpacity: 0.08, visible: true },
+  TextButton: { x: 24, y: 24, width: 160, height: 48, position: UDim2(0, 24, 0, 24), size: UDim2(0, 160, 0, 48), anchorPoint: { x: 0, y: 0 }, backgroundColor3: '#2563eb', backgroundTransparency: 0, textColor3: '#ffffff', radius: 10, textSize: 15, fontFace: 'Arial', fontWeight: '500', text: 'Botão', textTransparency: 0, textScaled: false, textWrapped: false, textXAlignment: 'Center', textYAlignment: 'Center', richText: false, lineHeight: 1, opacity: 1, visible: true, borderColor3: '#334155', borderSizePixel: 0, autoButtonColor: true, interactable: true, zIndex: 1 },
+  ImageButton: { x: 24, y: 24, width: 140, height: 120, position: UDim2(0, 24, 0, 24), size: UDim2(0, 140, 0, 120), anchorPoint: { x: 0, y: 0 }, backgroundColor3: '#24344c', backgroundTransparency: 0, radius: 10, assetId: '', hoverAssetId: '', pressedAssetId: '', imageColor3: '#ffffff', imageTransparency: 0, fit: 'contain', tileSize: UDim2(0, 64, 0, 64), autoButtonColor: true, interactable: true, opacity: 1, visible: true, borderColor3: '#334155', borderSizePixel: 0, zIndex: 1 },
   TextLabel: { x: 24, y: 24, width: 220, height: 42, position: UDim2(0, 24, 0, 24), size: UDim2(0, 220, 0, 42), anchorPoint: { x: 0, y: 0 }, background: '#a3a2a5', backgroundColor3: '#a3a2a5', backgroundTransparency: 0, color: '#000000', textColor3: '#000000', textTransparency: 0, fontFace: 'Arial', fontWeight: '400', textSize: 14, textScaled: false, textWrapped: false, textXAlignment: 'Center', textYAlignment: 'Center', richText: false, lineHeight: 1, radius: 0, fontSize: 14, text: 'Label', opacity: 1, visible: true, border: '#000000', borderWidth: 0, zIndex: 1 },
   ImageLabel: { x: 24, y: 24, width: 140, height: 120, position: UDim2(0, 24, 0, 24), size: UDim2(0, 140, 0, 120), anchorPoint: { x: 0, y: 0 }, background: '#24344c', backgroundColor3: '#24344c', backgroundTransparency: 0, color: '#ffffff', radius: 10, opacity: 1, visible: true, border: '#334155', borderWidth: 0, assetId: '', fit: 'cover', imageTransparency: 0, imageColor3: '#ffffff', tileSize: UDim2(0, 64, 0, 64), zIndex: 1 }
 });
@@ -81,8 +82,14 @@ export class SceneNode {
     const clean = cleanProps(props);
     const merged = { rotation: 0, ...DEFAULTS[type], ...clean };
     // Blur is the only supported material. Older effect values migrate safely.
-    if (type === 'UIBackdrop') merged.effect = 'Blur';
+    if (type === 'UIBackdrop') { merged.effect = 'Blur'; delete merged.glassBorder; }
     else merged.zIndex = normalizeZIndex(merged.zIndex);
+    if (type === 'TextButton') {
+      if (Object.hasOwn(clean, 'background') && !Object.hasOwn(clean, 'backgroundColor3')) merged.backgroundColor3 = clean.background;
+      if (Object.hasOwn(clean, 'color') && !Object.hasOwn(clean, 'textColor3')) merged.textColor3 = clean.color;
+      if (Object.hasOwn(clean, 'fontSize') && !Object.hasOwn(clean, 'textSize')) merged.textSize = clean.fontSize;
+      if (Object.hasOwn(clean, 'textAlign') && !Object.hasOwn(clean, 'textXAlignment')) merged.textXAlignment = clean.textAlign === 'left' ? 'Left' : clean.textAlign === 'right' ? 'Right' : 'Center';
+    }
     if (!Object.hasOwn(clean, 'position')) merged.position = {
       x: { scale: 0, offset: finite(clean.x, DEFAULTS[type].x) },
       y: { scale: 0, offset: finite(clean.y, DEFAULTS[type].y) }
@@ -223,7 +230,8 @@ export class Scene {
 export const COMPONENTS = Object.freeze([
   { type: 'Frame', label: 'Frame', category: 'Contêineres', detail: 'Container para outros elementos' },
   { type: 'UIBackdrop', label: 'UIBackdrop', category: 'Aparência', detail: 'Material e efeitos atrás do fundo do Frame' },
-  { type: 'TextButton', label: 'TextButton', category: 'Interação', detail: 'Botão interativo' },
+  { type: 'TextButton', label: 'TextButton', category: 'Interação', detail: 'Botão de texto com evento Activated' },
+  { type: 'ImageButton', label: 'ImageButton', category: 'Interação', detail: 'Botão de imagem com estados normal, hover e pressionado' },
   { type: 'TextLabel', label: 'TextLabel', category: 'Texto', detail: 'Texto e títulos' },
   { type: 'ImageLabel', label: 'ImageLabel', category: 'Mídia', detail: 'Imagem e mídia' }
 ]);
