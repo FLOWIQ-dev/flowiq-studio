@@ -4,12 +4,12 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#101827">
-  <meta name="flowiq-build" content="2026.11.19.147">
+  <meta name="flowiq-build" content="2026.11.19.148">
   <meta name="description" content="Flowiq Studio, editor mobile-first de interfaces 2D.">
   <title>Flowiq Studio</title>
   <link rel="manifest" href="./manifest.json">
   <link rel="icon" href="./assets/icon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="./css/studio.css?v=2026.11.19.147">
+  <link rel="stylesheet" href="./css/studio.css?v=2026.11.19.148">
 </head>
 <body>
   <main id="screen-home" class="screen home-screen">
@@ -100,7 +100,7 @@
     <section class="secondary-content"><span class="eyebrow">PREFERÊNCIAS E DADOS</span><h1>Configurações</h1><p>Gerencie seus dados locais e crie cópias de segurança.</p>
       <div class="settings-card"><div><strong>Projetos</strong><span id="settings-count">0</span></div><div><strong>Arquivos</strong><span id="settings-assets">0</span></div></div>
       <div class="settings-actions"><button id="export-backup" class="button primary">Exportar backup completo</button><button id="import-backup" class="button subtle">Importar backup</button><input id="backup-input" type="file" accept=".flowiq-backup,.json,application/json" hidden></div>
-      <p class="settings-note">O backup inclui projetos e arquivos da biblioteca. Guarde-o em um local seguro.</p>
+      <p id="settings-storage" class="settings-note">Verificando armazenamento…</p><p class="settings-note">O backup inclui projetos, arquivos da biblioteca e histórico de versões. Guarde uma cópia fora deste dispositivo.</p>
     </section>
   </main>
 
@@ -117,12 +117,12 @@
       });
       window.addEventListener('load', async () => {
         try {
-          const registration = await navigator.serviceWorker.register('./sw.js?v=2026.11.19.147', { updateViaCache: 'none' });
+          const registration = await navigator.serviceWorker.register('./sw.js?v=2026.11.19.148', { updateViaCache: 'none' });
           await registration.update();
         } catch (error) { console.warn('Flowiq: cache offline indisponível.', error); }
       });
     }
   </script>
-  <script type="module" src="./js/app.js?v=2026.11.19.147"></script>
+  <script type="module" src="./js/app.js?v=2026.11.19.148"></script>
 </body>
 </html>
