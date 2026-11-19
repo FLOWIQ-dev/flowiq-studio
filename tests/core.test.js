@@ -192,7 +192,7 @@ test('ZIndex follows Roblox Sibling semantics with signed 32-bit integers', asyn
 });
 
 test('Inspector property schemas are class-based and extensible', () => {
-  assert.equal(PROPERTY_SCHEMA_VERSION, 19);
+  assert.equal(PROPERTY_SCHEMA_VERSION, 20);
   const frame = getPropertySchema('Frame');
   assert.ok(frame.sections.some(section => section.title === 'Data'));
   const frameKeys = frame.sections.flatMap(section => section.fields.map(field => field.key));
@@ -643,4 +643,28 @@ test('TextButton and ImageButton are complete GuiButton instances with Roblox-st
   assert.match(view, /p\.pressedAssetId/);
   assert.match(view, /onRun\(node, 'click'\)/);
   assert.match(html, /data-add-type="ImageButton"/);
+});
+
+
+test('Text and image GUI classes share one square Roblox-style visual and inspector schema', async () => {
+  const scene = new Scene();
+  for (const type of ['TextButton', 'ImageButton', 'TextLabel', 'ImageLabel']) {
+    const node = scene.create(type);
+    assert.equal(node.props.radius, 0, type + ' must have square corners');
+    const fields = getPropertySchema(type).sections.flatMap(section => section.fields);
+    for (const key of ['backgroundColor3', 'backgroundTransparency', 'borderColor3', 'borderSizePixel', 'opacity', 'rotation', 'visible', 'position', 'size', 'anchorPoint']) {
+      assert.ok(fields.some(field => field.key === key), type + ' should share ' + key);
+    }
+  }
+  const textButton = getPropertySchema('TextButton').sections.find(section => section.title === 'Text').fields;
+  const textLabel = getPropertySchema('TextLabel').sections.find(section => section.title === 'Text').fields;
+  assert.deepEqual(textButton, textLabel, 'TextButton and TextLabel must use the same text controls');
+  const imageButton = getPropertySchema('ImageButton').sections.find(section => section.title === 'Image').fields.filter(field => !['hoverAssetId', 'pressedAssetId'].includes(field.key));
+  const imageLabel = getPropertySchema('ImageLabel').sections.find(section => section.title === 'Image').fields;
+  assert.deepEqual(imageButton, imageLabel, 'ImageButton and ImageLabel must share image controls');
+  const view = await readFile(new URL('../js/editor/view.js', import.meta.url), 'utf8');
+  const html = await readFile(new URL('../index.html', import.meta.url), 'utf8');
+  assert.match(view, /export function renderInspector\(container, node/);
+  assert.equal((html.match(/id="inspector"/g) || []).length, 1, 'the editor must have exactly one dynamic Inspector host');
+  assert.match(view, /\['TextButton', 'ImageButton', 'TextLabel', 'ImageLabel'\]\.includes\(node\.type\) \? '0'/);
 });

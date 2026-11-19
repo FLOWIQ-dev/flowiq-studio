@@ -185,7 +185,7 @@ export function renderScene(container, scene, { selectedId = null, preview = fal
       item.onpointerleave = null;
       item.style.boxShadow = 'none';
     } else {
-      item.style.borderRadius = Math.max(0, Number(p.radius) || 0) + 'px';
+      item.style.borderRadius = ['TextButton', 'ImageButton', 'TextLabel', 'ImageLabel'].includes(node.type) ? '0' : Math.max(0, Number(p.radius) || 0) + 'px';
       item.style.border = Math.max(0, Number(p.borderSizePixel ?? p.borderWidth) || 0) + 'px solid ' + (p.borderColor3 || p.border || 'transparent');
       if (node.type === 'TextButton' || node.type === 'TextLabel' || node.type === 'ImageLabel' || node.type === 'ImageButton') {
         const bg = String(p.backgroundColor3 || p.background || 'transparent');

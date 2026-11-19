@@ -1369,3 +1369,9 @@ body[data-screen=editor]{
 .scene-node.scene-textbutton>.scene-text-content{display:flex;flex:1;align-items:center;justify-content:center;box-sizing:border-box;width:100%;height:100%;min-width:0;min-height:0;overflow:hidden;pointer-events:none}
 .preview-screen .scene-imagebutton{cursor:pointer}
 .preview-screen .scene-imagebutton:focus-visible,.preview-screen .scene-textbutton:focus-visible{outline:2px solid #70b2ff;outline-offset:2px}
+
+/* Roblox GuiObject primitives: square geometry shared by text and image classes. */
+.scene-node.scene-textbutton,.scene-node.scene-textlabel,.scene-node.scene-imagebutton,.scene-node.scene-imagelabel{border-radius:0!important}
+.scene-node.scene-textbutton,.scene-node.scene-imagebutton{appearance:none;-webkit-appearance:none;border-radius:0;padding:0}
+.scene-node.scene-textbutton>.scene-text-content,.scene-node.scene-textlabel>.scene-text-content{border-radius:0}
+.scene-node.scene-imagebutton>.scene-image-layer,.scene-node.scene-imagelabel>.scene-image-layer,.scene-image-content,.scene-image-tint{border-radius:0!important}
