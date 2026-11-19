@@ -23,9 +23,33 @@ export class Runtime {
     this.onLog('Pré-visualização encerrada.', 'info');
   }
 
+  executeProgram(program, node) {
+    for (const command of program.commands) {
+      if (command.type === 'print') { this.onLog(command.value, 'info'); continue; }
+      const matches = command.target === 'self' ? [node] : [...this.scene.nodes.values()].filter(item => item.type !== 'Script' && item.name.toLocaleLowerCase('pt-BR') === command.target.toLocaleLowerCase('pt-BR'));
+      if (matches.length !== 1) { this.onLog(matches.length ? 'FlowScript: nome duplicado "' + command.target + '".' : 'FlowScript: objeto "' + command.target + '" não encontrado.', 'error'); continue; }
+      const target = matches[0];
+      if (command.type === 'show') target.props.visible = true;
+      else if (command.type === 'hide') target.props.visible = false;
+      else if (command.type === 'setVisible') target.props.visible = command.value;
+      else if (command.type === 'setText') target.props.text = command.value;
+      else if (command.type === 'setProperty') target.props[command.property] = command.value;
+    }
+  }
+
   dispatch(node, eventName) {
     if (!this.running || !node) return;
     let count = 0;
+    const scriptInstances = [...this.scene.nodes.values()].filter(item => item.type === 'Script' && typeof item.props.source === 'string');
+    for (const script of scriptInstances) {
+      try {
+        const program = parseFlowScript(script.props.source);
+        if (eventName !== program.event) continue;
+        if (program.eventTarget && program.eventTarget.toLocaleLowerCase('pt-BR') !== 'self' && program.eventTarget.toLocaleLowerCase('pt-BR') !== node.name.toLocaleLowerCase('pt-BR')) continue;
+        this.executeProgram(program, node);
+        count += program.commands.length;
+      } catch (error) { this.onLog('FlowScript (' + script.name + '): ' + (error.message || 'erro no script.'), 'error'); }
+    }
     const scripts = Array.isArray(this.project?.scripts) ? this.project.scripts : [];
     for (const script of scripts.filter(item => item && item.nodeId === node.id && typeof item.source === 'string')) {
       try {
@@ -35,7 +59,7 @@ export class Runtime {
           if (command.type === 'print') { this.onLog(command.value, 'info'); continue; }
           const matches = command.target === 'self'
             ? [node]
-            : [...this.scene.nodes.values()].filter(item => item.name.toLocaleLowerCase('pt-BR') === command.target.toLocaleLowerCase('pt-BR'));
+            : [...this.scene.nodes.values()].filter(item => item.type !== 'Script' && item.name.toLocaleLowerCase('pt-BR') === command.target.toLocaleLowerCase('pt-BR'));
           if (matches.length !== 1) {
             this.onLog(matches.length ? 'FlowScript: nome duplicado "' + command.target + '".' : 'FlowScript: objeto "' + command.target + '" não encontrado.', 'error');
             continue;
