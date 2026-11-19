@@ -259,13 +259,14 @@ export function renderScene(container, scene, { selectedId = null, preview = fal
     item.append(childContainer);
     if (node.type === 'ImageLabel') {
       const asset = assetMap.get(p.assetId);
-      if (asset?.blob) {
-        usedAssetIds.add(asset.id);
-        let cached = assetUrls.get(asset.id);
-        if (!cached || cached.blob !== asset.blob) {
+      const initialAsset = asset?.blob ? asset : node.type === 'ImageButton' ? assetMap.get(p.hoverAssetId) || assetMap.get(p.pressedAssetId) : null;
+      if (initialAsset?.blob) {
+        usedAssetIds.add(initialAsset.id);
+        let cached = assetUrls.get(initialAsset.id);
+        if (!cached || cached.blob !== initialAsset.blob) {
           if (cached?.url) URL.revokeObjectURL(cached.url);
-          cached = { blob: asset.blob, url: URL.createObjectURL(asset.blob) };
-          assetUrls.set(asset.id, cached);
+          cached = { blob: initialAsset.blob, url: URL.createObjectURL(initialAsset.blob) };
+          assetUrls.set(initialAsset.id, cached);
         }
         const layer = preservedImageLayer || el('div', 'scene-image-layer');
         layer.replaceChildren();
@@ -322,7 +323,8 @@ export function renderScene(container, scene, { selectedId = null, preview = fal
         }
         layer.append(image, tint);
         item.insertBefore(layer, childContainer);
-        item.dataset.assetId = asset.id;
+        item.dataset.assetId = asset?.id || '';
+        if (!asset?.blob) { image.style.display = 'none'; layer.style.backgroundImage = 'none'; tint.style.maskImage = 'none'; tint.style.webkitMaskImage = 'none'; }
       } else {
         childContainer.style.backgroundImage = 'none';
         preservedImageLayer?.remove();
@@ -491,7 +493,8 @@ export function renderInspector(container, node, { onChange, onDelete, onDuplica
       const selectedAsset = assets.find(asset => asset.id === propertyValue);
       input.textContent = selectedAsset?.name || 'Escolher imagem…';
       input.dataset.openAssetPicker = 'true';
-      input.setAttribute('aria-label', 'Escolher imagem da Biblioteca');
+      input.dataset.assetProperty = key;
+      input.setAttribute('aria-label', 'Escolher imagem da Biblioteca: ' + labelText);
     } else if (type === 'select') {
       input = el('select');
       (descriptor.values || []).forEach(value => {
