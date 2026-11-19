@@ -4,12 +4,12 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#101827">
-  <meta name="flowiq-build" content="2026.11.19.148">
+  <meta name="flowiq-build" content="2026.11.19.149">
   <meta name="description" content="Flowiq Studio, editor mobile-first de interfaces 2D.">
   <title>Flowiq Studio</title>
   <link rel="manifest" href="./manifest.json">
   <link rel="icon" href="./assets/icon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="./css/studio.css?v=2026.11.19.148">
+  <link rel="stylesheet" href="./css/studio.css?v=2026.11.19.149">
 </head>
 <body>
   <main id="screen-home" class="screen home-screen">
@@ -80,6 +80,26 @@
       <button data-panel="inspector" aria-pressed="false"><span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/><circle cx="9" cy="6" r="2"/><circle cx="15" cy="12" r="2"/><circle cx="7" cy="18" r="2"/></svg></span>Propriedades</button>
     </nav>
     <section class="console-dock"><div class="console-heading"><strong>Console</strong><span>Saída do Studio</span></div><div id="console-log" class="console-log"><p class="log-line">Studio pronto.</p></div></section>
+    <section id="script-editor-modal" class="script-editor-modal" hidden>
+      <div class="script-editor-dialog" role="dialog" aria-modal="true" aria-labelledby="script-editor-title">
+        <header><div><span class="eyebrow">FLOWIQ SCRIPTING</span><h2 id="script-editor-title">Script</h2></div><button id="script-editor-close" class="icon-button" type="button" aria-label="Fechar editor">×</button></header>
+        <p class="script-editor-intro">FlowScript é a linguagem de scripts do Flowiq. Escreva o comportamento deste botão e teste na Prévia.</p>
+        <label class="script-source-label" for="script-editor-source">Código</label>
+        <textarea id="script-editor-source" spellcheck="false" autocapitalize="off" autocomplete="off" autocorrect="off"></textarea>
+        <div class="script-editor-help">
+          <strong>Comandos disponíveis</strong>
+          <code>show("Painel");</code>
+          <code>hide("Painel");</code>
+          <code>setVisible("Painel", true);</code>
+          <code>setText("Titulo", "Olá!");</code>
+          <code>setProperty("Painel", "opacity", 0.8);</code>
+          <code>print("Botão pressionado");</code>
+          <small>Estrutura: <code>on("click", () =&gt; { ... });</code> Use o nome exato da instância ou <code>"self"</code> para este botão. Não é JavaScript livre: só os comandos seguros listados são executados.</small>
+        </div>
+        <p id="script-editor-error" class="script-editor-error" role="alert"></p>
+        <footer><button id="script-editor-cancel" class="button subtle" type="button">Cancelar</button><button id="script-editor-save" class="button primary" type="button">Salvar script</button></footer>
+      </div>
+    </section>
     <input id="image-picker" type="file" accept="image/*" hidden>
     <div id="image-picker-modal" class="image-picker-modal" hidden>
       <section class="image-picker-dialog" role="dialog" aria-modal="true" aria-labelledby="image-picker-title">
@@ -117,12 +137,12 @@
       });
       window.addEventListener('load', async () => {
         try {
-          const registration = await navigator.serviceWorker.register('./sw.js?v=2026.11.19.148', { updateViaCache: 'none' });
+          const registration = await navigator.serviceWorker.register('./sw.js?v=2026.11.19.149', { updateViaCache: 'none' });
           await registration.update();
         } catch (error) { console.warn('Flowiq: cache offline indisponível.', error); }
       });
     }
   </script>
-  <script type="module" src="./js/app.js?v=2026.11.19.148"></script>
+  <script type="module" src="./js/app.js?v=2026.11.19.149"></script>
 </body>
 </html>
