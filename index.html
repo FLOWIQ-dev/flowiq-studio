@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#101827">
-  <meta name="flowiq-build" content="2026.11.19.149">
+  <meta name="flowiq-build" content="2026.11.19.150">
   <meta name="description" content="Flowiq Studio, editor mobile-first de interfaces 2D.">
   <title>Flowiq Studio</title>
   <link rel="manifest" href="./manifest.json">
@@ -68,6 +68,9 @@
             <section class="object-category"><h3>Aparência</h3>
               <button data-add-type="UIBackdrop"><b><svg viewBox="0 0 24 24"><path d="M12 2.8C9.2 6.5 5.8 10 5.8 14.2a6.2 6.2 0 0 0 12.4 0C18.2 10 14.8 6.5 12 2.8Z"/><path d="M9.2 15.1a3 3 0 0 0 2.7 2.8"/></svg></b><span><strong>UIBackdrop</strong><small>Desfoque ajustável no fundo do Frame</small></span></button>
             </section>
+            <section class="object-category"><h3>Scripting</h3>
+              <button data-add-type="Script"><b><svg viewBox="0 0 24 24"><path d="m8 5-5 7 5 7M16 5l5 7-5 7M14 3l-4 18"/></svg></b><span><strong>Script</strong><small>Código independente para controlar a interface</small></span></button>
+            </section>
             <section class="object-category"><h3>Mídia</h3>
               <button data-add-type="ImageLabel"><b><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9" r="1.5"/><path d="m4 17 5-5 3 3 3-4 5 6"/></svg></b><span><strong>ImageLabel</strong><small>Imagem vinculada à biblioteca</small></span></button>
             </section>
@@ -83,7 +86,7 @@
     <section id="script-editor-modal" class="script-editor-modal" hidden>
       <div class="script-editor-dialog" role="dialog" aria-modal="true" aria-labelledby="script-editor-title">
         <header><div><span class="eyebrow">FLOWIQ SCRIPTING</span><h2 id="script-editor-title">Script</h2></div><button id="script-editor-close" class="icon-button" type="button" aria-label="Fechar editor">×</button></header>
-        <p class="script-editor-intro">FlowScript é a linguagem de scripts do Flowiq. Escreva o comportamento deste botão e teste na Prévia.</p>
+        <p class="script-editor-intro">FlowScript é a linguagem de scripts do Flowiq. Este Script é uma instância independente. Escolha o botão pelo nome no evento e controle qualquer objeto da cena.</p>
         <label class="script-source-label" for="script-editor-source">Código</label>
         <textarea id="script-editor-source" spellcheck="false" autocapitalize="off" autocomplete="off" autocorrect="off"></textarea>
         <div class="script-editor-help">
@@ -94,7 +97,7 @@
           <code>setText("Titulo", "Olá!");</code>
           <code>setProperty("Painel", "opacity", 0.8);</code>
           <code>print("Botão pressionado");</code>
-          <small>Estrutura: <code>on("click", () =&gt; { ... });</code> Use o nome exato da instância ou <code>"self"</code> para este botão. Não é JavaScript livre: só os comandos seguros listados são executados.</small>
+          <small>Estrutura: <code>on("click", "Botao", () =&gt; { ... });</code> O segundo argumento é o nome do TextButton ou ImageButton que dispara o Script. Use <code>"self"</code> para o botão que disparou o evento. Não é JavaScript livre: só os comandos seguros listados são executados.</small>
         </div>
         <p id="script-editor-error" class="script-editor-error" role="alert"></p>
         <footer><button id="script-editor-cancel" class="button subtle" type="button">Cancelar</button><button id="script-editor-save" class="button primary" type="button">Salvar script</button></footer>
