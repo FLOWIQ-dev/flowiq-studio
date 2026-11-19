@@ -23,9 +23,9 @@ export function parseFlowScript(source) {
     .filter(item => item.raw && !item.raw.startsWith('//'));
   if (!meaningful.length) return { event: 'click', commands: [] };
   const header = meaningful.shift();
-  if (!/^on\(\s*"(?:click|Activated)"\s*,\s*\(\)\s*=>\s*\{\s*$/.test(header.raw)) {
-    throw new Error('Linha ' + header.line + ': comece com on("click", () => {');
-  }
+  const headerMatch = header.raw.match(/^on\(\s*"(click|Activated)"\s*,\s*(?:"([^"]+)"\s*,\s*)?\(\)\s*=>\s*\{\s*$/);
+  if (!headerMatch) throw new Error('Linha ' + header.line + ': use on("click", "NomeDoBotao", () => {');
+  const eventTarget = headerMatch[2] ?? null;
   const closing = meaningful.pop();
   if (!closing || closing.raw !== '});') throw new Error('Finalize o evento com });');
   const commands = [];
@@ -62,5 +62,5 @@ export function parseFlowScript(source) {
     }
     if (commands.length > MAX_COMMANDS) throw new Error('O script ultrapassa o limite de 100 comandos.');
   }
-  return { event: 'click', commands };
+  return { event: 'click', eventTarget, commands };
 }
