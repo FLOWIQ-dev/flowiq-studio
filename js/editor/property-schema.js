@@ -1,6 +1,5 @@
-// Property schema registry for the Inspector.
-// Keep property definitions separate from rendering so classes can add or override
-// categories without coupling the data model to DOM controls.
+// One Inspector renders the schema for whichever instance is selected.
+// Class schemas are data only: they do not create per-class panels or renderers.
 const registry = new Map();
 
 const number = (key, label, min, max, step = 1) => ({ key, label, type: 'number', min, max, step });
@@ -13,65 +12,74 @@ const color = (key, label) => ({ key, label, type: 'color' });
 const select = (key, label, values) => ({ key, label, type: 'select', values });
 const checkbox = (key, label) => ({ key, label, type: 'checkbox' });
 
-const sharedLayoutFields = [
+const layoutFields = [
   udim2('position', 'Position', 'Position'),
   udim2('size', 'Size', 'Size'),
   vector2('anchorPoint', 'AnchorPoint', 'AnchorPoint')
 ];
-const instanceSection = { title: 'Data', fields: [text('name', 'Name')] };
-const layout = [{ title: 'Layout', fields: sharedLayoutFields }];
-const commonAppearance = [
+const commonAppearanceFields = [
   slider('opacity', 'Opacity', 0, 1, 0.01),
   slider('rotation', 'Rotation', -360, 360, 1),
   checkbox('visible', 'Visible')
 ];
-
-const appearance = [
-  color('background', 'Fundo'),
-  color('border', 'Borda'),
-  number('borderWidth', 'Espessura da borda', 0, 30),
-  slider('opacity', 'Opacidade', 0, 1, 0.01),
-  slider('rotation', 'Rotação', -360, 360, 1),
-  checkbox('visible', 'Visível')
+const guiAppearanceFields = [
+  color('backgroundColor3', 'BackgroundColor3'),
+  slider('backgroundTransparency', 'BackgroundTransparency', 0, 1, 0.01),
+  color('borderColor3', 'BorderColor3'),
+  number('borderSizePixel', 'BorderSizePixel', 0, 30),
+  ...commonAppearanceFields
 ];
-
-const textAppearance = [
-  color('color', 'Cor do texto'),
-  text('text', 'Texto'),
-  number('fontSize', 'Tamanho do texto', 8, 120),
-  select('textAlign', 'Alinhamento do texto', [
-    { value: 'left', label: 'Esquerda' },
-    { value: 'center', label: 'Centro' },
-    { value: 'right', label: 'Direita' }
+const textFields = [
+  textarea('text', 'Text'),
+  color('textColor3', 'TextColor3'),
+  slider('textTransparency', 'TextTransparency', 0, 1, 0.01),
+  select('fontFace', 'Fonte', [
+    { value: 'Arial', label: 'Arial' }, { value: 'Inter', label: 'Inter' },
+    { value: 'Roboto', label: 'Roboto' }, { value: 'Georgia', label: 'Georgia' },
+    { value: 'Monospace', label: 'Monoespaçada' }
   ]),
-  select('fontWeight', 'Peso do texto', [
-    { value: '400', label: 'Normal' },
-    { value: '500', label: 'Médio' },
-    { value: '600', label: 'Seminegrito' },
-    { value: '700', label: 'Negrito' }
-  ])
+  select('fontWeight', 'Espessura', [
+    { value: '400', label: 'Regular' }, { value: '500', label: 'Média' },
+    { value: '600', label: 'Seminegrito' }, { value: '700', label: 'Negrito' }
+  ]),
+  number('textSize', 'TextSize', 1, 100),
+  checkbox('textScaled', 'TextScaled'),
+  checkbox('textWrapped', 'TextWrapped'),
+  select('textXAlignment', 'TextXAlignment', [
+    { value: 'Left', label: 'Left' }, { value: 'Center', label: 'Center' }, { value: 'Right', label: 'Right' }
+  ]),
+  select('textYAlignment', 'TextYAlignment', [
+    { value: 'Top', label: 'Top' }, { value: 'Center', label: 'Center' }, { value: 'Bottom', label: 'Bottom' }
+  ]),
+  checkbox('richText', 'RichText'),
+  slider('lineHeight', 'Altura da linha', 1, 2, 0.05)
 ];
+const imageFields = [
+  { key: 'assetId', label: 'Image', type: 'asset', accept: 'image/*' },
+  color('imageColor3', 'ImageColor3'),
+  slider('imageTransparency', 'ImageTransparency', 0, 1, 0.01),
+  select('fit', 'ScaleType', [
+    { value: 'fill', label: 'Stretch' }, { value: 'contain', label: 'Fit' },
+    { value: 'cover', label: 'Crop' }, { value: 'tile', label: 'Tile' }
+  ]),
+  { ...udim2('tileSize', 'TileSize', 'TileSize'), visibleWhen: { key: 'fit', value: 'tile' } }
+];
+const instanceFields = [text('name', 'Name'), number('zIndex', 'ZIndex', -2147483648, 2147483647)];
 
-export const PROPERTY_SCHEMA_VERSION = 19;
+export const PROPERTY_SCHEMA_VERSION = 20;
 
 export function registerPropertySchema(className, schema, { replace = false } = {}) {
   if (typeof className !== 'string' || (className !== '*' && !/^[A-Z][A-Za-z0-9]*$/.test(className))) {
     throw new TypeError('Nome de classe inválido para o Inspector.');
   }
-  if (!schema || !Array.isArray(schema.sections)) {
-    throw new TypeError('O schema precisa declarar uma lista de seções.');
-  }
+  if (!schema || !Array.isArray(schema.sections)) throw new TypeError('O schema precisa declarar uma lista de seções.');
   const normalized = {
     sections: schema.sections.map(section => {
-      if (!section || typeof section.title !== 'string' || !Array.isArray(section.fields)) {
-        throw new TypeError('Seção de propriedades inválida.');
-      }
+      if (!section || typeof section.title !== 'string' || !Array.isArray(section.fields)) throw new TypeError('Seção de propriedades inválida.');
       return {
         title: section.title,
         fields: section.fields.map(field => {
-          if (!field || typeof field.key !== 'string' || typeof field.label !== 'string') {
-            throw new TypeError('Campo de propriedade inválido.');
-          }
+          if (!field || typeof field.key !== 'string' || typeof field.label !== 'string') throw new TypeError('Campo de propriedade inválido.');
           if (!['text', 'textarea', 'number', 'slider', 'color', 'select', 'checkbox', 'asset', 'udim2', 'vector2'].includes(field.type)) {
             throw new TypeError('Tipo de campo não suportado: ' + field.type);
           }
@@ -93,19 +101,20 @@ export function listPropertySchemas() {
   return [...registry.entries()].map(([className, schema]) => ({ className, schema }));
 }
 
-const frameLayout = sharedLayoutFields;
-
 registerPropertySchema('*', { sections: [
-  instanceSection,
-  ...layout,
-  { title: 'Appearance', fields: [...appearance.filter(field => !['opacity', 'rotation', 'visible'].includes(field.key)), ...commonAppearance] }
+  { title: 'Data', fields: [text('name', 'Name')] },
+  { title: 'Layout', fields: layoutFields },
+  { title: 'Appearance', fields: [
+    color('background', 'Fundo'), color('border', 'Borda'), number('borderWidth', 'Espessura da borda', 0, 30),
+    ...commonAppearanceFields
+  ]}
 ]});
 
 registerPropertySchema('Frame', { sections: [
   { title: 'Appearance', fields: [
     color('backgroundColor3', 'BackgroundColor3'),
     slider('backgroundTransparency', 'BackgroundTransparency', 0, 1, 0.01),
-    ...commonAppearance
+    ...commonAppearanceFields
   ]},
   { title: 'Data', fields: [
     text('name', 'Name'),
@@ -117,127 +126,42 @@ registerPropertySchema('Frame', { sections: [
       { value: 'RelativeXY', label: 'RelativeXY' }, { value: 'RelativeXX', label: 'RelativeXX' },
       { value: 'RelativeYY', label: 'RelativeYY' }
     ]),
-    number('layoutOrder', 'LayoutOrder', -1000, 1000), number('zIndex', 'ZIndex', -2147483648, 2147483647),
+    number('layoutOrder', 'LayoutOrder', -1000, 1000),
+    number('zIndex', 'ZIndex', -2147483648, 2147483647),
     number('selectionOrder', 'SelectionOrder', 0, 1000)
   ]},
   { title: 'Behavior', fields: [
     checkbox('clipsDescendants', 'ClipsDescendants'), checkbox('active', 'Active'),
     checkbox('interactable', 'Interactable'), checkbox('selectable', 'Selectable')
   ]},
-  { title: 'Layout', fields: frameLayout }
+  { title: 'Layout', fields: layoutFields }
 ]});
 
-registerPropertySchema('TextButton', { sections: [
-  { title: 'Appearance', fields: [
-    color('backgroundColor3', 'BackgroundColor3'), slider('backgroundTransparency', 'BackgroundTransparency', 0, 1, 0.01),
-    color('borderColor3', 'BorderColor3'), number('borderSizePixel', 'BorderSizePixel', 0, 30), ...commonAppearance
-  ]},
-  { title: 'Text', fields: [
-    textarea('text', 'Text'), color('textColor3', 'TextColor3'), slider('textTransparency', 'TextTransparency', 0, 1, 0.01),
-    select('fontFace', 'Fonte', [
-      { value: 'Arial', label: 'Arial' }, { value: 'Inter', label: 'Inter' }, { value: 'Roboto', label: 'Roboto' },
-      { value: 'Georgia', label: 'Georgia' }, { value: 'Monospace', label: 'Monoespaçada' }
-    ]),
-    select('fontWeight', 'Espessura', [
-      { value: '400', label: 'Regular' }, { value: '500', label: 'Média' },
-      { value: '600', label: 'Seminegrito' }, { value: '700', label: 'Negrito' }
-    ]),
-    number('textSize', 'TextSize', 1, 100), checkbox('textScaled', 'TextScaled'), checkbox('textWrapped', 'TextWrapped'),
-    select('textXAlignment', 'TextXAlignment', [
-      { value: 'Left', label: 'Left' }, { value: 'Center', label: 'Center' }, { value: 'Right', label: 'Right' }
-    ]),
-    select('textYAlignment', 'TextYAlignment', [
-      { value: 'Top', label: 'Top' }, { value: 'Center', label: 'Center' }, { value: 'Bottom', label: 'Bottom' }
-    ]),
-    checkbox('richText', 'RichText'), slider('lineHeight', 'Altura da linha', 1, 2, 0.05)
-  ]},
-  { title: 'Behavior', fields: [checkbox('autoButtonColor', 'AutoButtonColor'), checkbox('interactable', 'Interactable')] },
-  { title: 'Data', fields: [text('name', 'Name'), number('zIndex', 'ZIndex', -2147483648, 2147483647)] },
-  ...layout
-]});
+const registerGuiClass = (className, kind, isButton = false) => {
+  const sections = [
+    { title: 'Appearance', fields: guiAppearanceFields },
+    { title: kind, fields: kind === 'Text' ? textFields : [
+      ...imageFields,
+      ...(isButton ? [
+        { key: 'hoverAssetId', label: 'HoverImage', type: 'asset', accept: 'image/*' },
+        { key: 'pressedAssetId', label: 'PressedImage', type: 'asset', accept: 'image/*' }
+      ] : [])
+    ]}
+  ];
+  if (isButton) sections.push({ title: 'Behavior', fields: [
+    checkbox('autoButtonColor', 'AutoButtonColor'), checkbox('interactable', 'Interactable')
+  ]});
+  sections.push({ title: 'Data', fields: instanceFields }, { title: 'Layout', fields: layoutFields });
+  registerPropertySchema(className, { sections });
+};
 
-registerPropertySchema('TextLabel', { sections: [
-  { title: 'Appearance', fields: [
-    color('backgroundColor3', 'BackgroundColor3'),
-    slider('backgroundTransparency', 'BackgroundTransparency', 0, 1, 0.01),
-    color('border', 'BorderColor3'), number('borderWidth', 'BorderSizePixel', 0, 30), ...commonAppearance
-  ]},
-  { title: 'Text', fields: [
-    textarea('text', 'Text'),
-    color('textColor3', 'TextColor3'),
-    slider('textTransparency', 'TextTransparency', 0, 1, 0.01),
-    select('fontFace', 'Fonte', [
-      { value: 'Arial', label: 'Arial' },
-      { value: 'Inter', label: 'Inter' },
-      { value: 'Roboto', label: 'Roboto' },
-      { value: 'Georgia', label: 'Georgia' },
-      { value: 'Monospace', label: 'Monoespaçada' }
-    ]),
-    select('fontWeight', 'Espessura', [
-      { value: '400', label: 'Regular' },
-      { value: '500', label: 'Média' },
-      { value: '600', label: 'Seminegrito' },
-      { value: '700', label: 'Negrito' }
-    ]),
-    number('textSize', 'Tamanho', 1, 100),
-    checkbox('textScaled', 'TextScaled'),
-    checkbox('textWrapped', 'TextWrapped'),
-    select('textXAlignment', 'TextXAlignment', [
-      { value: 'Left', label: 'Left' }, { value: 'Center', label: 'Center' }, { value: 'Right', label: 'Right' }
-    ]),
-    select('textYAlignment', 'TextYAlignment', [
-      { value: 'Top', label: 'Top' }, { value: 'Center', label: 'Center' }, { value: 'Bottom', label: 'Bottom' }
-    ]),
-    checkbox('richText', 'RichText'),
-    slider('lineHeight', 'Altura da linha', 1, 2, 0.05)
-  ]},
-  { title: 'Data', fields: [text('name', 'Name'), number('zIndex', 'ZIndex', -2147483648, 2147483647)] },
-  ...layout
-]});
-
-registerPropertySchema('ImageLabel', { sections: [
-  { title: 'Appearance', fields: [
-    color('backgroundColor3', 'BackgroundColor3'),
-    slider('backgroundTransparency', 'BackgroundTransparency', 0, 1, 0.01),
-    color('border', 'BorderColor3'), number('borderWidth', 'BorderSizePixel', 0, 30), ...commonAppearance
-  ]},
-  { title: 'Data', fields: [text('name', 'Name'), number('zIndex', 'ZIndex', -2147483648, 2147483647)] },
-  { title: 'Image', fields: [
-    { key: 'assetId', label: 'Image', type: 'asset', accept: 'image/*' },
-    color('imageColor3', 'ImageColor3'),
-    slider('imageTransparency', 'ImageTransparency', 0, 1, 0.01),
-    select('fit', 'ScaleType', [
-      { value: 'fill', label: 'Stretch' }, { value: 'contain', label: 'Fit' },
-      { value: 'cover', label: 'Crop' }, { value: 'tile', label: 'Tile' }
-    ]),
-    { ...udim2('tileSize', 'TileSize', 'TileSize'), visibleWhen: { key: 'fit', value: 'tile' } }
-  ]},
-  { title: 'Layout', fields: frameLayout }
-]});
-
-registerPropertySchema('ImageButton', { sections: [
-  { title: 'Appearance', fields: [
-    color('backgroundColor3', 'BackgroundColor3'), slider('backgroundTransparency', 'BackgroundTransparency', 0, 1, 0.01),
-    color('borderColor3', 'BorderColor3'), number('borderSizePixel', 'BorderSizePixel', 0, 30), ...commonAppearance
-  ]},
-  { title: 'Image', fields: [
-    { key: 'assetId', label: 'Image', type: 'asset', accept: 'image/*' },
-    { key: 'hoverAssetId', label: 'HoverImage', type: 'asset', accept: 'image/*' },
-    { key: 'pressedAssetId', label: 'PressedImage', type: 'asset', accept: 'image/*' },
-    color('imageColor3', 'ImageColor3'), slider('imageTransparency', 'ImageTransparency', 0, 1, 0.01),
-    select('fit', 'ScaleType', [
-      { value: 'fill', label: 'Stretch' }, { value: 'contain', label: 'Fit' },
-      { value: 'cover', label: 'Crop' }, { value: 'tile', label: 'Tile' }
-    ]),
-    { ...udim2('tileSize', 'TileSize', 'TileSize'), visibleWhen: { key: 'fit', value: 'tile' } }
-  ]},
-  { title: 'Behavior', fields: [checkbox('autoButtonColor', 'AutoButtonColor'), checkbox('interactable', 'Interactable')] },
-  { title: 'Data', fields: [text('name', 'Name'), number('zIndex', 'ZIndex', -2147483648, 2147483647)] },
-  ...layout
-]});
+registerGuiClass('TextButton', 'Text', true);
+registerGuiClass('TextLabel', 'Text');
+registerGuiClass('ImageButton', 'Image', true);
+registerGuiClass('ImageLabel', 'Image');
 
 registerPropertySchema('UIBackdrop', { sections: [
-  instanceSection,
+  { title: 'Data', fields: [text('name', 'Name')] },
   { title: 'Behavior', fields: [checkbox('enabled', 'Enabled')] },
   { title: 'Blur', fields: [
     { ...slider('blur', 'Blur amount', 0, 64, 0.5), enabledOnly: true },
@@ -245,6 +169,6 @@ registerPropertySchema('UIBackdrop', { sections: [
     { ...slider('brightness', 'Brightness', 0.5, 1.5, 0.01), enabledOnly: true },
     { ...slider('contrast', 'Contrast', 0.5, 1.5, 0.01), enabledOnly: true },
     { ...color('tintColor', 'Tint color'), enabledOnly: true },
-    { ...slider('tintOpacity', 'Tint strength', 0, 0.5, 0.01), enabledOnly: true },
+    { ...slider('tintOpacity', 'Tint strength', 0, 0.5, 0.01), enabledOnly: true }
   ]}
 ]});
