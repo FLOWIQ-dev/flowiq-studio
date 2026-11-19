@@ -676,3 +676,19 @@ test('scene renderer does not allocate empty child wrappers', async () => {
   assert.match(view, /if \(childContainer\) item\.append\(childContainer\)/);
   assert.match(view, /if \(childContainer\) for \(const childId of node\.children\) build/);
 });
+
+
+test('mobile panels are hidden unless selected, including after Inspector grid layout', async () => {
+  const css = await readFile(new URL('../css/studio.css', import.meta.url), 'utf8');
+  assert.match(css, /\.editor-shell:not\(\[data-panel="explorer"\]\) \.explorer-panel\{display:none!important/);
+  assert.match(css, /\.editor-shell:not\(\[data-panel="inspector"\]\) \.inspector-panel\{display:none!important/);
+  assert.match(css, /\.editor-shell\[data-panel="explorer"\] \.explorer-panel\{display:grid!important/);
+  assert.match(css, /\.editor-shell\[data-panel="inspector"\] \.inspector-panel\{display:grid!important/);
+});
+
+test('scene renderer retains a stable child container for every instance', async () => {
+  const view = await readFile(new URL('../js/editor/view.js', import.meta.url), 'utf8');
+  assert.match(view, /const childContainer = existingChildContainer \|\| el\('div', 'scene-children'\)/);
+  assert.match(view, /item\.append\(childContainer\)/);
+  assert.match(view, /for \(const childId of node\.children\) build\(childId, childContainer/);
+});
