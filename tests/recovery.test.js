@@ -56,7 +56,7 @@ test('app exposes version restore and requests persistent browser storage', asyn
   assert.match(app, /this\.db\.restoreVersion\(projectId, selected\)/);
   assert.match(app, /settings-storage/);
   assert.match(html, /id="settings-storage"/);
-  assert.match(html, /Histórico/);
+  assert.match(app, /this\.button\('Histórico', 'button subtle'\)/);
 });
 
 test('service worker and document use the same new cache build', async () => {
