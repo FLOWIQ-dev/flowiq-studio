@@ -692,3 +692,14 @@ test('scene renderer retains a stable child container for every instance', async
   assert.match(view, /item\.append\(childContainer\)/);
   assert.match(view, /for \(const childId of node\.children\) build\(childId, childContainer/);
 });
+
+
+test('Script is an independent non-visual scene instance', () => {
+  const scene = new Scene();
+  const script = scene.create('Script', null, 'AbrirPainel');
+  script.props.source = 'on("click", "Abrir", () => {\\n  show("Painel");\\n});';
+  assert.equal(script.type, 'Script');
+  const restored = new Scene(scene.toJSON());
+  assert.equal(restored.get(script.id).props.source, script.props.source);
+  assert.ok(COMPONENTS.some(item => item.type === 'Script'));
+});
