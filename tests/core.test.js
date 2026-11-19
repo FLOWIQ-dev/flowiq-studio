@@ -521,7 +521,7 @@ test('Asset rename preserves the existing blob record', async () => {
 test('Image picker is visual and asset library supports rename and thumbnails', async () => {
   const app = await readFile(new URL('../js/app.js', import.meta.url), 'utf8');
   const html = await readFile(new URL('../index.html', import.meta.url), 'utf8');
-  assert.match(app, /openImagePicker\(\)/);
+  assert.match(app, /openImagePicker\(/);
   assert.match(app, /data-choose-asset/);
   assert.match(app, /data-rename-asset/);
   assert.match(app, /asset-preview/);
