@@ -188,7 +188,7 @@ test('ZIndex follows Roblox Sibling semantics with signed 32-bit integers', asyn
   assert.doesNotMatch(view, /childContainer\.prepend\(layer\)/);
   assert.match(css, /\.scene-node\{isolation:isolate\}/);
   assert.doesNotMatch(css, /\.scene-node\.scene-frame\{isolation:auto/);
-  assert.match(view, /orderedSiblingIds\\(scene, node\\.children\\)/);
+  assert.ok(view.includes('orderedSiblingIds(scene, node.children)'));
 });
 
 test('Inspector property schemas are class-based and extensible', () => {
@@ -674,7 +674,7 @@ test('scene renderer keeps a stable child container for every instance', async (
   const view = await readFile(new URL('../js/editor/view.js', import.meta.url), 'utf8');
   assert.match(view, /const childContainer = existingChildContainer \|\| el\('div', 'scene-children'\)/);
   assert.match(view, /item\.append\(childContainer\)/);
-  assert.match(view, /orderedSiblingIds\\(scene, node\\.children\\)/);
+  assert.ok(view.includes('orderedSiblingIds(scene, node.children)'));
 });
 
 
@@ -690,7 +690,7 @@ test('scene renderer retains a stable child container for every instance', async
   const view = await readFile(new URL('../js/editor/view.js', import.meta.url), 'utf8');
   assert.match(view, /const childContainer = existingChildContainer \|\| el\('div', 'scene-children'\)/);
   assert.match(view, /item\.append\(childContainer\)/);
-  assert.match(view, /orderedSiblingIds\\(scene, node\\.children\\)/);
+  assert.ok(view.includes('orderedSiblingIds(scene, node.children)'));
 });
 
 
