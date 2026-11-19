@@ -670,11 +670,11 @@ test('Text and image GUI classes share one square Roblox-style visual and inspec
 });
 
 
-test('scene renderer does not allocate empty child wrappers', async () => {
+test('scene renderer keeps a stable child container for every instance', async () => {
   const view = await readFile(new URL('../js/editor/view.js', import.meta.url), 'utf8');
-  assert.match(view, /const childContainer = node\.children\.length \? \(existingChildContainer \|\| el\('div', 'scene-children'\)\) : null/);
-  assert.match(view, /if \(childContainer\) item\.append\(childContainer\)/);
-  assert.match(view, /if \(childContainer\) for \(const childId of node\.children\) build/);
+  assert.match(view, /const childContainer = existingChildContainer \|\| el\('div', 'scene-children'\)/);
+  assert.match(view, /item\.append\(childContainer\)/);
+  assert.match(view, /for \(const childId of node\.children\) build\(childId, childContainer/);
 });
 
 
