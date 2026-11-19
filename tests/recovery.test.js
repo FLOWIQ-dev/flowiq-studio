@@ -62,7 +62,7 @@ test('app exposes version restore and requests persistent browser storage', asyn
 test('service worker and document use the same new cache build', async () => {
   const app = await read('index.html');
   const worker = await read('sw.js');
-  assert.match(app, /2026\.11\.19\.150/);
-  assert.match(worker, /flowiq-studio-clean-v150/);
-  assert.match(worker, /2026\.11\.19\.150/);
+  assert.match(app, /2026\.11\.19\.152/);
+  assert.match(worker, /flowiq-studio-clean-v152/);
+  assert.match(worker, /2026\.11\.19\.152/);
 });
