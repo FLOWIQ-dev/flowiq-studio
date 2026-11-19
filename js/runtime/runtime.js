@@ -25,6 +25,7 @@ export class Runtime {
 
   dispatch(node, eventName) {
     if (!this.running || !node) return;
+    let count = 0;
     const scripts = Array.isArray(this.project?.scripts) ? this.project.scripts : [];
     for (const script of scripts.filter(item => item && item.nodeId === node.id && typeof item.source === 'string')) {
       try {
@@ -59,7 +60,6 @@ export class Runtime {
     }
     const rules = Array.isArray(this.project?.events) ? this.project.events : [];
     const matches = rules.filter(rule => rule && rule.nodeId === node.id && String(rule.event || 'click') === eventName);
-    let count = 0;
     for (const rule of matches) {
       for (const action of (Array.isArray(rule.actions) ? rule.actions : []).slice(0, this.actionLimit)) {
         if (action.type === 'toggleVisibility') {
