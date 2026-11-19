@@ -1,10 +1,10 @@
 {
   "name": "flowiq-studio",
   "private": true,
-  "version": "1.5.15",
+  "version": "1.6.0",
   "type": "module",
   "scripts": {
     "test": "node --test",
-    "check": "node --check js/app.js && node --check js/core/store.js && node --check js/core/history.js && node --check js/data/model.js && node --check js/data/database.js && node --check js/editor/view.js && node --check js/editor/property-schema.js && node --check js/runtime/runtime.js && node --check sw.js"
+    "check": "node --check js/app.js && node --check js/core/store.js && node --check js/core/history.js && node --check js/data/model.js && node --check js/data/database.js && node --check js/editor/view.js && node --check js/editor/property-schema.js && node --check js/runtime/runtime.js && node --check js/runtime/flow-script.js && node --check sw.js"
   }
 }
