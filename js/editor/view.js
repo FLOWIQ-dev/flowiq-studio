@@ -8,8 +8,10 @@ const ICONS = {
   TextLabel: '<path d="M4 6h16M12 6v13M8 19h8"/>',
   ImageLabel: '<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9" r="1.5"/><path d="m4 17 5-5 3 3 3-4 5 6"/>',
   UIBackdrop: '<path d="M12 2.8C9.2 6.5 5.8 10 5.8 14.2a6.2 6.2 0 0 0 12.4 0C18.2 10 14.8 6.5 12 2.8Z"/><path d="M9.2 15.1a3 3 0 0 0 2.7 2.8"/>',
+  Script: '<path d="m8 5-5 7 5 7M16 5l5 7-5 7M14 3l-4 18"/>',
 };
 const icon = type => '<svg viewBox="0 0 24 24" aria-hidden="true">' + (ICONS[type] || ICONS.Frame) + '</svg>';
+const orderedSiblingIds = (scene, ids) => ids.map((id, index) => ({ id, index, node: scene.get(id) })).filter(item => item.node && item.node.type !== 'Script').sort((a, b) => normalizeZIndex(a.node.props.zIndex) - normalizeZIndex(b.node.props.zIndex) || b.index - a.index).map(item => item.id);
 const el = (tag, className, text) => {
   const node = document.createElement(tag);
   if (className) node.className = className;
@@ -122,7 +124,7 @@ export function renderScene(container, scene, { selectedId = null, preview = fal
   };
   const build = (id, parent, parentWidth, parentHeight) => {
     const node = scene.get(id);
-    if (!node || node.props.visible === false || node.type === 'UIBackdrop') return;
+    if (!node || node.props.visible === false || node.type === 'UIBackdrop' || node.type === 'Script') return;
     const p = node.props;
     const existing = existingNodes.get(node.id);
     const isGuiButton = node.type === 'TextButton' || node.type === 'ImageButton';
@@ -370,7 +372,7 @@ export function renderScene(container, scene, { selectedId = null, preview = fal
     }
     item.onclick = preview && isGuiButton ? event => { event.stopPropagation(); onRun(node, 'click'); } : null;
     parent.append(item);
-    for (const childId of node.children) build(childId, childContainer, layout.width, layout.height);
+    for (const childId of orderedSiblingIds(scene, node.children)) build(childId, childContainer, layout.width, layout.height);
     if (selectedId === node.id && !preview) {
       for (const direction of ['nw','n','ne','e','se','s','sw','w']) {
         const handle = el('button', 'resize-handle handle-' + direction);
@@ -383,7 +385,7 @@ export function renderScene(container, scene, { selectedId = null, preview = fal
       item.append(rotate);
     }
   };
-  for (const id of scene.roots) build(id, world, rootWidth, rootHeight);
+  for (const id of orderedSiblingIds(scene, scene.roots)) build(id, world, rootWidth, rootHeight);
   for (const [id, oldNode] of existingNodes) {
     if (!renderedNodeIds.has(id)) {
     }
@@ -464,7 +466,7 @@ export function renderTree(container, scene, selectedId, { search = '', expanded
     const toggle = el('button', 'tree-disclosure', node.children.length ? (isOpen ? '⌄' : '›') : '');
     toggle.type = 'button'; toggle.dataset.treeToggle = id; toggle.disabled = !node.children.length;
     toggle.setAttribute('aria-label', isOpen ? 'Recolher' : 'Expandir');
-    const marker = el('span', 'tree-marker'); marker.innerHTML = icon(node.type);
+    const marker = el('span', 'tree-marker tree-icon-' + node.type.toLowerCase()); marker.innerHTML = icon(node.type);
     const name = el('span', 'tree-name', node.name);
     const type = el('span', 'tree-type', node.type);
     const menu = el('button', 'tree-menu-trigger', '⋯'); menu.type = 'button'; menu.dataset.treeMenu = id;
@@ -705,12 +707,11 @@ export function renderInspector(container, node, { onChange, onDelete, onDuplica
     });
   });
 
-  if (node.type === 'TextButton' || node.type === 'ImageButton') {
+  if (node.type === 'Script') {
     const scriptPanel = el('section', 'property-group script-group');
-    scriptPanel.append(el('h3', '', 'Script'));
-    const script = scripts.find(item => item && item.nodeId === node.id);
-    scriptPanel.append(el('p', 'event-editor-note', script?.source?.trim() ? 'Este botão possui um FlowScript.' : 'Este botão ainda não possui script.'));
-    const edit = el('button', 'button subtle script-edit-button', script?.source?.trim() ? 'Editar script' : 'Adicionar script');
+    scriptPanel.append(el('h3', '', 'Código'));
+    scriptPanel.append(el('p', 'event-editor-note', node.props.source?.trim() ? 'FlowScript independente. O evento é conectado ao botão pelo nome.' : 'Este Script ainda não possui código.'));
+    const edit = el('button', 'button subtle script-edit-button', 'Editar código');
     edit.type = 'button';
     edit.addEventListener('click', () => onScriptEdit?.(node.id));
     scriptPanel.append(edit);

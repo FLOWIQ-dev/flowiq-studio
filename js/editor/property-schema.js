@@ -160,6 +160,10 @@ registerGuiClass('TextLabel', 'Text');
 registerGuiClass('ImageButton', 'Image', true);
 registerGuiClass('ImageLabel', 'Image');
 
+registerPropertySchema('Script', { sections: [
+  { title: 'Data', fields: [text('name', 'Name')] }
+]});
+
 registerPropertySchema('UIBackdrop', { sections: [
   { title: 'Data', fields: [text('name', 'Name')] },
   { title: 'Behavior', fields: [checkbox('enabled', 'Enabled')] },

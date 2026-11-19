@@ -21,7 +21,7 @@ test('FlowScript parses safe event handlers and visual commands', () => {
 });
 
 test('FlowScript rejects arbitrary JavaScript, unknown commands and unsafe properties', () => {
-  assert.throws(() => parseFlowScript('alert(1);'), /comece com/);
+  assert.throws(() => parseFlowScript('alert(1);'), /use on/);
   assert.throws(() => parseFlowScript('on("click", () => {\n  fetch("https://example.com");\n});'), /comando não reconhecido/);
   assert.throws(() => parseFlowScript('on("click", () => {\n  setProperty("Painel", "__proto__", {});\n});'), /propriedade ou valor não permitido/);
   assert.throws(() => parseFlowScript('on("click", () => {\n  show("Painel");'), /Finalize/);
@@ -60,4 +60,19 @@ test('FlowScript reports missing and ambiguous object names instead of guessing'
   assert.ok(logs.some(message => message.includes('nome duplicado')));
   assert.equal(scene.get('a').props.visible, true);
   assert.equal(scene.get('b').props.visible, true);
+});
+
+
+test('FlowScript standalone Script listens to a named button without being attached to it', () => {
+  const scene = new Scene([
+    { id: 'button', type: 'TextButton', name: 'Abrir' },
+    { id: 'script', type: 'Script', name: 'Controlador', props: { source: 'on("click", "Abrir", () => {\n  show("Painel");\n});' } },
+    { id: 'panel', type: 'Frame', name: 'Painel', props: { visible: false } }
+  ]);
+  const program = parseFlowScript(scene.get('script').props.source);
+  assert.equal(program.eventTarget, 'Abrir');
+  const runtime = new Runtime();
+  runtime.start({}, scene);
+  runtime.dispatch(scene.get('button'), 'click');
+  assert.equal(scene.get('panel').props.visible, true);
 });

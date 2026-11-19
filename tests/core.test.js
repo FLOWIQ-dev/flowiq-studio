@@ -188,7 +188,7 @@ test('ZIndex follows Roblox Sibling semantics with signed 32-bit integers', asyn
   assert.doesNotMatch(view, /childContainer\.prepend\(layer\)/);
   assert.match(css, /\.scene-node\{isolation:isolate\}/);
   assert.doesNotMatch(css, /\.scene-node\.scene-frame\{isolation:auto/);
-  assert.match(view, /for \(const childId of node\.children\) build\(childId, childContainer/);
+  assert.ok(view.includes('orderedSiblingIds(scene, node.children)'));
 });
 
 test('Inspector property schemas are class-based and extensible', () => {
@@ -674,7 +674,7 @@ test('scene renderer keeps a stable child container for every instance', async (
   const view = await readFile(new URL('../js/editor/view.js', import.meta.url), 'utf8');
   assert.match(view, /const childContainer = existingChildContainer \|\| el\('div', 'scene-children'\)/);
   assert.match(view, /item\.append\(childContainer\)/);
-  assert.match(view, /for \(const childId of node\.children\) build\(childId, childContainer/);
+  assert.ok(view.includes('orderedSiblingIds(scene, node.children)'));
 });
 
 
@@ -690,5 +690,16 @@ test('scene renderer retains a stable child container for every instance', async
   const view = await readFile(new URL('../js/editor/view.js', import.meta.url), 'utf8');
   assert.match(view, /const childContainer = existingChildContainer \|\| el\('div', 'scene-children'\)/);
   assert.match(view, /item\.append\(childContainer\)/);
-  assert.match(view, /for \(const childId of node\.children\) build\(childId, childContainer/);
+  assert.ok(view.includes('orderedSiblingIds(scene, node.children)'));
+});
+
+
+test('Script is an independent non-visual scene instance', () => {
+  const scene = new Scene();
+  const script = scene.create('Script', null, 'AbrirPainel');
+  script.props.source = 'on("click", "Abrir", () => {\n  show("Painel");\n});';
+  assert.equal(script.type, 'Script');
+  const restored = new Scene(scene.toJSON());
+  assert.equal(restored.get(script.id).props.source, script.props.source);
+  assert.ok(COMPONENTS.some(item => item.type === 'Script'));
 });

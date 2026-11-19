@@ -1404,3 +1404,13 @@ body[data-screen=editor]{
 @media(max-width:600px){.script-editor-dialog{padding:16px;border-radius:14px}.script-editor-help{grid-template-columns:1fr}#script-editor-source{min-height:190px}}
 
 .script-editor-modal[hidden]{display:none}
+
+
+/* Explorer instance palette on the deep blue surface. */
+.tree-marker.tree-icon-frame{color:#70b7ff}
+.tree-marker.tree-icon-textbutton{color:#63d6b0}
+.tree-marker.tree-icon-imagebutton{color:#f2bd69}
+.tree-marker.tree-icon-textlabel{color:#b7a0ff}
+.tree-marker.tree-icon-imagelabel{color:#f08fbd}
+.tree-marker.tree-icon-uibackdrop{color:#7dd3fc}
+.tree-marker.tree-icon-script{color:#d5a6ff}
