@@ -192,7 +192,7 @@ test('ZIndex follows Roblox Sibling semantics with signed 32-bit integers', asyn
 });
 
 test('Inspector property schemas are class-based and extensible', () => {
-  assert.equal(PROPERTY_SCHEMA_VERSION, 17);
+  assert.equal(PROPERTY_SCHEMA_VERSION, 18);
   const frame = getPropertySchema('Frame');
   assert.ok(frame.sections.some(section => section.title === 'Data'));
   const frameKeys = frame.sections.flatMap(section => section.fields.map(field => field.key));
