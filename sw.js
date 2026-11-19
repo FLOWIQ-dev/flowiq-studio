@@ -11,6 +11,7 @@ const FILES = [
   './js/data/database.js',
   './js/editor/view.js', './js/editor/property-schema.js',
   './js/runtime/runtime.js',
+  './js/runtime/flow-script.js',
   './assets/icon.svg'
 ];
 
