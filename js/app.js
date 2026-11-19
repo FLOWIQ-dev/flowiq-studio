@@ -118,7 +118,7 @@ class FlowiqStudio {
     });
     $('inspector').addEventListener('click', event => {
       const asset = event.target.closest('[data-open-asset-picker]');
-      if (asset) this.openImagePicker();
+      if (asset) this.openImagePicker(asset.dataset.assetProperty || 'assetId');
     });
     $('image-picker').addEventListener('change', async event => {
       const file = event.target.files?.[0];
@@ -1197,7 +1197,7 @@ class FlowiqStudio {
     this.assets = await this.db.listAssets(); this.renderAssets(); this.toast('Arquivo renomeado.');
   }
 
-  openImagePicker() {
+  openImagePicker(propertyKey = 'assetId') {
     const modal = $('image-picker-modal'), list = $('image-picker-grid');
     list.replaceChildren();
     const images = this.assets.filter(asset => asset.mime?.startsWith('image/'));
@@ -1211,7 +1211,7 @@ class FlowiqStudio {
       this.libraryAssetUrls.set('picker-' + asset.id, url); image.src = url; image.alt = asset.name;
       const name = document.createElement('span'); name.textContent = asset.name; card.append(image, name); list.append(card);
     }
-    this.assetPickerCallback = id => this.updateProperty('assetId', id);
+    this.assetPickerCallback = id => this.updateProperty(propertyKey, id);
     modal.hidden = false; requestAnimationFrame(() => modal.classList.add('visible'));
   }
 

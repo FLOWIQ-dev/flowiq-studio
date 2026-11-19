@@ -3,7 +3,8 @@ import { getPropertySchema } from './property-schema.js';
 const $ = id => document.getElementById(id);
 const ICONS = {
   Frame: '<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M8 8h8v8H8z"/>',
-  TextButton: '<rect x="3" y="5" width="18" height="14" rx="3"/><path d="M8 9h8M12 9v6m-3 0h6"/>',
+  TextButton: '<rect x="3" y="5" width="18" height="14" rx="3"/><path d="M8 12h8"/>',
+  ImageButton: '<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9" r="1.5"/><path d="m4 17 5-5 3 3 3-4 5 6"/>',
   TextLabel: '<path d="M4 6h16M12 6v13M8 19h8"/>',
   ImageLabel: '<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9" r="1.5"/><path d="m4 17 5-5 3 3 3-4 5 6"/>',
   UIBackdrop: '<path d="M12 2.8C9.2 6.5 5.8 10 5.8 14.2a6.2 6.2 0 0 0 12.4 0C18.2 10 14.8 6.5 12 2.8Z"/><path d="M9.2 15.1a3 3 0 0 0 2.7 2.8"/>',
@@ -124,11 +125,12 @@ export function renderScene(container, scene, { selectedId = null, preview = fal
     if (!node || node.props.visible === false || node.type === 'UIBackdrop') return;
     const p = node.props;
     const existing = existingNodes.get(node.id);
-    const item = existing && existing.tagName.toLowerCase() === (node.type === 'TextButton' && preview ? 'button' : 'div')
-      ? existing
-      : el(node.type === 'TextButton' && preview ? 'button' : 'div', 'scene-node scene-' + node.type.toLowerCase());
+    const isGuiButton = node.type === 'TextButton' || node.type === 'ImageButton';
+    const elementTag = isGuiButton && preview ? 'button' : 'div';
+    const item = existing && existing.tagName.toLowerCase() === elementTag ? existing : el(elementTag, 'scene-node scene-' + node.type.toLowerCase());
     item.className = 'scene-node scene-' + node.type.toLowerCase();
     item.dataset.nodeId = node.id;
+    if (isGuiButton && preview) { item.type = 'button'; item.disabled = p.interactable === false; }
     renderedNodeIds.add(node.id);
     const layout = measureLayout(node, parentWidth, parentHeight);
     item.style.left = (layout.x + layout.width * p.anchorPoint.x) + 'px';
@@ -139,7 +141,7 @@ export function renderScene(container, scene, { selectedId = null, preview = fal
     item.style.transform = 'translate(' + (-p.anchorPoint.x * 100) + '%,' + (-p.anchorPoint.y * 100) + '%) rotate(' + (Number(p.rotation) || 0) + 'deg)';
     const isFrame = node.type === 'Frame';
     const backdropNode = isFrame ? node.children.map(childId => scene.get(childId)).find(child => child?.type === 'UIBackdrop') : null;
-      item.style.background = isFrame ? 'transparent' : (p.background || 'transparent');
+      item.style.background = isFrame ? 'transparent' : (p.backgroundColor3 || p.background || 'transparent');
     item.style.opacity = String(Math.max(0, Math.min(1, Number(p.opacity ?? 1))));
     if (isFrame) {
       const bg = String(p.backgroundColor3 || p.background || 'transparent');
@@ -181,13 +183,11 @@ export function renderScene(container, scene, { selectedId = null, preview = fal
         : 'none';
       item.onpointermove = null;
       item.onpointerleave = null;
-      if (effectEnabled) item.style.boxShadow = backdropVisible && Boolean(backdrop.glassBorder)
-        ? 'inset 0 0 0 1px rgba(255,255,255,.34), inset 0 1px 0 rgba(255,255,255,.22)'
-        : 'none';
+      item.style.boxShadow = 'none';
     } else {
       item.style.borderRadius = Math.max(0, Number(p.radius) || 0) + 'px';
-      item.style.border = Math.max(0, Number(p.borderWidth) || 0) + 'px solid ' + (p.border || 'transparent');
-      if (node.type === 'TextLabel' || node.type === 'ImageLabel') {
+      item.style.border = Math.max(0, Number(p.borderSizePixel ?? p.borderWidth) || 0) + 'px solid ' + (p.borderColor3 || p.border || 'transparent');
+      if (node.type === 'TextButton' || node.type === 'TextLabel' || node.type === 'ImageLabel' || node.type === 'ImageButton') {
         const bg = String(p.backgroundColor3 || p.background || 'transparent');
         const alpha = 1 - Math.max(0, Math.min(1, Number(p.backgroundTransparency) || 0));
         const match = bg.match(/^#([0-9a-f]{3}|[0-9a-f]{6})$/i);
@@ -202,18 +202,19 @@ export function renderScene(container, scene, { selectedId = null, preview = fal
     item.style.textAlign = p.textAlign || 'center';
     item.style.fontWeight = p.fontWeight || '500';
     const existingChildContainer = item.querySelector(':scope > .scene-children');
-    const preservedImageLayer = node.type === 'ImageLabel' ? item.querySelector(':scope > .scene-image-layer') : null;
-    if (node.type === 'TextLabel') item.replaceChildren();
-    else if (node.type !== 'ImageLabel') item.textContent = node.type === 'Frame' ? '' : (p.text || node.name);
+    const isImageNode = node.type === 'ImageLabel' || node.type === 'ImageButton';
+    const preservedImageLayer = isImageNode ? item.querySelector(':scope > .scene-image-layer') : null;
+    if (node.type === 'TextLabel' || node.type === 'TextButton') item.replaceChildren();
+    else if (!isImageNode) item.textContent = node.type === 'Frame' ? '' : (p.text || node.name);
     const childContainer = existingChildContainer || el('div', 'scene-children');
     childContainer.replaceChildren();
     childContainer.style.position = 'absolute';
     childContainer.style.inset = '0';
     childContainer.style.overflow = node.type === 'Frame' && p.clipsDescendants ? 'hidden' : 'visible';
-    if (node.type === 'ImageLabel') childContainer.style.borderRadius = 'inherit';
+    if (isImageNode) childContainer.style.borderRadius = 'inherit';
     childContainer.style.zIndex = '2';
     for (const child of Array.from(item.children)) if (child !== childContainer && child !== preservedImageLayer && !(node.type === 'TextLabel' && child.classList.contains('scene-text-content'))) child.remove();
-    if (node.type === 'TextLabel') {
+    if (node.type === 'TextLabel' || node.type === 'TextButton') {
       const content = el('span', 'scene-text-content');
       const fontKey = p.fontFace || 'Arial';
       const fontFamily = FONT_CSS[fontKey] || FONT_CSS.Arial;
@@ -222,7 +223,7 @@ export function renderScene(container, scene, { selectedId = null, preview = fal
       const wrapped = Boolean(p.textWrapped || p.textScaled);
       const horizontal = p.textXAlignment || 'Center';
       const vertical = p.textYAlignment || 'Center';
-      const fontSize = Math.max(1, Math.min(100, Number(p.textSize ?? 14)));
+      const fontSize = Math.max(1, Math.min(100, Number(p.textSize ?? p.fontSize ?? 14)));
       const paddingX = 18, paddingY = 10;
       const resolvedSize = p.textScaled
         ? fitTextSize(textValue, fontFamily, 100, Math.max(1, layout.width - paddingX), Math.max(1, layout.height - paddingY), Number(p.lineHeight) || 1, wrapped)
@@ -257,15 +258,17 @@ export function renderScene(container, scene, { selectedId = null, preview = fal
       item.append(content);
     }
     item.append(childContainer);
-    if (node.type === 'ImageLabel') {
+    if (isImageNode) {
       const asset = assetMap.get(p.assetId);
-      if (asset?.blob) {
-        usedAssetIds.add(asset.id);
-        let cached = assetUrls.get(asset.id);
-        if (!cached || cached.blob !== asset.blob) {
+      const initialAsset = asset?.blob ? asset : node.type === 'ImageButton' ? assetMap.get(p.hoverAssetId) || assetMap.get(p.pressedAssetId) : null;
+      if (initialAsset?.blob) {
+        usedAssetIds.add(initialAsset.id);
+        if (node.type === 'ImageButton') for (const variantId of [p.assetId, p.hoverAssetId, p.pressedAssetId]) if (variantId && assetMap.has(variantId)) usedAssetIds.add(variantId);
+        let cached = assetUrls.get(initialAsset.id);
+        if (!cached || cached.blob !== initialAsset.blob) {
           if (cached?.url) URL.revokeObjectURL(cached.url);
-          cached = { blob: asset.blob, url: URL.createObjectURL(asset.blob) };
-          assetUrls.set(asset.id, cached);
+          cached = { blob: initialAsset.blob, url: URL.createObjectURL(initialAsset.blob) };
+          assetUrls.set(initialAsset.id, cached);
         }
         const layer = preservedImageLayer || el('div', 'scene-image-layer');
         layer.replaceChildren();
@@ -322,7 +325,34 @@ export function renderScene(container, scene, { selectedId = null, preview = fal
         }
         layer.append(image, tint);
         item.insertBefore(layer, childContainer);
-        item.dataset.assetId = asset.id;
+        item.dataset.assetId = asset?.id || '';
+        if (node.type === 'ImageButton') {
+          const urlFor = assetId => {
+            const record = assetMap.get(assetId);
+            if (!record?.blob) return null;
+            let entry = assetUrls.get(record.id);
+            if (!entry || entry.blob !== record.blob) {
+              if (entry?.url) URL.revokeObjectURL(entry.url);
+              entry = { blob: record.blob, url: URL.createObjectURL(record.blob) };
+              assetUrls.set(record.id, entry);
+            }
+            return entry.url;
+          };
+          const setImageState = assetId => {
+            const url = urlFor(assetId || p.assetId);
+            if (!url) { image.style.display = 'none'; layer.style.backgroundImage = 'none'; tint.style.maskImage = 'none'; tint.style.webkitMaskImage = 'none'; return; }
+            image.style.display = p.fit === 'tile' ? 'none' : 'block'; image.src = url;
+            tint.style.maskImage = 'url(\"' + url + '\")'; tint.style.webkitMaskImage = tint.style.maskImage;
+            layer.style.backgroundImage = p.fit === 'tile' ? 'url(\"' + url + '\")' : 'none';
+          };
+          if (!asset?.blob) setImageState('');
+          item.onpointerenter = preview ? () => setImageState(p.hoverAssetId || p.assetId) : null;
+          item.onpointerleave = preview ? () => setImageState(p.assetId) : null;
+          item.onpointerdown = preview ? () => setImageState(p.pressedAssetId || p.hoverAssetId || p.assetId) : null;
+          item.onpointerup = preview ? () => setImageState(p.hoverAssetId || p.assetId) : null;
+          item.onpointercancel = preview ? () => setImageState(p.assetId) : null;
+        }
+        if (!asset?.blob) { image.style.display = 'none'; layer.style.backgroundImage = 'none'; tint.style.maskImage = 'none'; tint.style.webkitMaskImage = 'none'; }
       } else {
         childContainer.style.backgroundImage = 'none';
         preservedImageLayer?.remove();
@@ -332,7 +362,13 @@ export function renderScene(container, scene, { selectedId = null, preview = fal
       item.setAttribute('aria-label', node.name);
     }
     if (selectedId === node.id && !preview) item.classList.add('is-selected');
-    item.onclick = preview && node.type === 'TextButton' ? event => { event.stopPropagation(); onRun(node, 'click'); } : null;
+    if (preview && isGuiButton && p.autoButtonColor && !(node.type === 'ImageButton' && (p.hoverAssetId || p.pressedAssetId))) {
+      item.onpointerenter = () => { item.style.filter = 'brightness(1.08)'; };
+      item.onpointerdown = () => { item.style.filter = 'brightness(.92)'; };
+      item.onpointerup = () => { item.style.filter = 'brightness(1.08)'; };
+      item.onpointerleave = () => { item.style.filter = ''; };
+    }
+    item.onclick = preview && isGuiButton ? event => { event.stopPropagation(); onRun(node, 'click'); } : null;
     parent.append(item);
     for (const childId of node.children) build(childId, childContainer, layout.width, layout.height);
     if (selectedId === node.id && !preview) {
@@ -491,7 +527,8 @@ export function renderInspector(container, node, { onChange, onDelete, onDuplica
       const selectedAsset = assets.find(asset => asset.id === propertyValue);
       input.textContent = selectedAsset?.name || 'Escolher imagem…';
       input.dataset.openAssetPicker = 'true';
-      input.setAttribute('aria-label', 'Escolher imagem da Biblioteca');
+      input.dataset.assetProperty = key;
+      input.setAttribute('aria-label', 'Escolher imagem da Biblioteca: ' + labelText);
     } else if (type === 'select') {
       input = el('select');
       (descriptor.values || []).forEach(value => {
@@ -668,7 +705,7 @@ export function renderInspector(container, node, { onChange, onDelete, onDuplica
     });
   });
 
-  if (node.type === 'TextButton') {
+  if (node.type === 'TextButton' || node.type === 'ImageButton') {
     const logic = el('section', 'property-group logic-group');
     logic.append(el('h3', '', 'Interações'));
     const rule = events.find(item => item && item.nodeId === node.id && item.event === 'click');
