@@ -618,7 +618,7 @@ test('Blur has no optional glass border property or rim rendering', async () => 
   const fields = getPropertySchema('UIBackdrop').sections.flatMap(section => section.fields);
   assert.ok(!fields.some(field => field.key === 'glassBorder'));
   const view = await readFile(new URL('../js/editor/view.js', import.meta.url), 'utf8');
-  assert.doesNotMatch(view, /glassBorder|inset 0 0 0 1px rgba\\(255,255,255/);
+  assert.doesNotMatch(view, /glassBorder|inset 0 0 0 1px/);
 });
 
 test('TextButton and ImageButton are complete GuiButton instances with Roblox-style properties', async () => {
@@ -638,9 +638,9 @@ test('TextButton and ImageButton are complete GuiButton instances with Roblox-st
   assert.ok(COMPONENTS.some(item => item.type === 'ImageButton'));
   const view = await readFile(new URL('../js/editor/view.js', import.meta.url), 'utf8');
   const html = await readFile(new URL('../index.html', import.meta.url), 'utf8');
-  assert.match(view, /node\\.type === 'TextButton' \\|\\| node\\.type === 'ImageButton'/);
-  assert.match(view, /p\\.hoverAssetId/);
-  assert.match(view, /p\\.pressedAssetId/);
-  assert.match(view, /onRun\\(node, 'click'\\)/);
+  assert.match(view, /node\.type === 'TextButton' \|\| node\.type === 'ImageButton'/);
+  assert.match(view, /p\.hoverAssetId/);
+  assert.match(view, /p\.pressedAssetId/);
+  assert.match(view, /onRun\(node, 'click'\)/);
   assert.match(html, /data-add-type="ImageButton"/);
 });
