@@ -1402,3 +1402,5 @@ body[data-screen=editor]{
 .script-editor-dialog>footer{justify-content:flex-end;padding-top:4px}
 .script-group .script-edit-button{width:100%;justify-content:center}
 @media(max-width:600px){.script-editor-dialog{padding:16px;border-radius:14px}.script-editor-help{grid-template-columns:1fr}#script-editor-source{min-height:190px}}
+
+.script-editor-modal[hidden]{display:none}
