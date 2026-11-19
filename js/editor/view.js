@@ -181,7 +181,9 @@ export function renderScene(container, scene, { selectedId = null, preview = fal
         : 'none';
       item.onpointermove = null;
       item.onpointerleave = null;
-      if (effectEnabled) item.style.boxShadow = 'none';
+      if (effectEnabled) item.style.boxShadow = backdropVisible && Boolean(backdrop.glassBorder)
+        ? 'inset 0 0 0 1px rgba(255,255,255,.34), inset 0 1px 0 rgba(255,255,255,.22)'
+        : 'none';
     } else {
       item.style.borderRadius = Math.max(0, Number(p.radius) || 0) + 'px';
       item.style.border = Math.max(0, Number(p.borderWidth) || 0) + 'px solid ' + (p.border || 'transparent');
