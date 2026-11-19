@@ -325,7 +325,7 @@ export class Database {
         id: makeId(), projectId, kind: String(version.kind || 'imported').slice(0, 32),
         note: String(version.note || 'Versão importada').slice(0, 120),
         createdAt: new Date(version.createdAt || Date.now()).toISOString(),
-        snapshot: { ...version.snapshot, id: projectId }
+        snapshot: rewriteAssets({ ...version.snapshot, id: projectId })
       };
     });
     if (versions.length > data.projects.length * MAX_VERSIONS) throw new Error('O backup contém versões demais.');
