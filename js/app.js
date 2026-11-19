@@ -4,6 +4,7 @@ import { Scene, COMPONENTS, resolveNodeLayout, normalizeZIndex } from './data/mo
 import { Database } from './data/database.js';
 import { renderScene, renderTree, renderInspector, updateSceneLayout } from './editor/view.js';
 import { Runtime } from './runtime/runtime.js';
+import { parseFlowScript } from './runtime/flow-script.js';
 
 const $ = id => document.getElementById(id);
 const makeId = () => crypto.randomUUID?.() || 'flowiq_' + Date.now().toString(36) + Math.random().toString(36).slice(2);
@@ -30,6 +31,7 @@ class FlowiqStudio {
     this.inspectorCameraSnapshot = null;
     this.cameraTrackFrame = 0;
     this.previewScene = null;
+    this.scriptEditingNodeId = null;
     this.dialogResolve = null;
     this.search = '';
     this.treeSearch = '';
@@ -143,6 +145,10 @@ class FlowiqStudio {
     $('undo').addEventListener('click', () => this.undo());
     $('redo').addEventListener('click', () => this.redo());
     $('preview').addEventListener('click', () => this.play());
+    $('script-editor-close').addEventListener('click', () => this.closeScriptEditor());
+    $('script-editor-cancel').addEventListener('click', () => this.closeScriptEditor());
+    $('script-editor-save').addEventListener('click', () => this.saveScriptEditor());
+    $('script-editor-modal').addEventListener('click', event => { if (event.target === $('script-editor-modal')) this.closeScriptEditor(); });
     $('stop-preview').addEventListener('click', () => this.stopPreview());
     $('zoom-in').addEventListener('click', () => this.setZoom(this.zoom + 0.1));
     $('zoom-out').addEventListener('click', () => this.setZoom(this.zoom - 0.1));
@@ -512,6 +518,42 @@ class FlowiqStudio {
     }
   }
 
+  openScriptEditor(nodeId) {
+    const node = this.scene.get(nodeId);
+    if (!node || !['TextButton', 'ImageButton'].includes(node.type)) return;
+    this.scriptEditingNodeId = nodeId;
+    const existing = (this.project.scripts || []).find(item => item && item.nodeId === nodeId);
+    $('script-editor-title').textContent = 'Script · ' + node.name;
+    $('script-editor-source').value = existing?.source || 'on("click", () => {\n  show("Painel");\n});';
+    $('script-editor-error').textContent = '';
+    $('script-editor-modal').hidden = false;
+    requestAnimationFrame(() => $('script-editor-source').focus());
+  }
+
+  closeScriptEditor() {
+    $('script-editor-modal').hidden = true;
+    this.scriptEditingNodeId = null;
+  }
+
+  saveScriptEditor() {
+    const nodeId = this.scriptEditingNodeId;
+    if (!nodeId || !this.scene.get(nodeId)) return this.closeScriptEditor();
+    const source = $('script-editor-source').value.trim();
+    try { parseFlowScript(source); }
+    catch (error) {
+      $('script-editor-error').textContent = error.message || 'Verifique a sintaxe do FlowScript.';
+      return;
+    }
+    this.history.checkpoint(this.historySnapshot());
+    const scripts = (this.project.scripts || []).filter(item => item && item.nodeId !== nodeId);
+    if (source) scripts.push({ id: makeId(), nodeId, source, language: 'FlowScript', version: 1 });
+    this.project.scripts = scripts;
+    this.scheduleSave();
+    this.closeScriptEditor();
+    this.renderInspectorPanel(this.scene.get(nodeId));
+    this.toast(source ? 'FlowScript salvo.' : 'Script removido.');
+  }
+
   saveButtonAction(nodeId, actions) {
     this.history.checkpoint(this.historySnapshot());
     const events = Array.isArray(this.project.events) ? [...this.project.events] : [];
@@ -719,9 +761,8 @@ class FlowiqStudio {
       onDuplicate: () => this.duplicateSelected(),
       onDelete: () => { this.deleteSelected(); this.setPanel('stage'); },
       onAsset: id => this.updateProperty('assetId', id),
-      events: this.project?.events || [],
-      nodes: [...this.scene.nodes.values()],
-      onEventSave: (nodeId, actions) => this.saveButtonAction(nodeId, actions)
+      scripts: this.project?.scripts || [],
+      onScriptEdit: nodeId => this.openScriptEditor(nodeId)
     });
   }
 
