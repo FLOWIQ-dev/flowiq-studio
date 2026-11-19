@@ -103,12 +103,13 @@ export class Database {
               const rows = historyRequest.result || [];
               const newest = rows.reduce((value, item) => Math.max(value, Date.parse(item.createdAt) || 0), 0);
               if (!newest || Date.now() - newest >= AUTO_VERSION_INTERVAL) {
-                versions.add({
+                const version = {
                   id: makeId(), projectId: record.id, kind: 'automatic',
                   note: 'Salvamento automático', createdAt: new Date().toISOString(),
                   snapshot: previous
-                });
-                this.#pruneVersions(versions, record.id, rows);
+                };
+                versions.add(version);
+                this.#pruneVersions(versions, record.id, [...rows, version]);
               }
             };
           }
