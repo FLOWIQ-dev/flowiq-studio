@@ -1375,3 +1375,13 @@ body[data-screen=editor]{
 .scene-node.scene-textbutton,.scene-node.scene-imagebutton{appearance:none;-webkit-appearance:none;border-radius:0;padding:0}
 .scene-node.scene-textbutton>.scene-text-content,.scene-node.scene-textlabel>.scene-text-content{border-radius:0}
 .scene-node.scene-imagebutton>.scene-image-layer,.scene-node.scene-imagelabel>.scene-image-layer,.scene-image-content,.scene-image-tint{border-radius:0!important}
+
+
+/* Hotfix 2026.11.19: mobile panels must obey the active panel state.
+   These rules intentionally come after desktop Inspector layout declarations. */
+@media(max-width:680px){
+  #screen-editor .editor-shell:not([data-panel="explorer"]) .explorer-panel{display:none!important;}
+  #screen-editor .editor-shell:not([data-panel="inspector"]) .inspector-panel{display:none!important;}
+  #screen-editor .editor-shell[data-panel="explorer"] .explorer-panel{display:grid!important;}
+  #screen-editor .editor-shell[data-panel="inspector"] .inspector-panel{display:grid!important;}
+}
