@@ -668,3 +668,11 @@ test('Text and image GUI classes share one square Roblox-style visual and inspec
   assert.equal((html.match(/id="inspector"/g) || []).length, 1, 'the editor must have exactly one dynamic Inspector host');
   assert.match(view, /\['TextButton', 'ImageButton', 'TextLabel', 'ImageLabel'\]\.includes\(node\.type\) \? '0'/);
 });
+
+
+test('scene renderer does not allocate empty child wrappers', async () => {
+  const view = await readFile(new URL('../js/editor/view.js', import.meta.url), 'utf8');
+  assert.match(view, /const childContainer = node\.children\.length \? \(existingChildContainer \|\| el\('div', 'scene-children'\)\) : null/);
+  assert.match(view, /if \(childContainer\) item\.append\(childContainer\)/);
+  assert.match(view, /if \(childContainer\) for \(const childId of node\.children\) build/);
+});

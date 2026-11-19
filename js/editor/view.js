@@ -206,13 +206,15 @@ export function renderScene(container, scene, { selectedId = null, preview = fal
     const preservedImageLayer = isImageNode ? item.querySelector(':scope > .scene-image-layer') : null;
     if (node.type === 'TextLabel' || node.type === 'TextButton') item.replaceChildren();
     else if (!isImageNode) item.textContent = node.type === 'Frame' ? '' : (p.text || node.name);
-    const childContainer = existingChildContainer || el('div', 'scene-children');
-    childContainer.replaceChildren();
-    childContainer.style.position = 'absolute';
-    childContainer.style.inset = '0';
-    childContainer.style.overflow = node.type === 'Frame' && p.clipsDescendants ? 'hidden' : 'visible';
-    if (isImageNode) childContainer.style.borderRadius = 'inherit';
-    childContainer.style.zIndex = '2';
+    const childContainer = node.children.length ? (existingChildContainer || el('div', 'scene-children')) : null;
+    if (childContainer) {
+      childContainer.replaceChildren();
+      childContainer.style.position = 'absolute';
+      childContainer.style.inset = '0';
+      childContainer.style.overflow = node.type === 'Frame' && p.clipsDescendants ? 'hidden' : 'visible';
+      if (isImageNode) childContainer.style.borderRadius = '0';
+      childContainer.style.zIndex = '2';
+    }
     for (const child of Array.from(item.children)) if (child !== childContainer && child !== preservedImageLayer && !(node.type === 'TextLabel' && child.classList.contains('scene-text-content'))) child.remove();
     if (node.type === 'TextLabel' || node.type === 'TextButton') {
       const content = el('span', 'scene-text-content');
@@ -257,7 +259,7 @@ export function renderScene(container, scene, { selectedId = null, preview = fal
       content.style.pointerEvents = 'none';
       item.append(content);
     }
-    item.append(childContainer);
+    if (childContainer) item.append(childContainer);
     if (isImageNode) {
       const asset = assetMap.get(p.assetId);
       const initialAsset = asset?.blob ? asset : node.type === 'ImageButton' ? assetMap.get(p.hoverAssetId) || assetMap.get(p.pressedAssetId) : null;
@@ -370,7 +372,7 @@ export function renderScene(container, scene, { selectedId = null, preview = fal
     }
     item.onclick = preview && isGuiButton ? event => { event.stopPropagation(); onRun(node, 'click'); } : null;
     parent.append(item);
-    for (const childId of node.children) build(childId, childContainer, layout.width, layout.height);
+    if (childContainer) for (const childId of node.children) build(childId, childContainer, layout.width, layout.height);
     if (selectedId === node.id && !preview) {
       for (const direction of ['nw','n','ne','e','se','s','sw','w']) {
         const handle = el('button', 'resize-handle handle-' + direction);
