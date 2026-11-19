@@ -52,7 +52,7 @@ const textAppearance = [
   ])
 ];
 
-export const PROPERTY_SCHEMA_VERSION = 17;
+export const PROPERTY_SCHEMA_VERSION = 18;
 
 export function registerPropertySchema(className, schema, { replace = false } = {}) {
   if (typeof className !== 'string' || (className !== '*' && !/^[A-Z][A-Za-z0-9]*$/.test(className))) {
@@ -202,6 +202,7 @@ registerPropertySchema('UIBackdrop', { sections: [
     { ...slider('brightness', 'Brightness', 0.5, 1.5, 0.01), enabledOnly: true },
     { ...slider('contrast', 'Contrast', 0.5, 1.5, 0.01), enabledOnly: true },
     { ...color('tintColor', 'Tint color'), enabledOnly: true },
-    { ...slider('tintOpacity', 'Tint strength', 0, 0.5, 0.01), enabledOnly: true }
+    { ...slider('tintOpacity', 'Tint strength', 0, 0.5, 0.01), enabledOnly: true },
+    { ...checkbox('glassBorder', 'Borda de vidro'), enabledOnly: true }
   ]}
 ]});

@@ -192,7 +192,7 @@ test('ZIndex follows Roblox Sibling semantics with signed 32-bit integers', asyn
 });
 
 test('Inspector property schemas are class-based and extensible', () => {
-  assert.equal(PROPERTY_SCHEMA_VERSION, 17);
+  assert.equal(PROPERTY_SCHEMA_VERSION, 18);
   const frame = getPropertySchema('Frame');
   assert.ok(frame.sections.some(section => section.title === 'Data'));
   const frameKeys = frame.sections.flatMap(section => section.fields.map(field => field.key));
@@ -606,4 +606,18 @@ test('TextLabel exposes Roblox text properties and hierarchy-aware rendering', a
   assert.match(view, /fitTextSize\(/);
   assert.match(view, /richTextFragment\(/);
   assert.match(css, /scene-node\{isolation:isolate\}/);
+});
+
+
+test('Blur exposes an optional glass border that is off by default and stays inset', async () => {
+  const scene = new Scene();
+  const frame = scene.create('Frame');
+  const material = scene.create('UIBackdrop', frame.id);
+  assert.equal(material.props.glassBorder, false);
+  const fields = getPropertySchema('UIBackdrop').sections.flatMap(section => section.fields);
+  assert.ok(fields.some(field => field.key === 'glassBorder' && field.type === 'checkbox'));
+  const view = await readFile(new URL('../js/editor/view.js', import.meta.url), 'utf8');
+  assert.match(view, /backdropVisible && Boolean\(backdrop\.glassBorder\)/);
+  assert.match(view, /inset 0 0 0 1px rgba\(255,255,255,\.34\)/);
+  assert.match(view, /inset 0 1px 0 rgba\(255,255,255,\.22\)/);
 });
