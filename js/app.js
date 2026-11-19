@@ -50,6 +50,7 @@ class FlowiqStudio {
   async start() {
     try {
       await this.db.open();
+      this.storagePersisted = await this.db.requestPersistentStorage();
       await this.refreshProjects();
       this.assets = await this.db.listAssets();
       this.showScreen('home');
@@ -266,7 +267,9 @@ class FlowiqStudio {
       remove.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M5 7l1 14h12l1-14M9 7V4h6v3"/></svg>';
       remove.setAttribute('aria-label', 'Excluir projeto'); remove.title = 'Excluir projeto';
       remove.addEventListener('click', this.guarded(() => this.deleteProject(project)));
-      actions.append(open, rename, remove);
+      const history = this.button('Histórico', 'button subtle');
+      history.addEventListener('click', () => this.showProjectHistory(project.id));
+      actions.append(open, history, rename, remove);
       body.append(name, meta, actions);
       card.append(preview, body);
       grid.append(card);
@@ -281,6 +284,32 @@ class FlowiqStudio {
     const project = { id: makeId(), name: name.trim().slice(0, 64), scene: [], events: [], scripts: [], animations: [], settings: { width: 960, height: 640 }, createdAt: now, updatedAt: now };
     await this.db.saveProject(project);
     await this.openProject(project.id);
+  }
+
+  async showProjectHistory(projectId) {
+    try {
+      const project = await this.db.getProject(projectId);
+      if (!project) throw new Error('O projeto não foi encontrado.');
+      await this.db.createVersion(project, { kind: 'manual', note: 'Ponto de restauração manual' });
+      const versions = await this.db.listVersions(projectId);
+      const choices = versions.map(version => {
+        const date = new Date(version.createdAt).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
+        const label = version.kind === 'manual' ? 'Manual' : version.kind === 'pre-restore' ? 'Antes de restauração' : 'Automático';
+        return { value: version.id, label: 'Restaurar ' + date + ' · ' + label };
+      });
+      choices.push({ value: 'cancel', label: 'Fechar histórico' });
+      const selected = await this.dialog({
+        title: 'Histórico de versões',
+        message: versions.length + ' pontos de restauração. O Studio mantém até 30 versões por projeto. Ao restaurar, a versão atual também será preservada.',
+        choices
+      });
+      if (!selected || selected === 'cancel') return;
+      const confirmed = await this.confirm('Restaurar esta versão?', 'O conteúdo atual será substituído, mas ficará salvo no histórico para recuperação.');
+      if (!confirmed) return;
+      await this.db.restoreVersion(projectId, selected);
+      await this.refreshProjects();
+      this.toast('Versão restaurada com segurança.');
+    } catch (error) { this.toast(error.message || 'Não foi possível abrir o histórico.', 'error'); }
   }
 
   async renameProject(project) {
@@ -1245,6 +1274,10 @@ class FlowiqStudio {
     this.returnScreen = this.store.state.screen;
     $('settings-count').textContent = String(this.projects?.length || 0);
     $('settings-assets').textContent = String(this.assets.length);
+    const estimate = await this.db.getStorageEstimate();
+    const used = estimate?.usage ? this.formatBytes(estimate.usage) : 'indisponível';
+    const quota = estimate?.quota ? this.formatBytes(estimate.quota) : 'indisponível';
+    $('settings-storage').textContent = (this.storagePersisted ? 'Armazenamento persistente solicitado e concedido' : 'Persistência não concedida pelo navegador') + ' · ' + used + ' usados de ' + quota + '. Mantenha backups externos.';
     this.showScreen('settings');
   }
 
@@ -1260,7 +1293,7 @@ class FlowiqStudio {
     if (!file) return;
     try {
       const result = await this.db.importAll(file);
-      this.toast(result.projects + ' projetos e ' + result.assets + ' arquivos importados.');
+      this.toast(result.projects + ' projetos, ' + result.assets + ' arquivos e ' + result.versions + ' versões importados.');
       await this.refreshProjects();
       this.assets = await this.db.listAssets();
     } catch (error) { this.toast(error.message, 'error'); }
