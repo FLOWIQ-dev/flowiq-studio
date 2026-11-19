@@ -84,6 +84,7 @@ export class SceneNode {
     // Blur is the only supported material. Older effect values migrate safely.
     if (type === 'UIBackdrop') { merged.effect = 'Blur'; delete merged.glassBorder; }
     else merged.zIndex = normalizeZIndex(merged.zIndex);
+    if (['TextButton', 'ImageButton', 'TextLabel', 'ImageLabel'].includes(type)) merged.radius = 0;
     if (type === 'TextButton') {
       if (Object.hasOwn(clean, 'background') && !Object.hasOwn(clean, 'backgroundColor3')) merged.backgroundColor3 = clean.background;
       if (Object.hasOwn(clean, 'color') && !Object.hasOwn(clean, 'textColor3')) merged.textColor3 = clean.color;
