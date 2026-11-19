@@ -1385,3 +1385,20 @@ body[data-screen=editor]{
   #screen-editor .editor-shell[data-panel="explorer"] .explorer-panel{display:grid!important;}
   #screen-editor .editor-shell[data-panel="inspector"] .inspector-panel{display:grid!important;}
 }
+
+.script-editor-modal{position:fixed;inset:0;z-index:260;display:grid;place-items:center;padding:16px;background:rgba(3,8,15,.78);backdrop-filter:blur(10px)}
+.script-editor-dialog{display:flex;flex-direction:column;gap:12px;width:min(760px,100%);max-height:min(88dvh,900px);padding:22px;border:1px solid var(--line);border-radius:16px;background:#111d2d;box-shadow:0 28px 90px rgba(0,0,0,.55);overflow:auto}
+.script-editor-dialog>header,.script-editor-dialog>footer{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.script-editor-dialog h2{margin:3px 0 0;font-size:20px}
+.script-editor-intro{margin:0;color:var(--muted);font-size:13px;line-height:1.55}
+.script-source-label,.script-editor-help>strong{color:#cbd5e1;font-size:12px;font-weight:650}
+#script-editor-source{width:100%;min-height:220px;resize:vertical;padding:16px;border:1px solid #33465f;border-radius:10px;outline:0;background:#081321;color:#dbeafe;font:13px/1.7 ui-monospace,SFMono-Regular,Consolas,monospace;tab-size:2}
+#script-editor-source:focus{border-color:var(--accent)}
+.script-editor-help{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px 16px;padding:12px;border-radius:10px;background:rgba(148,163,184,.07)}
+.script-editor-help>strong,.script-editor-help>small{grid-column:1/-1}
+.script-editor-help code{color:#a5d8ff;font:11px/1.5 ui-monospace,SFMono-Regular,Consolas,monospace}
+.script-editor-help small{color:var(--muted);font-size:11px;line-height:1.55}
+.script-editor-error{min-height:18px;margin:0;color:#fca5a5;font-size:12px}
+.script-editor-dialog>footer{justify-content:flex-end;padding-top:4px}
+.script-group .script-edit-button{width:100%;justify-content:center}
+@media(max-width:600px){.script-editor-dialog{padding:16px;border-radius:14px}.script-editor-help{grid-template-columns:1fr}#script-editor-source{min-height:190px}}
