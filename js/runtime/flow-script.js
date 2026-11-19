@@ -3,7 +3,7 @@ const MAX_COMMANDS = 100;
 const PROPERTY_ALLOWLIST = new Set([
   'visible', 'backgroundColor3', 'backgroundTransparency', 'opacity',
   'text', 'textColor3', 'textTransparency', 'textSize', 'rotation',
-  'position', 'size', 'zIndex', 'blur', 'saturation', 'brightness',
+  'zIndex', 'blur', 'saturation', 'brightness',
   'contrast', 'tintColor', 'tintOpacity', 'enabled'
 ]);
 
