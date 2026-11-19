@@ -66,7 +66,7 @@ test('FlowScript reports missing and ambiguous object names instead of guessing'
 test('FlowScript standalone Script listens to a named button without being attached to it', () => {
   const scene = new Scene([
     { id: 'button', type: 'TextButton', name: 'Abrir' },
-    { id: 'script', type: 'Script', name: 'Controlador', props: { source: 'on("click", "Abrir", () => {\\n  show("Painel");\\n});' } },
+    { id: 'script', type: 'Script', name: 'Controlador', props: { source: 'on("click", "Abrir", () => {\n  show("Painel");\n});' } },
     { id: 'panel', type: 'Frame', name: 'Painel', props: { visible: false } }
   ]);
   const program = parseFlowScript(scene.get('script').props.source);
