@@ -11,7 +11,7 @@ const ICONS = {
   Script: '<path d="m8 5-5 7 5 7M16 5l5 7-5 7M14 3l-4 18"/>',
 };
 const icon = type => '<svg viewBox="0 0 24 24" aria-hidden="true">' + (ICONS[type] || ICONS.Frame) + '</svg>';
-const orderedSiblingIds = (scene, ids) => ids.map((id, index) => ({ id, index, node: scene.get(id) })).filter(item => item.node && item.node.type !== 'Script').sort((a, b) => normalizeZIndex(a.node.props.zIndex) - normalizeZIndex(b.node.props.zIndex) || b.index - a.index).map(item => item.id);
+const orderedSiblingIds = (scene, ids) => ids.map((id, index) => ({ id, index, node: scene.get(id) })).filter(item => item.node && item.node.type !== 'Script').sort((a, b) => normalizeZIndex(a.node.props.zIndex) - normalizeZIndex(b.node.props.zIndex) || a.index - b.index).map(item => item.id);
 const el = (tag, className, text) => {
   const node = document.createElement(tag);
   if (className) node.className = className;
@@ -439,7 +439,7 @@ export function updateSceneLayout(container, scene, sceneSize = { width: 960, he
   for (const id of scene.roots) visit(id, container.querySelector('.scene-world'), rootWidth, rootHeight);
 }
 
-export function renderTree(container, scene, selectedId, { search = '', expanded = new Set(), onSelect = () => {}, onToggle = () => {} } = {}) {
+export function renderTree(container, scene, selectedId, { search = '', expanded = new Set(), onSelect = () => {}, onToggle = () => {}, onScriptEdit = () => {} } = {}) {
   container.replaceChildren();
   const list = el('div', 'tree-list');
   const query = search.trim().toLocaleLowerCase('pt-BR');
@@ -469,9 +469,17 @@ export function renderTree(container, scene, selectedId, { search = '', expanded
     const marker = el('span', 'tree-marker tree-icon-' + node.type.toLowerCase()); marker.innerHTML = icon(node.type);
     const name = el('span', 'tree-name', node.name);
     const type = el('span', 'tree-type', node.type);
-    const menu = el('button', 'tree-menu-trigger', '⋯'); menu.type = 'button'; menu.dataset.treeMenu = id;
-    menu.setAttribute('aria-label', 'Opções de ' + node.name);
-    row.append(toggle, marker, name, type, menu);
+    if (node.type === 'Script') {
+      const openScript = el('button', 'tree-script-open', 'Abrir');
+      openScript.type = 'button'; openScript.dataset.treeOpenScript = id;
+      openScript.title = 'Abrir script'; openScript.setAttribute('aria-label', 'Abrir script ' + node.name);
+      openScript.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5h8M8 9h8M8 13h5M6 3h12a1 1 0 0 1 1 1v16l-7-4-7 4V4a1 1 0 0 1 1-1Z"/></svg>';
+      row.append(toggle, marker, name, type, openScript);
+    } else {
+      const menu = el('button', 'tree-menu-trigger', '⋯'); menu.type = 'button'; menu.dataset.treeMenu = id;
+      menu.setAttribute('aria-label', 'Opções de ' + node.name);
+      row.append(toggle, marker, name, type, menu);
+    }
     branch.append(row);
     if (node.children.length && isOpen) {
       const children = el('div', 'tree-children');
@@ -487,7 +495,7 @@ export function renderTree(container, scene, selectedId, { search = '', expanded
   container.append(rootStart, list);
 }
 
-export function renderInspector(container, node, { onChange, onDelete, onDuplicate, onEditStart, onPreview, onCommit, assets = [], onAsset, scripts = [], onScriptEdit } = {}) {
+export function renderInspector(container, node, { onChange, onDelete, onDuplicate, onEditStart, onPreview, onCommit, assets = [], onAsset, scripts = [], onScriptEdit, onSelectInstance, relatedInstances = [], parentInstance = null } = {}) {
   const previousScrollTop = container.scrollTop;
   container.replaceChildren();
   const toolbarHost = container.closest('.inspector-panel')?.querySelector('.inspector-toolbar-actions');
@@ -499,6 +507,22 @@ export function renderInspector(container, node, { onChange, onDelete, onDuplica
   const heading = el('div', 'inspector-heading');
   heading.append(el('span', 'eyebrow', node.type.toUpperCase()), el('strong', '', node.name));
   container.append(heading);
+  const instanceBar = el('div', 'inspector-instance-bar');
+  if (node.type === 'UIBackdrop' && parentInstance) {
+    const back = el('button', 'inspector-instance-chip is-parent', '← ' + parentInstance.name);
+    back.type = 'button'; back.addEventListener('click', () => onSelectInstance?.(parentInstance.id));
+    instanceBar.append(el('span', 'inspector-instance-label', 'Objeto principal'), back);
+  } else if (relatedInstances.length) {
+    instanceBar.append(el('span', 'inspector-instance-label', 'Subinstâncias'));
+    relatedInstances.forEach(instance => {
+      const chip = el('button', 'inspector-instance-chip');
+      chip.type = 'button'; chip.innerHTML = icon(instance.type) + '<span>' + instance.name + '</span>';
+      chip.title = 'Abrir propriedades de ' + instance.name;
+      chip.addEventListener('click', () => onSelectInstance?.(instance.id));
+      instanceBar.append(chip);
+    });
+  }
+  if (instanceBar.childElementCount) container.append(instanceBar);
   const toolbar = container.closest('.inspector-panel')?.querySelector('.inspector-toolbar-actions');
   if (toolbar) {
     toolbar.replaceChildren();
