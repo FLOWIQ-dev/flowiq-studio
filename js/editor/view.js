@@ -485,7 +485,7 @@ export function renderTree(container, scene, selectedId, { search = '', expanded
   container.append(rootStart, list);
 }
 
-export function renderInspector(container, node, { onChange, onDelete, onDuplicate, onEditStart, onPreview, onCommit, assets = [], onAsset, events = [], nodes = [], onEventSave } = {}) {
+export function renderInspector(container, node, { onChange, onDelete, onDuplicate, onEditStart, onPreview, onCommit, assets = [], onAsset, scripts = [], onScriptEdit } = {}) {
   const previousScrollTop = container.scrollTop;
   container.replaceChildren();
   const toolbarHost = container.closest('.inspector-panel')?.querySelector('.inspector-toolbar-actions');
@@ -706,71 +706,15 @@ export function renderInspector(container, node, { onChange, onDelete, onDuplica
   });
 
   if (node.type === 'TextButton' || node.type === 'ImageButton') {
-    const logic = el('section', 'property-group logic-group');
-    logic.append(el('h3', '', 'Interações'));
-    const rule = events.find(item => item && item.nodeId === node.id && item.event === 'click');
-    const available = nodes.filter(item => item && item.id !== node.id);
-    const actionTypes = [
-      { value: 'setText', label: 'Alterar texto' },
-      { value: 'setProperty', label: 'Alterar propriedade' },
-      { value: 'toggleVisibility', label: 'Mostrar / ocultar' },
-      { value: 'log', label: 'Registrar mensagem' }
-    ];
-    const targetSelect = (action, index) => {
-      const label = el('label', 'property-field');
-      label.append(el('span', '', 'Objeto afetado'));
-      const select = el('select');
-      const self = el('option', '', 'Este botão'); self.value = ''; select.append(self);
-      available.forEach(item => { const option = el('option', '', item.name); option.value = item.id; select.append(option); });
-      select.value = action.targetId || '';
-      select.addEventListener('change', () => { const next = actions.map((item, i) => i === index ? { ...item, targetId: select.value } : item); onEventSave?.(node.id, next); });
-      label.append(select); return label;
-    };
-    const actions = Array.isArray(rule?.actions) ? rule.actions : [];
-    if (!rule) {
-      const hint = el('p', 'event-editor-note', 'Defina o que acontece quando alguém tocar neste botão na prévia.');
-      const create = el('button', 'button subtle', 'Criar evento Ao clicar');
-      create.type = 'button'; create.addEventListener('click', () => onEventSave?.(node.id, []));
-      logic.append(hint, create);
-    } else {
-      actions.forEach((action, index) => {
-        const card = el('div', 'event-action-card');
-        const top = el('div', 'event-action-heading');
-        top.append(el('strong', '', 'Ação ' + (index + 1)));
-        const remove = el('button', 'icon-button', '×'); remove.type = 'button'; remove.setAttribute('aria-label', 'Remover ação');
-        remove.addEventListener('click', () => onEventSave?.(node.id, actions.filter((_, i) => i !== index)));
-        top.append(remove); card.append(top);
-        const typeWrap = el('label', 'property-field'); typeWrap.append(el('span', '', 'Ação'));
-        const typeSelect = el('select');
-        actionTypes.forEach(item => { const option = el('option', '', item.label); option.value = item.value; typeSelect.append(option); });
-        typeSelect.value = action.type || 'setText';
-        typeSelect.addEventListener('change', () => onEventSave?.(node.id, actions.map((item, i) => i === index ? { type: typeSelect.value, targetId: item.targetId || '', value: item.value || '' } : item)));
-        typeWrap.append(typeSelect); card.append(typeWrap);
-        if (action.type !== 'log') card.append(targetSelect(action, index));
-        if (action.type === 'setText' || !action.type || action.type === 'log' || action.type === 'setProperty') {
-          const label = el('label', 'property-field');
-          label.append(el('span', '', action.type === 'log' ? 'Mensagem' : action.type === 'setProperty' ? 'Valor da propriedade' : 'Novo texto'));
-          const input = el('input'); input.type = 'text'; input.value = String(action.value ?? '');
-          input.addEventListener('change', () => onEventSave?.(node.id, actions.map((item, i) => i === index ? { ...item, value: input.value } : item)));
-          label.append(input); card.append(label);
-        }
-        if (action.type === 'setProperty') {
-          const label = el('label', 'property-field'); label.append(el('span', '', 'Propriedade'));
-          const select = el('select');
-          [['background','Cor de fundo'],['color','Cor do texto'],['opacity','Opacidade'],['visible','Visibilidade']].forEach(([value,text]) => { const option=el('option','',text);option.value=value;select.append(option); });
-          select.value = action.property || 'background';
-          select.addEventListener('change', () => onEventSave?.(node.id, actions.map((item,i)=>i===index?{...item,property:select.value}:item)));
-          label.append(select); card.append(label);
-        }
-        logic.append(card);
-      });
-      const add = el('button', 'button subtle', 'Adicionar ação');
-      add.type = 'button'; add.addEventListener('click', () => onEventSave?.(node.id, [...actions, { type: 'setText', targetId: '', value: 'Olá!' }]));
-      const removeEvent = el('button', 'button subtle danger-text', 'Excluir evento');
-      removeEvent.type = 'button'; removeEvent.addEventListener('click', () => onEventSave?.(node.id, null));
-      logic.append(add, removeEvent);
-    }
-    container.append(logic);
+    const scriptPanel = el('section', 'property-group script-group');
+    scriptPanel.append(el('h3', '', 'Script'));
+    const script = scripts.find(item => item && item.nodeId === node.id);
+    scriptPanel.append(el('p', 'event-editor-note', script?.source?.trim() ? 'Este botão possui um FlowScript.' : 'Este botão ainda não possui script.'));
+    const edit = el('button', 'button subtle script-edit-button', script?.source?.trim() ? 'Editar script' : 'Adicionar script');
+    edit.type = 'button';
+    edit.addEventListener('click', () => onScriptEdit?.(node.id));
+    scriptPanel.append(edit);
+    container.append(scriptPanel);
   }
   container.scrollTop = previousScrollTop;
 }
