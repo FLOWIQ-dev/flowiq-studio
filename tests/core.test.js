@@ -447,7 +447,7 @@ test('Blur is clipped to the Frame surface', async () => {
 test('ImageLabel reuses object URLs and DOM nodes across scene renders', async () => {
   const view = await readFile(new URL('../js/editor/view.js', import.meta.url), 'utf8');
   assert.match(view, /container\._assetObjectUrls/);
-  assert.match(view, /cached\.blob !== asset\.blob/);
+  assert.match(view, /cached\.blob !== initialAsset\.blob/);
   assert.match(view, /existingNodes\.get\(node\.id\)/);
   assert.match(view, /existing && existing\.tagName/);
   assert.doesNotMatch(view, /for \(const url of container\._objectUrls/);
