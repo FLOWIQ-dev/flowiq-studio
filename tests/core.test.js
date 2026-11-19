@@ -703,3 +703,15 @@ test('Script is an independent non-visual scene instance', () => {
   assert.equal(restored.get(script.id).props.source, script.props.source);
   assert.ok(COMPONENTS.some(item => item.type === 'Script'));
 });
+
+
+test('new equal-ZIndex siblings are painted above older siblings and Inspector exposes component navigation', async () => {
+  const view = await readFile(new URL('../js/editor/view.js', import.meta.url), 'utf8');
+  const app = await readFile(new URL('../js/app.js', import.meta.url), 'utf8');
+  const html = await readFile(new URL('../index.html', import.meta.url), 'utf8');
+  assert.match(view, /normalizeZIndex\(a\.node\.props\.zIndex\) - normalizeZIndex\(b\.node\.props\.zIndex\) \|\| a\.index - b\.index/);
+  assert.match(view, /dataset\.treeOpenScript = id/);
+  assert.match(view, /inspector-instance-bar/);
+  assert.match(app, /data-tree-open-script/);
+  assert.equal((html.match(/data-add-type="Script"/g) || []).length, 1);
+});

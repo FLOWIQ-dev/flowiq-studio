@@ -1414,3 +1414,23 @@ body[data-screen=editor]{
 .tree-marker.tree-icon-imagelabel{color:#f08fbd}
 .tree-marker.tree-icon-uibackdrop{color:#7dd3fc}
 .tree-marker.tree-icon-script{color:#d5a6ff}
+
+
+/* Build 1.7.1: clear instance palette, direct Script access and Inspector component switcher. */
+.tree-marker.tree-icon-frame,.add-menu [data-add-type="Frame"]>b{color:#82b8ff;background:rgba(72,139,220,.13);border-color:rgba(112,174,255,.28)}
+.tree-marker.tree-icon-textbutton,.add-menu [data-add-type="TextButton"]>b{color:#63ddb2;background:rgba(48,174,130,.12);border-color:rgba(99,221,178,.28)}
+.tree-marker.tree-icon-imagebutton,.add-menu [data-add-type="ImageButton"]>b{color:#ffbd78;background:rgba(210,133,55,.12);border-color:rgba(255,189,120,.28)}
+.tree-marker.tree-icon-textlabel,.add-menu [data-add-type="TextLabel"]>b{color:#66d7e8;background:rgba(58,166,185,.12);border-color:rgba(102,215,232,.28)}
+.tree-marker.tree-icon-imagelabel,.add-menu [data-add-type="ImageLabel"]>b{color:#c09aff;background:rgba(143,104,208,.13);border-color:rgba(192,154,255,.28)}
+.tree-marker.tree-icon-uibackdrop,.add-menu [data-add-type="UIBackdrop"]>b{color:#5fd9e4;background:rgba(50,166,180,.13);border-color:rgba(95,217,228,.28)}
+.tree-marker.tree-icon-script,.add-menu [data-add-type="Script"]>b{color:#f2d078;background:rgba(190,150,58,.13);border-color:rgba(242,208,120,.3)}
+.add-menu [data-add-type]>b{border-radius:9px}
+.tree-script-open{display:inline-flex;align-items:center;justify-content:center;gap:4px;min-width:54px;height:26px;padding:0 7px;border:1px solid rgba(242,208,120,.3);border-radius:6px;background:rgba(190,150,58,.12);color:#f2d078;font-size:10px;font-weight:700}
+.tree-script-open svg{width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.tree-script-open:hover{background:rgba(190,150,58,.22);border-color:rgba(242,208,120,.55)}
+.inspector-instance-bar{display:flex;align-items:center;gap:7px;flex-wrap:wrap;padding:9px 0 10px;border-bottom:1px solid var(--line-soft)}
+.inspector-instance-label{color:#8195b1;font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;margin-right:2px}
+.inspector-instance-chip{display:inline-flex;align-items:center;gap:6px;min-height:29px;padding:0 9px;border:1px solid rgba(95,217,228,.24);border-radius:6px;background:rgba(53,143,158,.1);color:#9ce6eb;font-size:11px;font-weight:650}
+.inspector-instance-chip svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.inspector-instance-chip:hover{background:rgba(53,143,158,.2);border-color:rgba(95,217,228,.48)}
+.inspector-instance-chip.is-parent{border-color:rgba(130,184,255,.25);background:rgba(72,139,220,.1);color:#a8ccff}

@@ -85,6 +85,8 @@ class FlowiqStudio {
       if (event.target.closest('[data-tree-move-cancel]')) this.cancelTreeMoveMode();
     });
     $('tree').addEventListener('click', event => {
+      const openScript = event.target.closest('[data-tree-open-script]');
+      if (openScript) { const id = openScript.dataset.treeOpenScript; this.select(id); this.openScriptEditor(id); return; }
       const toggle = event.target.closest('[data-tree-toggle]');
       if (toggle) { this.toggleTreeNode(toggle.dataset.treeToggle); return; }
       const menu = event.target.closest('[data-tree-menu]');
@@ -653,7 +655,8 @@ class FlowiqStudio {
       search: this.treeSearch,
       expanded: this.treeExpanded,
       onSelect: id => this.select(id),
-      onToggle: id => this.toggleTreeNode(id)
+      onToggle: id => this.toggleTreeNode(id),
+      onScriptEdit: id => { this.select(id); this.openScriptEditor(id); }
     });
     tree.classList.toggle('tree-move-mode-active', !!this.treeMoveMode);
     tree.querySelectorAll('[data-tree-node]').forEach(row => row.classList.toggle('tree-move-source', row.dataset.treeNode === this.treeMoveMode));
@@ -771,7 +774,10 @@ class FlowiqStudio {
       onDelete: () => { this.deleteSelected(); this.setPanel('stage'); },
       onAsset: id => this.updateProperty('assetId', id),
       scripts: this.project?.scripts || [],
-      onScriptEdit: nodeId => this.openScriptEditor(nodeId)
+      onScriptEdit: nodeId => this.openScriptEditor(nodeId),
+      onSelectInstance: id => this.select(id),
+      relatedInstances: node.type === 'Frame' ? node.children.map(id => this.scene.get(id)).filter(child => child && (child.type === 'UIBackdrop' || child.props?.pseudoInstance)) : [],
+      parentInstance: node.type === 'UIBackdrop' && node.parentId ? this.scene.get(node.parentId) : null
     });
   }
 
