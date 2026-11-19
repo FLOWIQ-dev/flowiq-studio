@@ -192,7 +192,7 @@ test('ZIndex follows Roblox Sibling semantics with signed 32-bit integers', asyn
 });
 
 test('Inspector property schemas are class-based and extensible', () => {
-  assert.equal(PROPERTY_SCHEMA_VERSION, 18);
+  assert.equal(PROPERTY_SCHEMA_VERSION, 19);
   const frame = getPropertySchema('Frame');
   assert.ok(frame.sections.some(section => section.title === 'Data'));
   const frameKeys = frame.sections.flatMap(section => section.fields.map(field => field.key));
@@ -486,7 +486,7 @@ test('Frame and ImageLabel share the exact same UDim2 and AnchorPoint layout con
     { key: 'size', type: 'udim2', subgroup: 'Size', components: 4 },
     { key: 'anchorPoint', type: 'vector2', subgroup: 'AnchorPoint', components: 2 }
   ]);
-  for (const type of ['Frame', 'TextButton', 'TextLabel', 'ImageLabel']) {
+  for (const type of ['Frame', 'TextButton', 'ImageButton', 'TextLabel', 'ImageLabel']) {
     const current = getPropertySchema(type);
     assert.equal(current.sections[0].title, 'Appearance');
     assert.ok(current.sections.some(section => section.title === 'Layout'));
@@ -569,6 +569,7 @@ test('ZIndex is available on every GuiObject and supports Roblox signed integer 
     assert.equal(fields.find(field => field.key === 'zIndex')?.max, 2147483647, type + ' should expose positive ZIndex');
   }
   assert.ok(COMPONENTS.some(component => component.type === 'TextLabel'), 'TextLabel must be available in Insert Object');
+  assert.ok(COMPONENTS.some(component => component.type === 'ImageButton'), 'ImageButton must be available in Insert Object');
 });
 
 test('TextLabel typography is focused: useful fonts and independent weights, no text stroke or legacy controls', async () => {
@@ -609,15 +610,37 @@ test('TextLabel exposes Roblox text properties and hierarchy-aware rendering', a
 });
 
 
-test('Blur exposes an optional glass border that is off by default and stays inset', async () => {
+test('Blur has no optional glass border property or rim rendering', async () => {
   const scene = new Scene();
   const frame = scene.create('Frame');
   const material = scene.create('UIBackdrop', frame.id);
-  assert.equal(material.props.glassBorder, false);
+  assert.equal(Object.hasOwn(material.props, 'glassBorder'), false);
   const fields = getPropertySchema('UIBackdrop').sections.flatMap(section => section.fields);
-  assert.ok(fields.some(field => field.key === 'glassBorder' && field.type === 'checkbox'));
+  assert.ok(!fields.some(field => field.key === 'glassBorder'));
   const view = await readFile(new URL('../js/editor/view.js', import.meta.url), 'utf8');
-  assert.match(view, /backdropVisible && Boolean\(backdrop\.glassBorder\)/);
-  assert.match(view, /inset 0 0 0 1px rgba\(255,255,255,\.34\)/);
-  assert.match(view, /inset 0 1px 0 rgba\(255,255,255,\.22\)/);
+  assert.doesNotMatch(view, /glassBorder|inset 0 0 0 1px rgba\\(255,255,255/);
+});
+
+test('TextButton and ImageButton are complete GuiButton instances with Roblox-style properties', async () => {
+  const scene = new Scene();
+  const textButton = scene.create('TextButton');
+  const imageButton = scene.create('ImageButton');
+  assert.equal(textButton.props.text, 'Botão');
+  assert.equal(textButton.props.autoButtonColor, true);
+  assert.equal(imageButton.props.assetId, '');
+  assert.equal(imageButton.props.hoverAssetId, '');
+  assert.equal(imageButton.props.pressedAssetId, '');
+  assert.equal(imageButton.props.autoButtonColor, true);
+  const textFields = getPropertySchema('TextButton').sections.flatMap(section => section.fields);
+  for (const key of ['text','textColor3','textTransparency','textSize','textScaled','textWrapped','textXAlignment','textYAlignment','fontFace','autoButtonColor']) assert.ok(textFields.some(field => field.key === key), key);
+  const imageFields = getPropertySchema('ImageButton').sections.flatMap(section => section.fields);
+  for (const key of ['assetId','hoverAssetId','pressedAssetId','imageColor3','imageTransparency','fit','autoButtonColor']) assert.ok(imageFields.some(field => field.key === key), key);
+  assert.ok(COMPONENTS.some(item => item.type === 'ImageButton'));
+  const view = await readFile(new URL('../js/editor/view.js', import.meta.url), 'utf8');
+  const html = await readFile(new URL('../index.html', import.meta.url), 'utf8');
+  assert.match(view, /node\\.type === 'TextButton' \\|\\| node\\.type === 'ImageButton'/);
+  assert.match(view, /p\\.hoverAssetId/);
+  assert.match(view, /p\\.pressedAssetId/);
+  assert.match(view, /onRun\\(node, 'click'\\)/);
+  assert.match(html, /data-add-type="ImageButton"/);
 });
