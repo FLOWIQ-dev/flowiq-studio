@@ -1362,3 +1362,10 @@ body[data-screen=editor]{
 
 #screen-editor .property-field textarea.property-textarea{width:100%;min-height:64px;resize:vertical;padding:7px 8px;border:1px solid rgba(145,160,181,.14);border-radius:4px;background:#0d1929;color:#dce8f6;font:inherit;font-size:11px;line-height:1.45;outline:none}
 #screen-editor .property-field textarea.property-textarea:focus{border-color:rgba(91,157,232,.55)}
+
+/* GuiButton instances in the preview. */
+.scene-imagebutton{display:block;padding:0;appearance:none;-webkit-appearance:none;cursor:pointer}
+.scene-node.scene-textbutton,.scene-node.scene-imagebutton{font:inherit;text-align:inherit}
+.scene-node.scene-textbutton>.scene-text-content{display:flex;flex:1;align-items:center;justify-content:center;box-sizing:border-box;width:100%;height:100%;min-width:0;min-height:0;overflow:hidden;pointer-events:none}
+.preview-screen .scene-imagebutton{cursor:pointer}
+.preview-screen .scene-imagebutton:focus-visible,.preview-screen .scene-textbutton:focus-visible{outline:2px solid #70b2ff;outline-offset:2px}
