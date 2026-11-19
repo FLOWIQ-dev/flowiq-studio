@@ -345,7 +345,17 @@ class FlowiqStudio {
         return !item?.props?.position || !item?.props?.size || (item.children || []).some(hasLegacyLayout);
       });
       this.scene = new Scene(storedScene);
-      if (needsLayoutMigration) this.project.scene = this.scene.toJSON();
+      let needsScriptMigration = false;
+      for (const legacy of Array.isArray(project.scripts) ? project.scripts : []) {
+        const target = this.scene.get(legacy?.nodeId);
+        if (!target || !['TextButton', 'ImageButton'].includes(target.type) || typeof legacy.source !== 'string') continue;
+        const source = legacy.source.replace(/^\s*on\(\s*("(?:click|Activated)")\s*,\s*\(\)\s*=>/, 'on($1, ' + JSON.stringify(target.name) + ', () =>');
+        const scriptNode = this.scene.create('Script', null, 'Script');
+        scriptNode.props.source = source;
+        needsScriptMigration = true;
+      }
+      if (needsScriptMigration) this.project.scripts = [];
+      if (needsLayoutMigration || needsScriptMigration) this.project.scene = this.scene.toJSON();
       this.store.set({ project, selectedId: null, screen: 'editor', panel: 'stage' });
       this.setPanel('stage');
       this.history.clear();
@@ -355,9 +365,10 @@ class FlowiqStudio {
       $('mobile-tabs').hidden = false;
       this.renderEditor();
       this.showScreen('editor');
-      if (needsLayoutMigration) {
+      if (needsLayoutMigration || needsScriptMigration) {
         this.scheduleSave();
-        this.log('Layout antigo convertido para Position e Size compatíveis com UDim2.', 'success');
+        if (needsLayoutMigration) this.log('Layout antigo convertido para Position e Size compatíveis com UDim2.', 'success');
+        if (needsScriptMigration) this.log('Scripts antigos convertidos em instâncias Script independentes.', 'success');
       }
       this.log('Projeto aberto.', 'success');
     } catch (error) {
@@ -417,7 +428,7 @@ class FlowiqStudio {
 
   addNode(type, parentId = undefined) {
     if (!COMPONENTS.some(item => item.type === type)) return;
-    const destinationId = parentId !== undefined ? parentId : this.addParentId !== null ? this.addParentId : undefined;
+    const destinationId = type === 'Script' ? null : parentId !== undefined ? parentId : this.addParentId !== null ? this.addParentId : undefined;
     let parent = destinationId === undefined ? this.scene.get(this.store.state.selectedId) : this.scene.get(destinationId);
     if (type === 'UIBackdrop') {
       if (parent?.type !== 'Frame') { this.toast('Selecione um Frame para adicionar um UIBackdrop.', 'error'); return; }
@@ -520,11 +531,10 @@ class FlowiqStudio {
 
   openScriptEditor(nodeId) {
     const node = this.scene.get(nodeId);
-    if (!node || !['TextButton', 'ImageButton'].includes(node.type)) return;
+    if (!node || node.type !== 'Script') return;
     this.scriptEditingNodeId = nodeId;
-    const existing = (this.project.scripts || []).find(item => item && item.nodeId === nodeId);
     $('script-editor-title').textContent = 'Script · ' + node.name;
-    $('script-editor-source').value = existing?.source || 'on("click", () => {\n  show("Painel");\n});';
+    $('script-editor-source').value = node.props.source || 'on("click", "Botao", () => {\n  show("Painel");\n});';
     $('script-editor-error').textContent = '';
     $('script-editor-modal').hidden = false;
     requestAnimationFrame(() => $('script-editor-source').focus());
@@ -537,7 +547,8 @@ class FlowiqStudio {
 
   saveScriptEditor() {
     const nodeId = this.scriptEditingNodeId;
-    if (!nodeId || !this.scene.get(nodeId)) return this.closeScriptEditor();
+    const node = nodeId ? this.scene.get(nodeId) : null;
+    if (!node || node.type !== 'Script') return this.closeScriptEditor();
     const source = $('script-editor-source').value.trim();
     try { parseFlowScript(source); }
     catch (error) {
@@ -545,13 +556,11 @@ class FlowiqStudio {
       return;
     }
     this.history.checkpoint(this.historySnapshot());
-    const scripts = (this.project.scripts || []).filter(item => item && item.nodeId !== nodeId);
-    if (source) scripts.push({ id: makeId(), nodeId, source, language: 'FlowScript', version: 1 });
-    this.project.scripts = scripts;
+    node.props.source = source;
     this.scheduleSave();
     this.closeScriptEditor();
-    this.renderInspectorPanel(this.scene.get(nodeId));
-    this.toast(source ? 'FlowScript salvo.' : 'Script removido.');
+    this.renderInspectorPanel(node);
+    this.toast(source ? 'FlowScript salvo.' : 'Script atualizado.');
   }
 
   saveButtonAction(nodeId, actions) {
