@@ -192,7 +192,7 @@ test('ZIndex follows Roblox Sibling semantics with signed 32-bit integers', asyn
 });
 
 test('Inspector property schemas are class-based and extensible', () => {
-  assert.equal(PROPERTY_SCHEMA_VERSION, 21);
+  assert.equal(PROPERTY_SCHEMA_VERSION, 22);
   const frame = getPropertySchema('Frame');
   assert.ok(frame.sections.some(section => section.title === 'Data'));
   const frameKeys = frame.sections.flatMap(section => section.fields.map(field => field.key));
@@ -743,4 +743,18 @@ test('preview GuiObjects allow touch gestures to reach nested ScrollingFrame vie
   assert.ok(view.includes("childContainer.style.touchAction = enabled ?"));
   assert.ok(css.includes('.preview-screen .scene-node{touch-action:auto}'));
   assert.ok(css.includes('.scene-scroll-viewport'));
+});
+
+test('ScrollingFrame exposes a single Elastic toggle and migrates legacy bounce settings', async () => {
+  const view = await readFile(new URL('../js/editor/view.js', import.meta.url), 'utf8');
+  const model = await readFile(new URL('../js/data/model.js', import.meta.url), 'utf8');
+  const schema = await readFile(new URL('../js/editor/property-schema.js', import.meta.url), 'utf8');
+  const defaults = model.match(/ScrollingFrame: \{[^\\n]+/)?.[0] || '';
+  const scrolling = schema.match(/registerPropertySchema\('ScrollingFrame',[\\s\\S]*?\\n\\]\\}\);/)?.[0] || '';
+  assert.match(defaults, /elastic: true/);
+  assert.match(model, /delete merged\\.elasticBehavior/);
+  assert.match(view, /p\\.elastic === false \\? 'none' : 'auto'/);
+  assert.match(view, /webkitOverflowScrolling = 'touch'/);
+  assert.match(scrolling, /checkbox\\('elastic', 'Elastic'\\)/);
+  assert.doesNotMatch(scrolling, /WhenScrollable|Always|Never|elasticBehavior/);
 });
