@@ -1,5 +1,5 @@
 const ID = () => globalThis.crypto?.randomUUID?.() || 'node_' + Date.now().toString(36) + Math.random().toString(36).slice(2);
-const TYPES = new Set(['Frame', 'TextButton', 'ImageButton', 'TextLabel', 'ImageLabel', 'UIBackdrop', 'Script']);
+const TYPES = new Set(['Frame', 'ScrollingFrame', 'TextButton', 'ImageButton', 'TextLabel', 'ImageLabel', 'UIBackdrop', 'Script']);
 const finite = (value, fallback = 0) => Number.isFinite(Number(value)) ? Number(value) : fallback;
 export const normalizeZIndex = value => Math.max(-2147483648, Math.min(2147483647, Math.round(finite(value, 1))));
 export const UDim = (scale = 0, offset = 0) => ({ scale: finite(scale), offset: finite(offset) });
@@ -9,6 +9,7 @@ export const UDim2 = (xScale = 0, xOffset = 0, yScale = 0, yOffset = 0) => ({
 });
 const DEFAULTS = Object.freeze({
   Frame: { x: 24, y: 24, width: 320, height: 220, position: UDim2(0, 24, 0, 24), size: UDim2(0, 320, 0, 220), anchorPoint: { x: 0, y: 0 }, background: '#1b2940', backgroundColor3: '#1b2940', backgroundTransparency: 0, radius: 0, opacity: 1, border: '#334155', borderColor3: '#334155', borderWidth: 0, borderSizePixel: 0, borderMode: 'Outline', rotation: 0, visible: true, archivable: true, clipsDescendants: false, active: false, interactable: true, selectable: false, selectionOrder: 0, layoutOrder: 0, zIndex: 1, automaticSize: 'None', sizeConstraint: 'RelativeXY', style: 'Custom' },
+  ScrollingFrame: { x: 24, y: 24, width: 320, height: 220, position: UDim2(0, 24, 0, 24), size: UDim2(0, 320, 0, 220), anchorPoint: { x: 0, y: 0 }, backgroundColor3: '#1b2940', backgroundTransparency: 0, radius: 0, opacity: 1, borderColor3: '#334155', borderSizePixel: 0, visible: true, rotation: 0, zIndex: 1, clipsDescendants: true, scrollingEnabled: true, scrollingDirection: 'XY', automaticCanvasSize: 'None', canvasWidth: 0, canvasHeight: 0, scrollBarThickness: 8, elasticBehavior: 'WhenScrollable' },
   UIBackdrop: { x: 0, y: 0, width: 1, height: 1, position: UDim2(0, 0, 0, 0), size: UDim2(0, 1, 0, 1), anchorPoint: { x: 0, y: 0 }, enabled: true, effect: 'Blur', blur: 22, saturation: 1.35, brightness: 1.08, contrast: 1.08, tintColor: '#dbeafe', tintOpacity: 0.08, visible: true },
   Script: { source: 'on("click", "Botao", () => {\n  show("Painel");\n});' },
   TextButton: { x: 24, y: 24, width: 160, height: 48, position: UDim2(0, 24, 0, 24), size: UDim2(0, 160, 0, 48), anchorPoint: { x: 0, y: 0 }, backgroundColor3: '#2563eb', backgroundTransparency: 0, textColor3: '#ffffff', radius: 10, textSize: 15, fontFace: 'Arial', fontWeight: '500', text: 'Botão', textTransparency: 0, textScaled: false, textWrapped: false, textXAlignment: 'Center', textYAlignment: 'Center', richText: false, lineHeight: 1, opacity: 1, visible: true, borderColor3: '#334155', borderSizePixel: 0, autoButtonColor: true, interactable: true, zIndex: 1 },
@@ -231,6 +232,7 @@ export class Scene {
 
 export const COMPONENTS = Object.freeze([
   { type: 'Frame', label: 'Frame', category: 'Contêineres', detail: 'Container para outros elementos' },
+  { type: 'ScrollingFrame', label: 'ScrollingFrame', category: 'Contêineres', detail: 'Container rolável com elasticidade e canvas' },
   { type: 'UIBackdrop', label: 'UIBackdrop', category: 'Aparência', detail: 'Material e efeitos atrás do fundo do Frame' },
   { type: 'TextButton', label: 'TextButton', category: 'Interação', detail: 'Botão de texto com evento Activated' },
   { type: 'ImageButton', label: 'ImageButton', category: 'Interação', detail: 'Botão de imagem com estados normal, hover e pressionado' },
