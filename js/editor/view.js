@@ -489,10 +489,28 @@ export function updateSceneLayout(container, scene, sceneSize = { width: 960, he
     const children = element.querySelector(':scope > .scene-children');
     if (children) {
       const canvas = children.querySelector(':scope > .scene-scroll-canvas');
-      const childTarget = canvas || children;
-      const childWidth = canvas ? (Number.parseFloat(canvas.style.width) || layout.width) : layout.width;
-      const childHeight = canvas ? (Number.parseFloat(canvas.style.height) || layout.height) : layout.height;
-      for (const childId of node.children) visit(childId, childTarget, childWidth, childHeight);
+      let childWidth = layout.width;
+      let childHeight = layout.height;
+      if (canvas && node.type === 'ScrollingFrame') {
+        const direction = ['X', 'Y', 'XY'].includes(p.scrollingDirection) ? p.scrollingDirection : 'XY';
+        let canvasWidth = Math.max(layout.width, Number(p.canvasWidth) || 0);
+        let canvasHeight = Math.max(layout.height, Number(p.canvasHeight) || 0);
+        for (const childId of node.children) {
+          const child = scene.get(childId);
+          if (!child || child.type === 'UIBackdrop' || child.type === 'Script') continue;
+          const bounds = measure(child, layout.width, layout.height);
+          if (p.automaticCanvasSize === 'X' || p.automaticCanvasSize === 'XY') canvasWidth = Math.max(canvasWidth, bounds.x + bounds.width);
+          if (p.automaticCanvasSize === 'Y' || p.automaticCanvasSize === 'XY') canvasHeight = Math.max(canvasHeight, bounds.y + bounds.height);
+        }
+        childWidth = direction === 'Y' ? layout.width : canvasWidth;
+        childHeight = direction === 'X' ? layout.height : canvasHeight;
+        canvas.style.width = childWidth + 'px';
+        canvas.style.height = childHeight + 'px';
+      } else if (canvas) {
+        childWidth = Number.parseFloat(canvas.style.width) || layout.width;
+        childHeight = Number.parseFloat(canvas.style.height) || layout.height;
+      }
+      for (const childId of node.children) visit(childId, canvas || children, childWidth, childHeight);
     }
   };
   for (const id of scene.roots) visit(id, container.querySelector('.scene-world'), rootWidth, rootHeight);
