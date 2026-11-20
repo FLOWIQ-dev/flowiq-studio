@@ -739,7 +739,7 @@ test('ScrollingFrame remains scrollable in the editor while preserving its canva
 test('preview GuiObjects allow touch gestures to reach nested ScrollingFrame viewports', async () => {
   const view = await readFile(new URL('../js/editor/view.js', import.meta.url), 'utf8');
   const css = await readFile(new URL('../css/studio.css', import.meta.url), 'utf8');
-  assert.ok(view.includes("item.style.touchAction = preview ? 'auto' : 'none'"));
+  assert.ok(view.includes("item.style.touchAction = preview ? 'auto' : (isScrollingFrame || insideScrollViewport ? 'pan-x pan-y' : 'none')"));
   assert.ok(view.includes("childContainer.style.touchAction = enabled ?"));
   assert.ok(css.includes('.preview-screen .scene-node{touch-action:auto}'));
   assert.ok(css.includes('.scene-scroll-viewport'));
@@ -751,9 +751,23 @@ test('ScrollingFrame exposes a single Elastic toggle and migrates legacy bounce 
   const schema = await readFile(new URL('../js/editor/property-schema.js', import.meta.url), 'utf8');
   assert.ok(model.includes("elastic: true"));
   assert.ok(model.includes("delete merged.elasticBehavior"));
-  assert.ok(view.includes("p.elastic === false ? 'none' : 'auto'"));
+  assert.ok(view.includes("p.elastic === false ? 'none' : 'contain'"));
   assert.ok(view.includes("webkitOverflowScrolling = 'touch'"));
   assert.ok(schema.includes("checkbox('elastic', 'Elastic')"));
   assert.ok(!schema.includes('WhenScrollable'));
   assert.ok(!schema.includes('elasticBehavior'));
+});
+
+
+test('ScrollingFrame editor separates touch scrolling from moving the selected frame', async () => {
+  const view = await readFile(new URL('../js/editor/view.js', import.meta.url), 'utf8');
+  const app = await readFile(new URL('../js/app.js', import.meta.url), 'utf8');
+  const css = await readFile(new URL('../css/studio.css', import.meta.url), 'utf8');
+  assert.ok(view.includes("isScrollingFrame || insideScrollViewport ? 'pan-x pan-y' : 'none'"));
+  assert.ok(view.includes("move.dataset.move = 'true'"));
+  assert.ok(app.includes("const isTouchGesture = event.pointerType === 'touch' || event.pointerType === 'pen'"));
+  assert.ok(app.includes('if (scrollViewport && isTouchGesture && !moveHandle && !resizeHandle && !rotateHandle)'));
+  assert.ok(app.includes("const moveHandle = event.target.closest('[data-move]')"));
+  assert.ok(css.includes('.scene-node>.move-handle'));
+  assert.ok(css.includes('overscroll-behavior:contain'));
 });

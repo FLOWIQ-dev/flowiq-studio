@@ -902,7 +902,22 @@ class FlowiqStudio {
     const node = this.scene.get(target.dataset.nodeId);
     if (!node) return;
     const scrollViewport = event.target.closest('.scene-scroll-viewport');
-    if (scrollViewport && target === scrollViewport.parentElement) {
+    const moveHandle = event.target.closest('[data-move]');
+    const resizeHandle = event.target.closest('[data-resize]');
+    const rotateHandle = event.target.closest('[data-rotate]');
+    const isTouchGesture = event.pointerType === 'touch' || event.pointerType === 'pen';
+
+    // Touch/pen inside the viewport is reserved for scrolling, including over child instances.
+    // No pointer capture or preventDefault here: the browser must own the native scroll gesture.
+    if (scrollViewport && isTouchGesture && !moveHandle && !resizeHandle && !rotateHandle) {
+      if (this.store.state.selectedId !== node.id) {
+        this.sceneTap = { id: node.id, pointerId: event.pointerId, startX: event.clientX, startY: event.clientY };
+      }
+      return;
+    }
+
+    // On mouse, a blank viewport selects on first click and moves once selected.
+    if (scrollViewport && target === scrollViewport.parentElement && this.store.state.selectedId !== node.id) {
       this.sceneTap = { id: node.id, pointerId: event.pointerId, startX: event.clientX, startY: event.clientY };
       return;
     }
@@ -911,13 +926,13 @@ class FlowiqStudio {
     // O primeiro toque nunca move, redimensiona ou gira.
     if (this.store.state.selectedId !== node.id) {
       this.sceneTap = { id: node.id, pointerId: event.pointerId, startX: event.clientX, startY: event.clientY };
-      target.setPointerCapture?.(event.pointerId);
+      if (!scrollViewport) target.setPointerCapture?.(event.pointerId);
       return;
     }
 
     event.preventDefault();
-    const resize = event.target.closest('[data-resize]')?.dataset.resize || null;
-    const rotate = Boolean(event.target.closest('[data-rotate]'));
+    const resize = resizeHandle?.dataset.resize || null;
+    const rotate = Boolean(rotateHandle);
     const mode = rotate ? 'rotate' : resize ? 'resize' : 'move';
     const rect = target.getBoundingClientRect();
     const startAngle = Math.atan2(event.clientY - (rect.top + rect.height / 2), event.clientX - (rect.left + rect.width / 2));

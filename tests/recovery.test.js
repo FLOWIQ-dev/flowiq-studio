@@ -62,9 +62,9 @@ test('app exposes version restore and requests persistent browser storage', asyn
 test('service worker and document use the same new cache build', async () => {
   const app = await read('index.html');
   const worker = await read('sw.js');
-  assert.match(app, /2026\.11\.20\.158/);
-  assert.match(worker, /flowiq-studio-clean-v158/);
-  assert.match(worker, /2026\.11\.20\.158/);
+  assert.match(app, /2026\.11\.20\.159/);
+  assert.match(worker, /flowiq-studio-clean-v159/);
+  assert.match(worker, /2026\.11\.20\.159/);
 });
 
 
@@ -99,7 +99,7 @@ test('ScrollingFrame is a persisted scene class with Roblox-style elastic scroll
   assert.match(schema, /registerPropertySchema\('ScrollingFrame'/);
   assert.match(schema, /checkbox\('elastic', 'Elastic'\)/);
   assert.match(view, /scene-scroll-viewport/);
-  assert.match(view, /overscrollBehavior = p\.elastic === false \? 'none' : 'auto'/);
+  assert.match(view, /overscrollBehavior = p\.elastic === false \? 'none' : 'contain'/);
   assert.match(view, /webkitOverflowScrolling = 'touch'/);
   assert.match(html, /data-add-type="ScrollingFrame"/);
 });
