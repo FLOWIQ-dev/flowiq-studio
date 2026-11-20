@@ -1434,3 +1434,10 @@ body[data-screen=editor]{
 .inspector-instance-chip svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
 .inspector-instance-chip:hover{background:rgba(53,143,158,.2);border-color:rgba(95,217,228,.48)}
 .inspector-instance-chip.is-parent{border-color:rgba(130,184,255,.25);background:rgba(72,139,220,.1);color:#a8ccff}
+
+.scene-scroll-viewport{scrollbar-width:thin;scrollbar-color:rgba(148,163,184,.72) transparent;overscroll-behavior:auto}
+.scene-scroll-viewport::-webkit-scrollbar{width:var(--scrollbar-thickness,8px);height:var(--scrollbar-thickness,8px)}
+.scene-scroll-viewport::-webkit-scrollbar-track{background:transparent}
+.scene-scroll-viewport::-webkit-scrollbar-thumb{background:rgba(148,163,184,.58);border:2px solid transparent;border-radius:999px;background-clip:padding-box}
+.scene-scroll-viewport::-webkit-scrollbar-thumb:hover{background:rgba(203,213,225,.82);background-clip:padding-box}
+.scene-scroll-canvas{min-width:100%;min-height:100%;pointer-events:auto}
