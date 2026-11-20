@@ -141,6 +141,8 @@ export function renderScene(container, scene, { selectedId = null, preview = fal
     item.style.width = layout.width + 'px';
     item.style.height = layout.height + 'px';
     item.style.zIndex = String(normalizeZIndex(p.zIndex));
+    // Preview must allow touch gestures to reach nested ScrollingFrame viewports.
+    item.style.touchAction = preview ? 'auto' : 'none';
     item.style.transform = 'translate(' + (-p.anchorPoint.x * 100) + '%,' + (-p.anchorPoint.y * 100) + '%) rotate(' + (Number(p.rotation) || 0) + 'deg)';
     const isFrame = node.type === 'Frame';
     const isScrollingFrame = node.type === 'ScrollingFrame';
