@@ -76,3 +76,15 @@ test('opening a project with no selected instance keeps the inspector safe', asy
   assert.doesNotMatch(render, /relatedInstances: node\.type|parentInstance: node\.type/);
 });
 
+
+test('Script Explorer rows keep Abrir separate and expose move, rename, duplicate and delete actions', async () => {
+  const view = await read('js/editor/view.js');
+  const app = await read('js/app.js');
+  const scriptRow = view.slice(view.indexOf("if (node.type === 'Script')"), view.indexOf("branch.append(row)"));
+  assert.match(scriptRow, /data-tree-open-script/);
+  assert.match(scriptRow, /data-tree-menu/);
+  assert.match(app, /node\.type === 'Script'[\s\S]*\['move', 'Mover'\][\s\S]*\['rename', 'Renomear'\][\s\S]*\['duplicate', 'Duplicar'\][\s\S]*\['delete', 'Excluir'\]/);
+  assert.match(app, /if \(action === 'move'\) \{ this\.startTreeMoveMode\(id\); return; \}/);
+  assert.match(app, /else if \(action === 'duplicate'\) this\.duplicateSelected\(\)/);
+  assert.match(app, /else if \(action === 'delete'\) this\.deleteSelected\(\)/);
+});
