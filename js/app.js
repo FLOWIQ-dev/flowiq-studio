@@ -901,6 +901,11 @@ class FlowiqStudio {
     if (!target) return;
     const node = this.scene.get(target.dataset.nodeId);
     if (!node) return;
+    const scrollViewport = event.target.closest('.scene-scroll-viewport');
+    if (scrollViewport && target === scrollViewport.parentElement) {
+      this.sceneTap = { id: node.id, pointerId: event.pointerId, startX: event.clientX, startY: event.clientY };
+      return;
+    }
 
     // Objeto não selecionado: aguarda o fim do gesto para confirmar um tap.
     // O primeiro toque nunca move, redimensiona ou gira.
