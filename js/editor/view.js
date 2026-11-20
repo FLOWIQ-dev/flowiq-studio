@@ -3,6 +3,7 @@ import { getPropertySchema } from './property-schema.js';
 const $ = id => document.getElementById(id);
 const ICONS = {
   Frame: '<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M8 8h8v8H8z"/>',
+  ScrollingFrame: '<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M8 8h8M8 12h6M8 16h8M17 9l2 2-2 2"/>',
   TextButton: '<rect x="3" y="5" width="18" height="14" rx="3"/><path d="M8 12h8"/>',
   ImageButton: '<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9" r="1.5"/><path d="m4 17 5-5 3 3 3-4 5 6"/>',
   TextLabel: '<path d="M4 6h16M12 6v13M8 19h8"/>',
@@ -142,10 +143,12 @@ export function renderScene(container, scene, { selectedId = null, preview = fal
     item.style.zIndex = String(normalizeZIndex(p.zIndex));
     item.style.transform = 'translate(' + (-p.anchorPoint.x * 100) + '%,' + (-p.anchorPoint.y * 100) + '%) rotate(' + (Number(p.rotation) || 0) + 'deg)';
     const isFrame = node.type === 'Frame';
+    const isScrollingFrame = node.type === 'ScrollingFrame';
+    const isContainerFrame = isFrame || isScrollingFrame;
     const backdropNode = isFrame ? node.children.map(childId => scene.get(childId)).find(child => child?.type === 'UIBackdrop') : null;
-      item.style.background = isFrame ? 'transparent' : (p.backgroundColor3 || p.background || 'transparent');
+      item.style.background = isContainerFrame ? 'transparent' : (p.backgroundColor3 || p.background || 'transparent');
     item.style.opacity = String(Math.max(0, Math.min(1, Number(p.opacity ?? 1))));
-    if (isFrame) {
+    if (isContainerFrame) {
       const bg = String(p.backgroundColor3 || p.background || 'transparent');
       const alpha = 1 - Math.max(0, Math.min(1, Number(p.backgroundTransparency) || 0));
       const match = bg.match(/^#([0-9a-f]{3}|[0-9a-f]{6})$/i);
@@ -157,7 +160,7 @@ export function renderScene(container, scene, { selectedId = null, preview = fal
       if (p.style === 'ChatBlue') fillColor = 'rgba(36,84,135,' + alpha + ')';
       if (p.style === 'ChatGreen') fillColor = 'rgba(35,112,75,' + alpha + ')';
       if (p.style === 'ChatRed') fillColor = 'rgba(137,48,55,' + alpha + ')';
-      item.dataset.clipsDescendants = String(Boolean(p.clipsDescendants));
+      item.dataset.clipsDescendants = String(isScrollingFrame || Boolean(p.clipsDescendants));
       item.style.border = '0';
       item.style.outline = 'none';
       const frameRadius = Math.max(0, Math.min(400, Number(p.radius) || 0));
@@ -165,9 +168,9 @@ export function renderScene(container, scene, { selectedId = null, preview = fal
       item.style.backgroundColor = fillColor;
       item.style.backgroundImage = 'none';
       item.style.boxShadow = p.style === 'DropShadow' ? '0 5px 14px rgba(0,0,0,.28)' : 'none';
-      const backdrop = backdropNode?.props || {};
+      const backdrop = isFrame ? (backdropNode?.props || {}) : {};
       const effectEnabled = Boolean(backdrop.enabled) && backdropNode?.props.visible !== false;
-      const backdropVisible = effectEnabled && alpha < 1;
+      const backdropVisible = isFrame && effectEnabled && alpha < 1;
       const blur = Math.max(0, Math.min(64, Number(backdrop.blur) || 0));
       const saturation = Math.max(0, Math.min(2.5, Number(backdrop.saturation ?? 1.2)));
       const brightness = Math.max(0.5, Math.min(1.5, Number(backdrop.brightness ?? 1.08)));
@@ -207,12 +210,32 @@ export function renderScene(container, scene, { selectedId = null, preview = fal
     const isImageNode = node.type === 'ImageLabel' || node.type === 'ImageButton';
     const preservedImageLayer = isImageNode ? item.querySelector(':scope > .scene-image-layer') : null;
     if (node.type === 'TextLabel' || node.type === 'TextButton') item.replaceChildren();
-    else if (!isImageNode) item.textContent = node.type === 'Frame' ? '' : (p.text || node.name);
+    else if (!isImageNode) item.textContent = isContainerFrame ? '' : (p.text || node.name);
+    const previousScrollLeft = existingChildContainer?.scrollLeft || 0;
+    const previousScrollTop = existingChildContainer?.scrollTop || 0;
     const childContainer = existingChildContainer || el('div', 'scene-children');
     childContainer.replaceChildren();
     childContainer.style.position = 'absolute';
     childContainer.style.inset = '0';
-    childContainer.style.overflow = node.type === 'Frame' && p.clipsDescendants ? 'hidden' : 'visible';
+    childContainer.style.overflow = isScrollingFrame ? 'auto' : (node.type === 'Frame' && p.clipsDescendants ? 'hidden' : 'visible');
+    childContainer.classList.toggle('scene-scroll-viewport', isScrollingFrame);
+    if (isScrollingFrame) {
+      const direction = ['X', 'Y', 'XY'].includes(p.scrollingDirection) ? p.scrollingDirection : 'XY';
+      const enabled = p.scrollingEnabled !== false;
+      childContainer.style.overflowX = enabled && direction !== 'Y' ? 'auto' : 'hidden';
+      childContainer.style.overflowY = enabled && direction !== 'X' ? 'auto' : 'hidden';
+      childContainer.style.overscrollBehavior = p.elasticBehavior === 'Never' ? 'none' : 'auto';
+      childContainer.style.touchAction = !enabled ? 'none' : direction === 'X' ? 'pan-x' : direction === 'Y' ? 'pan-y' : 'pan-x pan-y';
+      childContainer.style.webkitOverflowScrolling = 'touch';
+      childContainer.style.setProperty('--scrollbar-thickness', Math.max(0, Math.min(24, Number(p.scrollBarThickness) || 0)) + 'px');
+    } else {
+      childContainer.style.overflowX = '';
+      childContainer.style.overflowY = '';
+      childContainer.style.overscrollBehavior = '';
+      childContainer.style.touchAction = '';
+      childContainer.style.webkitOverflowScrolling = '';
+      childContainer.style.removeProperty('--scrollbar-thickness');
+    }
     if (isImageNode) childContainer.style.borderRadius = 'inherit';
     childContainer.style.zIndex = '2';
     for (const child of Array.from(item.children)) if (child !== childContainer && child !== preservedImageLayer && !(node.type === 'TextLabel' && child.classList.contains('scene-text-content'))) child.remove();
@@ -260,6 +283,27 @@ export function renderScene(container, scene, { selectedId = null, preview = fal
       item.append(content);
     }
     item.append(childContainer);
+    let childRenderTarget = childContainer;
+    if (isScrollingFrame) {
+      const canvas = el('div', 'scene-scroll-canvas');
+      const direction = ['X', 'Y', 'XY'].includes(p.scrollingDirection) ? p.scrollingDirection : 'XY';
+      let canvasWidth = Math.max(layout.width, Math.max(0, Number(p.canvasWidth) || 0));
+      let canvasHeight = Math.max(layout.height, Math.max(0, Number(p.canvasHeight) || 0));
+      for (const childId of node.children) {
+        const child = scene.get(childId);
+        if (!child || child.type === 'UIBackdrop' || child.type === 'Script') continue;
+        const bounds = measureLayout(child, layout.width, layout.height);
+        if (p.automaticCanvasSize === 'X' || p.automaticCanvasSize === 'XY') canvasWidth = Math.max(canvasWidth, bounds.x + bounds.width);
+        if (p.automaticCanvasSize === 'Y' || p.automaticCanvasSize === 'XY') canvasHeight = Math.max(canvasHeight, bounds.y + bounds.height);
+      }
+      canvas.style.position = 'relative';
+      canvas.style.width = (direction === 'Y' ? layout.width : canvasWidth) + 'px';
+      canvas.style.height = (direction === 'X' ? layout.height : canvasHeight) + 'px';
+      childContainer.append(canvas);
+      childRenderTarget = canvas;
+      childContainer.scrollLeft = previousScrollLeft;
+      childContainer.scrollTop = previousScrollTop;
+    }
     if (isImageNode) {
       const asset = assetMap.get(p.assetId);
       const initialAsset = asset?.blob ? asset : node.type === 'ImageButton' ? assetMap.get(p.hoverAssetId) || assetMap.get(p.pressedAssetId) : null;
@@ -372,7 +416,7 @@ export function renderScene(container, scene, { selectedId = null, preview = fal
     }
     item.onclick = preview && isGuiButton ? event => { event.stopPropagation(); onRun(node, 'click'); } : null;
     parent.append(item);
-    for (const childId of orderedSiblingIds(scene, node.children)) build(childId, childContainer, layout.width, layout.height);
+    for (const childId of orderedSiblingIds(scene, node.children)) build(childId, childRenderTarget, layout.width, layout.height);
     if (selectedId === node.id && !preview) {
       for (const direction of ['nw','n','ne','e','se','s','sw','w']) {
         const handle = el('button', 'resize-handle handle-' + direction);
