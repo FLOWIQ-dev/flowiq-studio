@@ -271,7 +271,7 @@ test('editor recalculates nested descendants during live parent transforms', asy
   const view = await readFile(new URL('../js/editor/view.js', import.meta.url), 'utf8');
   assert.match(app, /updateSceneLayout\(\$\('scene'\), this\.scene, this\.getStageSize\(\)\)/);
   assert.match(view, /export function updateSceneLayout/);
-  assert.match(view, /visit\(childId, children, layout\.width, layout\.height\)/);
+  assert.ok(view.includes('visit(childId, canvas || children, childWidth, childHeight)'));
   const scene = new Scene([
     { id: 'parent', type: 'Frame', props: { size: { x: { scale: 0, offset: 400 }, y: { scale: 0, offset: 300 } } }, children: [
       { id: 'child', type: 'Frame', props: { position: { x: { scale: 0.5, offset: 0 }, y: { scale: 0.5, offset: 0 } }, size: { x: { scale: 0.5, offset: 0 }, y: { scale: 0.5, offset: 0 } } } }
@@ -714,4 +714,24 @@ test('new equal-ZIndex siblings are painted above older siblings and Inspector e
   assert.match(view, /inspector-instance-bar/);
   assert.match(app, /data-tree-open-script/);
   assert.equal((html.match(/data-add-type="Script"/g) || []).length, 1);
+});
+
+
+
+test('ScrollingFrame descendants use canvas coordinates for layout and live editing', async () => {
+  const view = await readFile(new URL('../js/editor/view.js', import.meta.url), 'utf8');
+  const app = await readFile(new URL('../js/app.js', import.meta.url), 'utf8');
+  assert.ok(view.includes('visit(childId, canvas || children, childWidth, childHeight)'));
+  assert.ok(view.includes('childSpace.width, childSpace.height'));
+  assert.ok(app.includes("parent.type !== 'ScrollingFrame'"));
+  assert.ok(app.includes("automaticCanvasSize === 'Y'"));
+});
+
+test('ScrollingFrame remains scrollable in the editor while preserving its canvas during edits', async () => {
+  const view = await readFile(new URL('../js/editor/view.js', import.meta.url), 'utf8');
+  const app = await readFile(new URL('../js/app.js', import.meta.url), 'utf8');
+  assert.ok(view.includes("p.scrollingEnabled !== false ? 'auto' : 'hidden'"));
+  assert.ok(view.includes('childContainer.scrollLeft = previousScrollLeft'));
+  assert.ok(view.includes("canvas.style.height = childHeight + 'px'"));
+  assert.ok(app.includes('scrollViewport && target === scrollViewport.parentElement'));
 });

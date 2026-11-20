@@ -169,9 +169,10 @@ registerPropertySchema('ScrollingFrame', { sections: [
   { title: 'Data', fields: [text('name', 'Name'), number('zIndex', 'ZIndex', -2147483648, 2147483647)] },
   { title: 'Scrolling', fields: [
     checkbox('scrollingEnabled', 'ScrollingEnabled'),
-    select('scrollingDirection', 'ScrollingDirection', [{ value: 'X', label: 'X' }, { value: 'Y', label: 'Y' }, { value: 'XY', label: 'XY' }]),
-    select('automaticCanvasSize', 'AutomaticCanvasSize', [{ value: 'None', label: 'None' }, { value: 'X', label: 'X' }, { value: 'Y', label: 'Y' }, { value: 'XY', label: 'XY' }]),
-    number('canvasWidth', 'CanvasSize X', 0, 10000), number('canvasHeight', 'CanvasSize Y', 0, 10000),
+    select('scrollingDirection', 'ScrollingDirection', [{ value: 'Y', label: 'Y' }, { value: 'X', label: 'X' }, { value: 'XY', label: 'XY' }]),
+    select('automaticCanvasSize', 'AutomaticCanvasSize', [{ value: 'Y', label: 'Y' }, { value: 'X', label: 'X' }, { value: 'XY', label: 'XY' }, { value: 'None', label: 'None' }]),
+    number('canvasWidth', 'CanvasSize X', 0, 10000),
+    number('canvasHeight', 'CanvasSize Y', 0, 10000),
     number('scrollBarThickness', 'ScrollBarThickness', 0, 24),
     select('elasticBehavior', 'ElasticBehavior', [{ value: 'WhenScrollable', label: 'WhenScrollable' }, { value: 'Always', label: 'Always' }, { value: 'Never', label: 'Never' }])
   ]},

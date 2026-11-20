@@ -794,7 +794,22 @@ class FlowiqStudio {
       if (!parent) return { width: 960, height: 640 };
       const grand = parentSize(parent.parentId);
       const layout = resolveNodeLayout(parent, grand.width, grand.height);
-      return { width: layout.width, height: layout.height };
+      if (parent.type !== 'ScrollingFrame') return { width: layout.width, height: layout.height };
+      const props = parent.props;
+      const direction = ['X', 'Y', 'XY'].includes(props.scrollingDirection) ? props.scrollingDirection : 'XY';
+      let canvasWidth = Math.max(layout.width, Number(props.canvasWidth) || 0);
+      let canvasHeight = Math.max(layout.height, Number(props.canvasHeight) || 0);
+      for (const childId of parent.children) {
+        const child = this.scene.get(childId);
+        if (!child || child.type === 'UIBackdrop' || child.type === 'Script') continue;
+        const bounds = resolveNodeLayout(child, layout.width, layout.height);
+        if (props.automaticCanvasSize === 'X' || props.automaticCanvasSize === 'XY') canvasWidth = Math.max(canvasWidth, bounds.x + bounds.width);
+        if (props.automaticCanvasSize === 'Y' || props.automaticCanvasSize === 'XY') canvasHeight = Math.max(canvasHeight, bounds.y + bounds.height);
+      }
+      return {
+        width: direction === 'Y' ? layout.width : canvasWidth,
+        height: direction === 'X' ? layout.height : canvasHeight
+      };
     };
     const bounds = parentSize(node.parentId);
     const p = node.props;
@@ -886,6 +901,11 @@ class FlowiqStudio {
     if (!target) return;
     const node = this.scene.get(target.dataset.nodeId);
     if (!node) return;
+    const scrollViewport = event.target.closest('.scene-scroll-viewport');
+    if (scrollViewport && target === scrollViewport.parentElement) {
+      this.sceneTap = { id: node.id, pointerId: event.pointerId, startX: event.clientX, startY: event.clientY };
+      return;
+    }
 
     // Objeto não selecionado: aguarda o fim do gesto para confirmar um tap.
     // O primeiro toque nunca move, redimensiona ou gira.
