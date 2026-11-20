@@ -474,7 +474,9 @@ export function renderTree(container, scene, selectedId, { search = '', expanded
       openScript.type = 'button'; openScript.dataset.treeOpenScript = id;
       openScript.title = 'Abrir script'; openScript.setAttribute('aria-label', 'Abrir script ' + node.name);
       openScript.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5h8M8 9h8M8 13h5M6 3h12a1 1 0 0 1 1 1v16l-7-4-7 4V4a1 1 0 0 1 1-1Z"/></svg>';
-      row.append(toggle, marker, name, type, openScript);
+      const menu = el('button', 'tree-menu-trigger', '⋯'); menu.type = 'button'; menu.dataset.treeMenu = id;
+      menu.setAttribute('aria-label', 'Opções de ' + node.name);
+      row.append(toggle, marker, name, type, openScript, menu);
     } else {
       const menu = el('button', 'tree-menu-trigger', '⋯'); menu.type = 'button'; menu.dataset.treeMenu = id;
       menu.setAttribute('aria-label', 'Opções de ' + node.name);
