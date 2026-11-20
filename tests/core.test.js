@@ -726,3 +726,12 @@ test('ScrollingFrame descendants use canvas coordinates for layout and live edit
   assert.match(app, /parent\\.type !== 'ScrollingFrame'/);
   assert.match(app, /automaticCanvasSize === 'Y'/);
 });
+
+test('ScrollingFrame remains scrollable in the editor while preserving its canvas during edits', async () => {
+  const view = await read('js/editor/view.js');
+  const app = await read('js/app.js');
+  assert.match(view, /p\.scrollingEnabled !== false \? 'auto' : 'hidden'/);
+  assert.match(view, /childContainer\.scrollLeft = previousScrollLeft/);
+  assert.match(view, /canvas\.style\.height = childHeight \+ 'px'/);
+  assert.match(app, /scrollViewport && target === scrollViewport\.parentElement/);
+});
