@@ -739,7 +739,7 @@ test('ScrollingFrame remains scrollable in the editor while preserving its canva
 test('preview GuiObjects allow touch gestures to reach nested ScrollingFrame viewports', async () => {
   const view = await readFile(new URL('../js/editor/view.js', import.meta.url), 'utf8');
   const css = await readFile(new URL('../css/studio.css', import.meta.url), 'utf8');
-  assert.ok(view.includes("item.style.touchAction = preview ? 'auto' : 'none'"));
+  assert.ok(view.includes("item.style.touchAction = preview ? 'auto' : (isScrollingFrame || insideScrollViewport ? 'pan-x pan-y' : 'none')"));
   assert.ok(view.includes("childContainer.style.touchAction = enabled ?"));
   assert.ok(css.includes('.preview-screen .scene-node{touch-action:auto}'));
   assert.ok(css.includes('.scene-scroll-viewport'));
