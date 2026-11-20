@@ -62,9 +62,9 @@ test('app exposes version restore and requests persistent browser storage', asyn
 test('service worker and document use the same new cache build', async () => {
   const app = await read('index.html');
   const worker = await read('sw.js');
-  assert.match(app, /2026\.11\.19\.153/);
-  assert.match(worker, /flowiq-studio-clean-v153/);
-  assert.match(worker, /2026\.11\.19\.153/);
+  assert.match(app, /2026\.11\.20\.155/);
+  assert.match(worker, /flowiq-studio-clean-v155/);
+  assert.match(worker, /2026\.11\.20\.155/);
 });
 
 
@@ -81,10 +81,25 @@ test('Script Explorer rows keep Abrir separate and expose move, rename, duplicat
   const view = await read('js/editor/view.js');
   const app = await read('js/app.js');
   const scriptRow = view.slice(view.indexOf("if (node.type === 'Script')"), view.indexOf("branch.append(row)"));
-  assert.match(scriptRow, /data-tree-open-script/);
-  assert.match(scriptRow, /data-tree-menu/);
+  assert.match(scriptRow, /treeOpenScript/);
+  assert.match(scriptRow, /treeMenu/);
   assert.match(app, /node\.type === 'Script'[\s\S]*\['move', 'Mover'\][\s\S]*\['rename', 'Renomear'\][\s\S]*\['duplicate', 'Duplicar'\][\s\S]*\['delete', 'Excluir'\]/);
   assert.match(app, /if \(action === 'move'\) \{ this\.startTreeMoveMode\(id\); return; \}/);
   assert.match(app, /else if \(action === 'duplicate'\) this\.duplicateSelected\(\)/);
   assert.match(app, /else if \(action === 'delete'\) this\.deleteSelected\(\)/);
+});
+
+test('ScrollingFrame is a persisted scene class with Roblox-style elastic scrolling properties', async () => {
+  const model = await read('js/data/model.js');
+  const schema = await read('js/editor/property-schema.js');
+  const view = await read('js/editor/view.js');
+  const html = await read('index.html');
+  assert.match(model, /'ScrollingFrame'/);
+  assert.match(model, /elasticBehavior: 'WhenScrollable'/);
+  assert.match(schema, /registerPropertySchema\('ScrollingFrame'/);
+  assert.match(schema, /ElasticBehavior/);
+  assert.match(view, /scene-scroll-viewport/);
+  assert.match(view, /overscrollBehavior = p\.elasticBehavior === 'Never' \? 'none' : 'auto'/);
+  assert.match(view, /webkitOverflowScrolling = 'touch'/);
+  assert.match(html, /data-add-type="ScrollingFrame"/);
 });
