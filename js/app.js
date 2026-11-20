@@ -776,8 +776,8 @@ class FlowiqStudio {
       scripts: this.project?.scripts || [],
       onScriptEdit: nodeId => this.openScriptEditor(nodeId),
       onSelectInstance: id => this.select(id),
-      relatedInstances: node.type === 'Frame' ? node.children.map(id => this.scene.get(id)).filter(child => child && (child.type === 'UIBackdrop' || child.props?.pseudoInstance)) : [],
-      parentInstance: node.type === 'UIBackdrop' && node.parentId ? this.scene.get(node.parentId) : null
+      relatedInstances: node?.type === 'Frame' ? node.children.map(id => this.scene.get(id)).filter(child => child && (child.type === 'UIBackdrop' || child.props?.pseudoInstance)) : [],
+      parentInstance: node?.type === 'UIBackdrop' && node.parentId ? this.scene.get(node.parentId) : null
     });
   }
 
