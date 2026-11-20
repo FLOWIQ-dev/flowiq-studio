@@ -217,17 +217,17 @@ export function renderScene(container, scene, { selectedId = null, preview = fal
     childContainer.replaceChildren();
     childContainer.style.position = 'absolute';
     childContainer.style.inset = '0';
-    childContainer.style.overflow = isScrollingFrame ? (preview && p.scrollingEnabled !== false ? 'auto' : 'hidden') : (node.type === 'Frame' && p.clipsDescendants ? 'hidden' : 'visible');
+    childContainer.style.overflow = isScrollingFrame ? (p.scrollingEnabled !== false ? 'auto' : 'hidden') : (node.type === 'Frame' && p.clipsDescendants ? 'hidden' : 'visible');
     childContainer.classList.toggle('scene-scroll-viewport', isScrollingFrame);
     if (isScrollingFrame) {
       const direction = ['X', 'Y', 'XY'].includes(p.scrollingDirection) ? p.scrollingDirection : 'XY';
       const enabled = p.scrollingEnabled !== false;
-      childContainer.style.overflowX = preview && enabled && direction !== 'Y' ? 'auto' : 'hidden';
-      childContainer.style.overflowY = preview && enabled && direction !== 'X' ? 'auto' : 'hidden';
+      childContainer.style.overflowX = enabled && direction !== 'Y' ? 'auto' : 'hidden';
+      childContainer.style.overflowY = enabled && direction !== 'X' ? 'auto' : 'hidden';
       childContainer.style.overscrollBehavior = 'contain';
-      childContainer.style.touchAction = preview && enabled ? (direction === 'X' ? 'pan-x' : direction === 'Y' ? 'pan-y' : 'pan-x pan-y') : 'auto';
-      childContainer.style.webkitOverflowScrolling = preview ? 'touch' : '';
-      childContainer.style.setProperty('--scrollbar-thickness', '8px');
+      childContainer.style.touchAction = enabled ? (direction === 'X' ? 'pan-x' : direction === 'Y' ? 'pan-y' : 'pan-x pan-y') : 'none';
+      childContainer.style.webkitOverflowScrolling = 'touch';
+      childContainer.style.setProperty('--scrollbar-thickness', Math.max(0, Math.min(24, Number(p.scrollBarThickness) || 8)) + 'px');
     } else {
       childContainer.style.overflowX = '';
       childContainer.style.overflowY = '';
@@ -301,13 +301,8 @@ export function renderScene(container, scene, { selectedId = null, preview = fal
       canvas.style.height = (direction === 'X' ? layout.height : canvasHeight) + 'px';
       childContainer.append(canvas);
       childRenderTarget = canvas;
-      if (preview) {
-        childContainer.scrollLeft = previousScrollLeft;
-        childContainer.scrollTop = previousScrollTop;
-      } else {
-        childContainer.scrollLeft = 0;
-        childContainer.scrollTop = 0;
-      }
+      childContainer.scrollLeft = previousScrollLeft;
+      childContainer.scrollTop = previousScrollTop;
     }
     if (isImageNode) {
       const asset = assetMap.get(p.assetId);
