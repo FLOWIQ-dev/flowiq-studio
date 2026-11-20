@@ -226,7 +226,7 @@ export function renderScene(container, scene, { selectedId = null, preview = fal
       const enabled = p.scrollingEnabled !== false;
       childContainer.style.overflowX = enabled && direction !== 'Y' ? 'auto' : 'hidden';
       childContainer.style.overflowY = enabled && direction !== 'X' ? 'auto' : 'hidden';
-      childContainer.style.overscrollBehavior = p.elasticBehavior === 'Never' ? 'none' : 'auto';
+      childContainer.style.overscrollBehavior = p.elastic === false ? 'none' : 'auto';
       childContainer.style.touchAction = enabled ? (direction === 'X' ? 'pan-x' : direction === 'Y' ? 'pan-y' : 'pan-x pan-y') : 'none';
       childContainer.style.webkitOverflowScrolling = 'touch';
       childContainer.style.setProperty('--scrollbar-thickness', Math.max(0, Math.min(24, Number(p.scrollBarThickness) || 8)) + 'px');

@@ -66,7 +66,7 @@ const imageFields = [
 ];
 const instanceFields = [text('name', 'Name'), number('zIndex', 'ZIndex', -2147483648, 2147483647)];
 
-export const PROPERTY_SCHEMA_VERSION = 21;
+export const PROPERTY_SCHEMA_VERSION = 22;
 
 export function registerPropertySchema(className, schema, { replace = false } = {}) {
   if (typeof className !== 'string' || (className !== '*' && !/^[A-Z][A-Za-z0-9]*$/.test(className))) {
@@ -174,7 +174,7 @@ registerPropertySchema('ScrollingFrame', { sections: [
     number('canvasWidth', 'CanvasSize X', 0, 10000),
     number('canvasHeight', 'CanvasSize Y', 0, 10000),
     number('scrollBarThickness', 'ScrollBarThickness', 0, 24),
-    select('elasticBehavior', 'ElasticBehavior', [{ value: 'WhenScrollable', label: 'WhenScrollable' }, { value: 'Always', label: 'Always' }, { value: 'Never', label: 'Never' }])
+    checkbox('elastic', 'Elastic')
   ]},
   { title: 'Layout', fields: layoutFields }
 ]});
