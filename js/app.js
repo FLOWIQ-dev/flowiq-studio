@@ -706,7 +706,10 @@ class FlowiqStudio {
     const menu = document.createElement('div');
     menu.className = 'tree-context-menu';
     const trackingLabel = this.cameraTracking && this.cameraTrackingId === id ? 'Parar rastreamento' : 'Rastrear câmera';
-    for (const [action, label] of [['track-camera', trackingLabel], ['move', 'Mover'], ['rename', 'Renomear'], ['add', 'Adicionar instância'], ['duplicate', 'Duplicar'], ['delete', 'Excluir']]) {
+    const actions = node.type === 'Script'
+      ? [['move', 'Mover'], ['rename', 'Renomear'], ['duplicate', 'Duplicar'], ['delete', 'Excluir']]
+      : [['track-camera', trackingLabel], ['move', 'Mover'], ['rename', 'Renomear'], ['add', 'Adicionar instância'], ['duplicate', 'Duplicar'], ['delete', 'Excluir']];
+    for (const [action, label] of actions) {
       const button = document.createElement('button');
       button.type = 'button';
       button.textContent = label;
