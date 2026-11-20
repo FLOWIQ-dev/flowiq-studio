@@ -75,3 +75,4 @@ test('opening a project with no selected instance keeps the inspector safe', asy
   assert.match(render, /node\?\.type === 'UIBackdrop'/);
   assert.doesNotMatch(render, /relatedInstances: node\.type|parentInstance: node\.type/);
 });
+
