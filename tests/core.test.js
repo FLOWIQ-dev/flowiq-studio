@@ -717,21 +717,21 @@ test('new equal-ZIndex siblings are painted above older siblings and Inspector e
 });
 
 
+
 test('ScrollingFrame descendants use canvas coordinates for layout and live editing', async () => {
-  const view = await read('js/editor/view.js');
-  const app = await read('js/app.js');
-  assert.match(view, /childTarget = canvas \\|\\| children/);
-  assert.match(view, /childTarget, childWidth, childHeight/);
-  assert.match(view, /childSpace\\.width, childSpace\\.height/);
-  assert.match(app, /parent\\.type !== 'ScrollingFrame'/);
-  assert.match(app, /automaticCanvasSize === 'Y'/);
+  const view = await readFile(new URL('../js/editor/view.js', import.meta.url), 'utf8');
+  const app = await readFile(new URL('../js/app.js', import.meta.url), 'utf8');
+  assert.ok(view.includes('visit(childId, canvas || children, childWidth, childHeight)'));
+  assert.ok(view.includes('childSpace.width, childSpace.height'));
+  assert.ok(app.includes("parent.type !== 'ScrollingFrame'"));
+  assert.ok(app.includes("automaticCanvasSize === 'Y'"));
 });
 
 test('ScrollingFrame remains scrollable in the editor while preserving its canvas during edits', async () => {
-  const view = await read('js/editor/view.js');
-  const app = await read('js/app.js');
-  assert.match(view, /p\.scrollingEnabled !== false \? 'auto' : 'hidden'/);
-  assert.match(view, /childContainer\.scrollLeft = previousScrollLeft/);
-  assert.match(view, /canvas\.style\.height = childHeight \+ 'px'/);
-  assert.match(app, /scrollViewport && target === scrollViewport\.parentElement/);
+  const view = await readFile(new URL('../js/editor/view.js', import.meta.url), 'utf8');
+  const app = await readFile(new URL('../js/app.js', import.meta.url), 'utf8');
+  assert.ok(view.includes("p.scrollingEnabled !== false ? 'auto' : 'hidden'"));
+  assert.ok(view.includes('childContainer.scrollLeft = previousScrollLeft'));
+  assert.ok(view.includes("canvas.style.height = childHeight + 'px'"));
+  assert.ok(app.includes('scrollViewport && target === scrollViewport.parentElement'));
 });
