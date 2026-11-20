@@ -141,12 +141,14 @@ export function renderScene(container, scene, { selectedId = null, preview = fal
     item.style.width = layout.width + 'px';
     item.style.height = layout.height + 'px';
     item.style.zIndex = String(normalizeZIndex(p.zIndex));
-    // Preview must allow touch gestures to reach nested ScrollingFrame viewports.
-    item.style.touchAction = preview ? 'auto' : 'none';
-    item.style.transform = 'translate(' + (-p.anchorPoint.x * 100) + '%,' + (-p.anchorPoint.y * 100) + '%) rotate(' + (Number(p.rotation) || 0) + 'deg)';
     const isFrame = node.type === 'Frame';
     const isScrollingFrame = node.type === 'ScrollingFrame';
     const isContainerFrame = isFrame || isScrollingFrame;
+    const insideScrollViewport = Boolean(parent.closest?.('.scene-scroll-viewport'));
+    // In the editor, touch gestures inside a ScrollingFrame belong to its native scrollport.
+    // Other instances retain direct-manipulation gestures.
+    item.style.touchAction = preview ? 'auto' : (isScrollingFrame || insideScrollViewport ? 'pan-x pan-y' : 'none');
+    item.style.transform = 'translate(' + (-p.anchorPoint.x * 100) + '%,' + (-p.anchorPoint.y * 100) + '%) rotate(' + (Number(p.rotation) || 0) + 'deg)';
     const backdropNode = isFrame ? node.children.map(childId => scene.get(childId)).find(child => child?.type === 'UIBackdrop') : null;
       item.style.background = isContainerFrame ? 'transparent' : (p.backgroundColor3 || p.background || 'transparent');
     item.style.opacity = String(Math.max(0, Math.min(1, Number(p.opacity ?? 1))));
@@ -226,7 +228,7 @@ export function renderScene(container, scene, { selectedId = null, preview = fal
       const enabled = p.scrollingEnabled !== false;
       childContainer.style.overflowX = enabled && direction !== 'Y' ? 'auto' : 'hidden';
       childContainer.style.overflowY = enabled && direction !== 'X' ? 'auto' : 'hidden';
-      childContainer.style.overscrollBehavior = p.elastic === false ? 'none' : 'auto';
+      childContainer.style.overscrollBehavior = p.elastic === false ? 'none' : 'contain';
       childContainer.style.touchAction = enabled ? (direction === 'X' ? 'pan-x' : direction === 'Y' ? 'pan-y' : 'pan-x pan-y') : 'none';
       childContainer.style.webkitOverflowScrolling = 'touch';
       childContainer.style.setProperty('--scrollbar-thickness', Math.max(0, Math.min(24, Number(p.scrollBarThickness) || 8)) + 'px');
@@ -424,6 +426,15 @@ export function renderScene(container, scene, { selectedId = null, preview = fal
     } : { width: layout.width, height: layout.height };
     for (const childId of orderedSiblingIds(scene, node.children)) build(childId, childRenderTarget, childSpace.width, childSpace.height);
     if (selectedId === node.id && !preview) {
+      if (isScrollingFrame) {
+        const move = el('button', 'move-handle');
+        move.type = 'button';
+        move.dataset.move = 'true';
+        move.setAttribute('aria-label', 'Mover ScrollingFrame');
+        move.title = 'Mover ScrollingFrame';
+        move.textContent = '•••';
+        item.append(move);
+      }
       for (const direction of ['nw','n','ne','e','se','s','sw','w']) {
         const handle = el('button', 'resize-handle handle-' + direction);
         handle.type = 'button'; handle.dataset.resize = direction; handle.setAttribute('aria-label', 'Redimensionar ' + direction);
