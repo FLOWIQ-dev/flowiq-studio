@@ -271,7 +271,7 @@ test('editor recalculates nested descendants during live parent transforms', asy
   const view = await readFile(new URL('../js/editor/view.js', import.meta.url), 'utf8');
   assert.match(app, /updateSceneLayout\(\$\('scene'\), this\.scene, this\.getStageSize\(\)\)/);
   assert.match(view, /export function updateSceneLayout/);
-  assert.match(view, /visit\(childId, children, layout\.width, layout\.height\)/);
+  assert.match(view, /visit\\(childId, canvas \\|\\| children, childWidth, childHeight\\)/);
   const scene = new Scene([
     { id: 'parent', type: 'Frame', props: { size: { x: { scale: 0, offset: 400 }, y: { scale: 0, offset: 300 } } }, children: [
       { id: 'child', type: 'Frame', props: { position: { x: { scale: 0.5, offset: 0 }, y: { scale: 0.5, offset: 0 } }, size: { x: { scale: 0.5, offset: 0 }, y: { scale: 0.5, offset: 0 } } } }
