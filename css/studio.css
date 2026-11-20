@@ -1441,3 +1441,7 @@ body[data-screen=editor]{
 .scene-scroll-viewport::-webkit-scrollbar-thumb{background:rgba(148,163,184,.58);border:2px solid transparent;border-radius:999px;background-clip:padding-box}
 .scene-scroll-viewport::-webkit-scrollbar-thumb:hover{background:rgba(203,213,225,.82);background-clip:padding-box}
 .scene-scroll-canvas{min-width:100%;min-height:100%;pointer-events:auto}
+
+
+/* Preview: do not let editor-only touch-action:none block native nested scrolling. */
+.preview-screen .scene-node{touch-action:auto}
