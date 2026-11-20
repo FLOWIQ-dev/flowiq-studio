@@ -66,7 +66,7 @@ const imageFields = [
 ];
 const instanceFields = [text('name', 'Name'), number('zIndex', 'ZIndex', -2147483648, 2147483647)];
 
-export const PROPERTY_SCHEMA_VERSION = 20;
+export const PROPERTY_SCHEMA_VERSION = 21;
 
 export function registerPropertySchema(className, schema, { replace = false } = {}) {
   if (typeof className !== 'string' || (className !== '*' && !/^[A-Z][A-Za-z0-9]*$/.test(className))) {
@@ -162,6 +162,20 @@ registerGuiClass('ImageLabel', 'Image');
 
 registerPropertySchema('Script', { sections: [
   { title: 'Data', fields: [text('name', 'Name')] }
+]});
+
+registerPropertySchema('ScrollingFrame', { sections: [
+  { title: 'Appearance', fields: [color('backgroundColor3', 'BackgroundColor3'), slider('backgroundTransparency', 'BackgroundTransparency', 0, 1, 0.01), color('borderColor3', 'BorderColor3'), number('borderSizePixel', 'BorderSizePixel', 0, 30), ...commonAppearanceFields] },
+  { title: 'Data', fields: [text('name', 'Name'), number('zIndex', 'ZIndex', -2147483648, 2147483647)] },
+  { title: 'Scrolling', fields: [
+    checkbox('scrollingEnabled', 'ScrollingEnabled'),
+    select('scrollingDirection', 'ScrollingDirection', [{ value: 'X', label: 'X' }, { value: 'Y', label: 'Y' }, { value: 'XY', label: 'XY' }]),
+    select('automaticCanvasSize', 'AutomaticCanvasSize', [{ value: 'None', label: 'None' }, { value: 'X', label: 'X' }, { value: 'Y', label: 'Y' }, { value: 'XY', label: 'XY' }]),
+    number('canvasWidth', 'CanvasSize X', 0, 10000), number('canvasHeight', 'CanvasSize Y', 0, 10000),
+    number('scrollBarThickness', 'ScrollBarThickness', 0, 24),
+    select('elasticBehavior', 'ElasticBehavior', [{ value: 'WhenScrollable', label: 'WhenScrollable' }, { value: 'Always', label: 'Always' }, { value: 'Never', label: 'Never' }])
+  ]},
+  { title: 'Layout', fields: layoutFields }
 ]});
 
 registerPropertySchema('UIBackdrop', { sections: [
