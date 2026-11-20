@@ -170,7 +170,11 @@ registerPropertySchema('ScrollingFrame', { sections: [
   { title: 'Scrolling', fields: [
     checkbox('scrollingEnabled', 'ScrollingEnabled'),
     select('scrollingDirection', 'ScrollingDirection', [{ value: 'Y', label: 'Y' }, { value: 'X', label: 'X' }, { value: 'XY', label: 'XY' }]),
-    select('automaticCanvasSize', 'AutomaticCanvasSize', [{ value: 'Y', label: 'Y' }, { value: 'X', label: 'X' }, { value: 'XY', label: 'XY' }, { value: 'None', label: 'None' }])
+    select('automaticCanvasSize', 'AutomaticCanvasSize', [{ value: 'Y', label: 'Y' }, { value: 'X', label: 'X' }, { value: 'XY', label: 'XY' }, { value: 'None', label: 'None' }]),
+    number('canvasWidth', 'CanvasSize X', 0, 10000),
+    number('canvasHeight', 'CanvasSize Y', 0, 10000),
+    number('scrollBarThickness', 'ScrollBarThickness', 0, 24),
+    select('elasticBehavior', 'ElasticBehavior', [{ value: 'WhenScrollable', label: 'WhenScrollable' }, { value: 'Always', label: 'Always' }, { value: 'Never', label: 'Never' }])
   ]},
   { title: 'Layout', fields: layoutFields }
 ]});
