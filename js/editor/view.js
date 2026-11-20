@@ -421,7 +421,11 @@ export function renderScene(container, scene, { selectedId = null, preview = fal
     }
     item.onclick = preview && isGuiButton ? event => { event.stopPropagation(); onRun(node, 'click'); } : null;
     parent.append(item);
-    for (const childId of orderedSiblingIds(scene, node.children)) build(childId, childRenderTarget, layout.width, layout.height);
+    const childSpace = isScrollingFrame ? {
+      width: Number.parseFloat(childRenderTarget.style.width) || layout.width,
+      height: Number.parseFloat(childRenderTarget.style.height) || layout.height
+    } : { width: layout.width, height: layout.height };
+    for (const childId of orderedSiblingIds(scene, node.children)) build(childId, childRenderTarget, childSpace.width, childSpace.height);
     if (selectedId === node.id && !preview) {
       for (const direction of ['nw','n','ne','e','se','s','sw','w']) {
         const handle = el('button', 'resize-handle handle-' + direction);
@@ -483,7 +487,13 @@ export function updateSceneLayout(container, scene, sceneSize = { width: 960, he
     element.style.height = layout.height + 'px';
     element.style.transform = 'translate(' + (-p.anchorPoint.x * 100) + '%,' + (-p.anchorPoint.y * 100) + '%) rotate(' + (Number(p.rotation) || 0) + 'deg)';
     const children = element.querySelector(':scope > .scene-children');
-    if (children) for (const childId of node.children) visit(childId, children, layout.width, layout.height);
+    if (children) {
+      const canvas = children.querySelector(':scope > .scene-scroll-canvas');
+      const childTarget = canvas || children;
+      const childWidth = canvas ? (Number.parseFloat(canvas.style.width) || layout.width) : layout.width;
+      const childHeight = canvas ? (Number.parseFloat(canvas.style.height) || layout.height) : layout.height;
+      for (const childId of node.children) visit(childId, childTarget, childWidth, childHeight);
+    }
   };
   for (const id of scene.roots) visit(id, container.querySelector('.scene-world'), rootWidth, rootHeight);
 }
