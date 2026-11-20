@@ -715,3 +715,14 @@ test('new equal-ZIndex siblings are painted above older siblings and Inspector e
   assert.match(app, /data-tree-open-script/);
   assert.equal((html.match(/data-add-type="Script"/g) || []).length, 1);
 });
+
+
+test('ScrollingFrame descendants use canvas coordinates for layout and live editing', async () => {
+  const view = await read('js/editor/view.js');
+  const app = await read('js/app.js');
+  assert.match(view, /childTarget = canvas \\|\\| children/);
+  assert.match(view, /childTarget, childWidth, childHeight/);
+  assert.match(view, /childSpace\\.width, childSpace\\.height/);
+  assert.match(app, /parent\\.type !== 'ScrollingFrame'/);
+  assert.match(app, /automaticCanvasSize === 'Y'/);
+});
