@@ -330,9 +330,9 @@ export function renderScene(container, scene, { selectedId = null, preview = fal
     childContainer.style.inset = '0';
     childContainer.style.overflow = isScrollingFrame ? (p.scrollingEnabled !== false ? 'auto' : 'hidden') : (node.type === 'Frame' && p.clipsDescendants ? 'hidden' : 'visible');
     childContainer.classList.toggle('scene-scroll-viewport', isScrollingFrame);
+    const direction = ['X', 'Y', 'XY'].includes(p.scrollingDirection) ? p.scrollingDirection : 'XY';
+    const enabled = isScrollingFrame && p.scrollingEnabled !== false;
     if (isScrollingFrame) {
-      const direction = ['X', 'Y', 'XY'].includes(p.scrollingDirection) ? p.scrollingDirection : 'XY';
-      const enabled = p.scrollingEnabled !== false;
       childContainer.style.overflowX = enabled && direction !== 'Y' ? 'auto' : 'hidden';
       childContainer.style.overflowY = enabled && direction !== 'X' ? 'auto' : 'hidden';
       childContainer.style.overscrollBehavior = p.elastic === false ? 'none' : 'contain';
@@ -397,7 +397,6 @@ export function renderScene(container, scene, { selectedId = null, preview = fal
     let childRenderTarget = childContainer;
     if (isScrollingFrame) {
       const canvas = el('div', 'scene-scroll-canvas');
-      const direction = ['X', 'Y', 'XY'].includes(p.scrollingDirection) ? p.scrollingDirection : 'XY';
       let canvasWidth = Math.max(layout.width, Math.max(0, Number(p.canvasWidth) || 0));
       let canvasHeight = Math.max(layout.height, Math.max(0, Number(p.canvasHeight) || 0));
       for (const childId of node.children) {
