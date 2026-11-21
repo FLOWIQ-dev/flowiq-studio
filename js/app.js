@@ -118,9 +118,9 @@ class FlowiqStudio {
         const direction = node?.props?.scrollingDirection || 'XY';
         const enabled = node?.props?.scrollingEnabled !== false;
         const axis = direction === 'X' ? 'pan-x' : direction === 'Y' ? 'pan-y' : 'pan-x pan-y';
-        viewport.style.overflow = enabled ? 'auto' : 'hidden';
-        viewport.style.overflowX = enabled && direction !== 'Y' ? 'auto' : 'hidden';
-        viewport.style.overflowY = enabled && direction !== 'X' ? 'auto' : 'hidden';
+        viewport.style.overflow = scrolling && enabled ? 'auto' : 'hidden';
+        viewport.style.overflowX = scrolling && enabled && direction !== 'Y' ? 'auto' : 'hidden';
+        viewport.style.overflowY = scrolling && enabled && direction !== 'X' ? 'auto' : 'hidden';
         viewport.style.touchAction = scrolling && enabled ? axis : 'none';
         viewport.style.overscrollBehavior = node?.props?.elastic === false ? 'contain' : 'auto';
         viewport.style.webkitOverflowScrolling = 'touch';
