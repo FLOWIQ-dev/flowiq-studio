@@ -745,28 +745,26 @@ test('preview GuiObjects allow touch gestures to reach nested ScrollingFrame vie
   assert.ok(css.includes('.scene-scroll-viewport'));
 });
 
-test('ScrollingFrame exposes physical elastic scrolling with wheel inertia and damped spring return', async () => {
+test('ScrollingFrame uses boundary-only rubber banding and iOS-like deceleration', async () => {
   const view = await readFile(new URL('../js/editor/view.js', import.meta.url), 'utf8');
   const model = await readFile(new URL('../js/data/model.js', import.meta.url), 'utf8');
   const schema = await readFile(new URL('../js/editor/property-schema.js', import.meta.url), 'utf8');
   assert.ok(model.includes("elastic: true"));
   assert.ok(model.includes("delete merged.elasticBehavior"));
-  assert.ok(view.includes("p.elastic === false ? 'none' : 'contain'"));
   assert.ok(view.includes("function setupElasticScroll(viewport, enabled, direction, rotation = 0)"));
-  assert.ok(view.includes("event.preventDefault()"));
-  assert.ok(view.includes("const stiffness = 0.00072"));
-  assert.ok(view.includes("const damping = 0.034"));
-  assert.ok(view.includes("Math.min(190, Math.max(72, dimension * 0.42))"));
-  assert.ok(view.includes("const wheel = event =>"));
+  assert.ok(view.includes("const MAX_PULL = 92"));
+  assert.ok(view.includes("const stiffness = 0.00012"));
+  assert.ok(view.includes("const damping = 0.018"));
+  assert.ok(view.includes("const decay = Math.pow(0.998, dt)"));
+  assert.ok(view.includes("const rubberPull = (current, delta)"));
+  assert.ok(view.includes("const moveAxis = (axis, delta)"));
+  assert.ok(view.includes("if (target <= 0 && leftover < 0) || (target >= maximum && leftover > 0)"));
+  assert.ok(view.includes("Trackpads already emit their own momentum events. Never add a second wheel inertia."));
   assert.ok(view.includes("viewport.addEventListener('wheel', wheel, { passive: false })"));
-  assert.ok(view.includes("applyScrollDelta(delta.x, delta.y, elapsed, 'wheel')"));
-  assert.ok(view.includes("state.velocityX = (viewport.scrollLeft - beforeX) / Math.max(1, elapsed)"));
-  assert.ok(view.includes("requestAnimationFrame(tick)"));
   assert.ok(view.includes("const radians = -viewport._elasticRotation * Math.PI / 180"));
   assert.ok(view.includes("setupElasticScroll(childContainer, enabled && p.elastic !== false, direction, p.rotation)"));
-  assert.ok(view.includes("state.velocityX * 0.35 + dx / Math.max(8, elapsed) * 0.28"));
-  assert.ok(view.includes("if (source === 'touch') paint()"));
-  assert.ok(view.includes("webkitOverflowScrolling = 'touch'"));
+  assert.ok(view.includes("state.velocityX * 0.55 + instantX * 0.45"));
+  assert.ok(view.includes("if (state.overX || state.overY) animate()"));
   assert.ok(schema.includes("checkbox('elastic', 'Elastic')"));
   assert.ok(!schema.includes('WhenScrollable'));
   assert.ok(!schema.includes('elasticBehavior'));
