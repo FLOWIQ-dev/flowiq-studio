@@ -104,7 +104,7 @@ function setupElasticScroll(viewport, enabled, direction) {
       const overY = allowY && ((viewport.scrollTop <= 0 && event.deltaY < 0) || (viewport.scrollTop >= maxY && event.deltaY > 0)) ? event.deltaY : 0;
       if (!overX && !overY) return;
       if (state.wheelFrame) cancelAnimationFrame(state.wheelFrame);
-      paint(rubber(overX), rubber(overY));
+      paint(rubber(-overX), rubber(-overY));
       state.wheelFrame = requestAnimationFrame(() => { springBack(); state.wheelFrame = 0; });
     };
     viewport.addEventListener('touchstart', start, { passive: true });
