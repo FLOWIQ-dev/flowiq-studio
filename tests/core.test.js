@@ -758,7 +758,8 @@ test('ScrollingFrame uses boundary-only rubber banding and iOS-like deceleration
   assert.ok(view.includes("const decay = Math.pow(0.998, dt)"));
   assert.ok(view.includes("const rubberPull = (current, delta)"));
   assert.ok(view.includes("const moveAxis = (axis, delta)"));
-  assert.ok(view.includes("if (target <= 0 && leftover < 0) || (target >= maximum && leftover > 0)"));
+  assert.ok(view.includes("target <= 0 && leftover < 0"));
+  assert.ok(view.includes("target >= maximum && leftover > 0"));
   assert.ok(view.includes("Trackpads already emit their own momentum events. Never add a second wheel inertia."));
   assert.ok(view.includes("viewport.addEventListener('wheel', wheel, { passive: false })"));
   assert.ok(view.includes("const radians = -viewport._elasticRotation * Math.PI / 180"));
