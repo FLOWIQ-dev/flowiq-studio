@@ -752,6 +752,13 @@ test('ScrollingFrame exposes a single Elastic toggle and migrates legacy bounce 
   assert.ok(model.includes("elastic: true"));
   assert.ok(model.includes("delete merged.elasticBehavior"));
   assert.ok(view.includes("p.elastic === false ? 'none' : 'contain'"));
+  assert.match(view, /function setupElasticScroll\(viewport, enabled, direction\)/);
+  assert.match(view, /event\.preventDefault\(\)/);
+  assert.match(view, /Math\.min\(76, Math\.abs\(value\) \* 0\.38\)/);
+  assert.match(view, /440ms cubic-bezier/);
+  assert.match(view, /requestAnimationFrame\(coast\)/);
+  assert.match(view, /const wheel = event =>/);
+  assert.match(view, /paint\(rubber\(-overX\), rubber\(-overY\)\)/);
   assert.ok(view.includes("webkitOverflowScrolling = 'touch'"));
   assert.ok(schema.includes("checkbox('elastic', 'Elastic')"));
   assert.ok(!schema.includes('WhenScrollable'));
@@ -765,9 +772,13 @@ test('ScrollingFrame editor separates touch scrolling from moving the selected f
   const css = await readFile(new URL('../css/studio.css', import.meta.url), 'utf8');
   assert.ok(view.includes("isScrollingFrame || insideScrollViewport ? 'pan-x pan-y' : 'none'"));
   assert.ok(view.includes("move.dataset.move = 'true'"));
+  assert.match(view, /move\.innerHTML = '<svg viewBox="0 0 24 24"/);
+  assert.match(css, /\.scene-node>\.move-handle svg/);
   assert.ok(app.includes("const isTouchGesture = event.pointerType === 'touch' || event.pointerType === 'pen'"));
   assert.ok(app.includes('if (scrollViewport && isTouchGesture && !moveHandle && !resizeHandle && !rotateHandle)'));
   assert.ok(app.includes("const moveHandle = event.target.closest('[data-move]')"));
   assert.ok(css.includes('.scene-node>.move-handle'));
   assert.ok(css.includes('overscroll-behavior:contain'));
+  assert.ok(css.includes('width:32px;min-width:32px;height:32px;min-height:32px'));
+  assert.ok(view.includes("p.elastic !== false, direction"));
 });
