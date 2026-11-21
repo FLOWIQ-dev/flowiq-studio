@@ -730,7 +730,7 @@ test('ScrollingFrame descendants use canvas coordinates for layout and live edit
 test('ScrollingFrame remains scrollable in the editor while preserving its canvas during edits', async () => {
   const view = await readFile(new URL('../js/editor/view.js', import.meta.url), 'utf8');
   const app = await readFile(new URL('../js/app.js', import.meta.url), 'utf8');
-  assert.ok(view.includes("p.scrollingEnabled !== false ? 'auto' : 'hidden'"));
+  assert.ok(view.includes("enabled ? 'auto' : 'hidden'"));
   assert.ok(view.includes('childContainer.scrollLeft = previousScrollLeft'));
   assert.ok(view.includes("canvas.style.height = childHeight + 'px'"));
   assert.ok(app.includes('scrollViewport && target === scrollViewport.parentElement'));
@@ -739,36 +739,33 @@ test('ScrollingFrame remains scrollable in the editor while preserving its canva
 test('preview GuiObjects allow touch gestures to reach nested ScrollingFrame viewports', async () => {
   const view = await readFile(new URL('../js/editor/view.js', import.meta.url), 'utf8');
   const css = await readFile(new URL('../css/studio.css', import.meta.url), 'utf8');
-  assert.ok(view.includes("item.style.touchAction = preview ? 'auto' : (isScrollingFrame || insideScrollViewport ? 'pan-x pan-y' : 'none')"));
-  assert.ok(view.includes("childContainer.style.touchAction = enabled ?"));
+  assert.ok(view.includes("item.style.touchAction = preview ? 'auto' : (insideScrollViewport && parent.closest('.scene-scroll-viewport')?.dataset.editorMode === 'scroll' ? 'pan-x pan-y' : 'none')"));
+  assert.ok(view.includes("childContainer.style.touchAction = enabled && scrollMode ?"));
   assert.ok(css.includes('.preview-screen .scene-node{touch-action:auto}'));
   assert.ok(css.includes('.scene-scroll-viewport'));
 });
 
-test('ScrollingFrame uses boundary-only rubber banding and iOS-like deceleration', async () => {
+test('ScrollingFrame separates editing from native momentum scrolling', async () => {
   const view = await readFile(new URL('../js/editor/view.js', import.meta.url), 'utf8');
-  const model = await readFile(new URL('../js/data/model.js', import.meta.url), 'utf8');
-  const schema = await readFile(new URL('../js/editor/property-schema.js', import.meta.url), 'utf8');
-  assert.ok(model.includes("elastic: true"));
-  assert.ok(model.includes("delete merged.elasticBehavior"));
-  assert.ok(view.includes("function setupElasticScroll(viewport, enabled, direction, rotation = 0)"));
-  assert.ok(view.includes("const MAX_PULL = 92"));
-  assert.ok(view.includes("const stiffness = 0.00012"));
-  assert.ok(view.includes("const damping = 0.018"));
-  assert.ok(view.includes("const decay = Math.pow(0.998, dt)"));
-  assert.ok(view.includes("const rubberPull = (current, delta)"));
-  assert.ok(view.includes("const moveAxis = (axis, delta)"));
-  assert.ok(view.includes("target <= 0 && leftover < 0"));
-  assert.ok(view.includes("target >= maximum && leftover > 0"));
-  assert.ok(view.includes("Trackpads already emit their own momentum events. Never add a second wheel inertia."));
-  assert.ok(view.includes("viewport.addEventListener('wheel', wheel, { passive: false })"));
-  assert.ok(view.includes("const radians = -viewport._elasticRotation * Math.PI / 180"));
-  assert.ok(view.includes("setupElasticScroll(childContainer, enabled && p.elastic !== false, direction, p.rotation)"));
-  assert.ok(view.includes("state.velocityX * 0.55 + instantX * 0.45"));
-  assert.ok(view.includes("if (state.overX || state.overY) animate()"));
-  assert.ok(schema.includes("checkbox('elastic', 'Elastic')"));
-  assert.ok(!schema.includes('WhenScrollable'));
-  assert.ok(!schema.includes('elasticBehavior'));
+  const app = await readFile(new URL('../js/app.js', import.meta.url), 'utf8');
+  const css = await readFile(new URL('../css/studio.css', import.meta.url), 'utf8');
+  assert.ok(view.includes("function setupElasticScroll(viewport, enabled, direction, elastic = true)"));
+  assert.ok(view.includes("viewport.style.overscrollBehavior = elastic ? 'auto' : 'contain'"));
+  assert.ok(view.includes("viewport.style.webkitOverflowScrolling = 'touch'"));
+  assert.ok(view.includes("viewport.dataset.editorMode = 'edit'"));
+  assert.ok(view.includes("childContainer.dataset.editorMode === 'scroll'"));
+  assert.ok(view.includes("modeButton.dataset.scrollMode = 'true'"));
+  assert.ok(view.includes("modeButton.title = scrollMode ? 'Editar conteúdo' : 'Rolar conteúdo'"));
+  assert.ok(view.includes("insideScrollViewport && parent.closest('.scene-scroll-viewport')?.dataset.editorMode === 'scroll'"));
+  assert.ok(view.includes("viewport.addEventListener('wheel', wheelGuard, { passive: false })"));
+  assert.ok(!view.includes("touchmove', move, { passive: false"));
+  assert.ok(!view.includes("const stiffness ="));
+  assert.ok(app.includes("viewport.dataset.editorMode = scrolling ? 'scroll' : 'edit'"));
+  assert.ok(app.includes("scrollViewport.dataset.editorMode === 'scroll' && isTouchGesture"));
+  assert.ok(app.includes("viewport.querySelectorAll('.scene-node').forEach(child =>"));
+  assert.ok(css.includes(".scene-scroll-viewport{overscroll-behavior:auto;"));
+  assert.ok(css.includes("-webkit-overflow-scrolling:touch"));
+  assert.ok(css.includes(".scene-node>.scroll-mode-handle"));
 });
 
 test('opening a project renders ScrollingFrame without an out-of-scope enabled variable', async () => {
@@ -776,7 +773,7 @@ test('opening a project renders ScrollingFrame without an out-of-scope enabled v
   const classToggle = view.indexOf("childContainer.classList.toggle('scene-scroll-viewport', isScrollingFrame)");
   const enabledDeclaration = view.indexOf("const enabled = isScrollingFrame && p.scrollingEnabled !== false", classToggle);
   const scrollingBlock = view.indexOf("if (isScrollingFrame) {", classToggle);
-  const elasticCall = view.indexOf("setupElasticScroll(childContainer, enabled && p.elastic !== false, direction, p.rotation)", scrollingBlock);
+  const elasticCall = view.indexOf("setupElasticScroll(childContainer, enabled, direction, p.elastic !== false)", scrollingBlock);
   assert.ok(enabledDeclaration > classToggle && enabledDeclaration < scrollingBlock);
   assert.ok(elasticCall > scrollingBlock);
   assert.ok(!view.includes("const enabled = p.scrollingEnabled !== false"));
@@ -787,15 +784,16 @@ test('ScrollingFrame editor separates touch scrolling from moving the selected f
   const view = await readFile(new URL('../js/editor/view.js', import.meta.url), 'utf8');
   const app = await readFile(new URL('../js/app.js', import.meta.url), 'utf8');
   const css = await readFile(new URL('../css/studio.css', import.meta.url), 'utf8');
-  assert.ok(view.includes("isScrollingFrame || insideScrollViewport ? 'pan-x pan-y' : 'none'"));
+  assert.ok(view.includes("childContainer.dataset.editorMode === 'scroll'"));
+  assert.ok(view.includes("modeButton.dataset.scrollMode = 'true'"));
   assert.ok(view.includes("move.dataset.move = 'true'"));
   assert.match(view, /move\.innerHTML = '<svg viewBox="0 0 24 24"/);
   assert.match(css, /\.scene-node>\.move-handle svg/);
   assert.ok(app.includes("const isTouchGesture = event.pointerType === 'touch' || event.pointerType === 'pen'"));
-  assert.ok(app.includes('if (scrollViewport && isTouchGesture && !moveHandle && !resizeHandle && !rotateHandle)'));
+  assert.ok(app.includes("if (scrollViewport && scrollViewport.dataset.editorMode === 'scroll' && isTouchGesture && !moveHandle && !resizeHandle && !rotateHandle)"));
   assert.ok(app.includes("const moveHandle = event.target.closest('[data-move]')"));
   assert.ok(css.includes('.scene-node>.move-handle'));
   assert.ok(css.includes('overscroll-behavior:contain'));
   assert.ok(css.includes('width:32px;min-width:32px;height:32px;min-height:32px'));
-  assert.ok(view.includes("p.elastic !== false, direction"));
+  assert.ok(view.includes("enabled, direction, p.elastic !== false"));
 });

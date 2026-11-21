@@ -13,200 +13,23 @@ const ICONS = {
 };
 const icon = type => '<svg viewBox="0 0 24 24" aria-hidden="true">' + (ICONS[type] || ICONS.Frame) + '</svg>';
 const orderedSiblingIds = (scene, ids) => ids.map((id, index) => ({ id, index, node: scene.get(id) })).filter(item => item.node && item.node.type !== 'Script').sort((a, b) => normalizeZIndex(a.node.props.zIndex) - normalizeZIndex(b.node.props.zIndex) || a.index - b.index).map(item => item.id);
-function setupElasticScroll(viewport, enabled, direction, rotation = 0) {
+function setupElasticScroll(viewport, enabled, direction, elastic = true) {
   viewport._elasticEnabled = Boolean(enabled);
   viewport._elasticDirection = direction;
-  viewport._elasticRotation = Number(rotation) || 0;
-  const canvas = () => viewport.querySelector(':scope > .scene-scroll-canvas');
-  const localDelta = (x, y) => {
-    const radians = -viewport._elasticRotation * Math.PI / 180;
-    const cosine = Math.cos(radians), sine = Math.sin(radians);
-    return { x: x * cosine - y * sine, y: x * sine + y * cosine };
-  };
-  const allowed = () => ({
-    x: viewport._elasticDirection !== 'Y',
-    y: viewport._elasticDirection !== 'X'
-  });
-  const MAX_PULL = 92;
-  const paint = () => {
-    const content = canvas();
-    if (!content) return;
-    content.style.transition = 'none';
-    content.style.transform = state.overX || state.overY
-      ? 'translate3d(' + (-state.overX) + 'px,' + (-state.overY) + 'px,0)'
-      : 'translate3d(0,0,0)';
-  };
-  if (!viewport._elasticHandlers) {
-    const state = {
-      gesture: null, frame: 0, lastWheel: 0,
-      velocityX: 0, velocityY: 0,
-      overX: 0, overY: 0, springVX: 0, springVY: 0
+  if (!viewport.dataset.editorMode) viewport.dataset.editorMode = 'edit';
+  const scrolling = enabled && viewport.dataset.editorMode === 'scroll';
+  const axis = direction === 'X' ? 'pan-x' : direction === 'Y' ? 'pan-y' : 'pan-x pan-y';
+  viewport.style.touchAction = scrolling ? axis : 'none';
+  viewport.style.overscrollBehavior = elastic ? 'auto' : 'contain';
+  viewport.style.webkitOverflowScrolling = 'touch';
+  if (!viewport._scrollModeHandlers) {
+    // Native overflow scrolling owns touch momentum and platform rubber-banding.
+    // Wheel input is available only in the explicit Scroll mode.
+    const wheelGuard = event => {
+      if (viewport.dataset.editorMode !== 'scroll') event.preventDefault();
     };
-    const stopFrame = () => {
-      if (state.frame) cancelAnimationFrame(state.frame);
-      state.frame = 0;
-    };
-    const maxScroll = axis => Math.max(0,
-      axis === 'x' ? viewport.scrollWidth - viewport.clientWidth : viewport.scrollHeight - viewport.clientHeight);
-    const rubberPull = (current, delta) => {
-      if (!delta) return current;
-      const sameDirection = !current || Math.sign(current) === Math.sign(delta);
-      const next = sameDirection
-        ? current + delta * (0.17 / (1 + Math.abs(current) / 72))
-        : current + delta * 0.72;
-      return Math.max(-MAX_PULL, Math.min(MAX_PULL, next));
-    };
-    const moveAxis = (axis, delta) => {
-      if (!delta) return 0;
-      const horizontal = axis === 'x';
-      const scroll = horizontal ? 'scrollLeft' : 'scrollTop';
-      const over = horizontal ? 'overX' : 'overY';
-      const maximum = maxScroll(axis);
-      let remaining = delta;
-      if (state[over]) {
-        const sameDirection = Math.sign(state[over]) === Math.sign(remaining);
-        if (sameDirection) {
-          state[over] = rubberPull(state[over], remaining);
-          return 0;
-        }
-        const unwind = Math.min(Math.abs(remaining), Math.abs(state[over]) / 0.72);
-        state[over] += Math.sign(remaining) * unwind * 0.72;
-        remaining -= Math.sign(remaining) * unwind;
-        if (Math.abs(state[over]) < 0.12) state[over] = 0;
-      }
-      if (!remaining) return 0;
-      const before = viewport[scroll];
-      const target = Math.max(0, Math.min(maximum, before + remaining));
-      viewport[scroll] = target;
-      const consumed = target - before;
-      const leftover = remaining - consumed;
-      if (leftover && ((target <= 0 && leftover < 0) || (target >= maximum && leftover > 0))) {
-        state[over] = rubberPull(state[over], leftover);
-      }
-      return consumed;
-    };
-    const spring = (offset, velocity, dt) => {
-      // A low-energy, near-critically-damped return: no snap and no launch.
-      const stiffness = 0.00012;
-      const damping = 0.018;
-      velocity += (-stiffness * offset - damping * velocity) * dt;
-      offset += velocity * dt;
-      if (Math.abs(offset) < 0.16 && Math.abs(velocity) < 0.003) return [0, 0];
-      return [offset, velocity];
-    };
-    const animate = () => {
-      if (state.frame) return;
-      let previous = performance.now();
-      const tick = now => {
-        const dt = Math.min(32, Math.max(1, now - previous));
-        previous = now;
-        const can = allowed();
-        if (state.gesture) {
-          state.frame = 0;
-          return;
-        }
-        // Trackpads already emit their own momentum events. Never add a second wheel inertia.
-        if (now - state.lastWheel < 90) {
-          state.frame = requestAnimationFrame(tick);
-          return;
-        }
-        const decay = Math.pow(0.998, dt);
-        for (const axis of ['x', 'y']) {
-          if (!can[axis]) continue;
-          const velocityKey = axis === 'x' ? 'velocityX' : 'velocityY';
-          const overKey = axis === 'x' ? 'overX' : 'overY';
-          const springKey = axis === 'x' ? 'springVX' : 'springVY';
-          const velocity = state[velocityKey];
-          if (Math.abs(velocity) > 0.012) {
-            const consumed = moveAxis(axis, velocity * dt);
-            if (Math.abs(consumed) < Math.abs(velocity * dt) - 0.01) {
-              state[velocityKey] = 0;
-              state[springKey] = 0;
-            } else {
-              state[velocityKey] *= decay;
-            }
-          } else state[velocityKey] = 0;
-          [state[overKey], state[springKey]] = spring(state[overKey], state[springKey], dt);
-        }
-        paint();
-        const moving = Math.abs(state.velocityX) + Math.abs(state.velocityY) > 0.012
-          || Math.abs(state.overX) + Math.abs(state.overY) > 0.16
-          || Math.abs(state.springVX) + Math.abs(state.springVY) > 0.003;
-        if (moving) state.frame = requestAnimationFrame(tick);
-        else {
-          state.frame = 0;
-          state.overX = state.overY = state.springVX = state.springVY = 0;
-          paint();
-        }
-      };
-      state.frame = requestAnimationFrame(tick);
-    };
-    const start = event => {
-      if (!viewport._elasticEnabled || event.touches.length !== 1) return;
-      stopFrame();
-      const touch = event.touches[0];
-      state.velocityX = state.velocityY = 0;
-      state.springVX = state.springVY = 0;
-      state.gesture = {
-        id: touch.identifier, x: touch.clientX, y: touch.clientY,
-        lastTime: performance.now()
-      };
-    };
-    const move = event => {
-      const gesture = state.gesture;
-      if (!viewport._elasticEnabled || !gesture) return;
-      const touch = Array.from(event.touches).find(item => item.identifier === gesture.id);
-      if (!touch) return;
-      event.preventDefault();
-      const now = performance.now(), elapsed = Math.max(1, now - gesture.lastTime);
-      const delta = localDelta(gesture.x - touch.clientX, gesture.y - touch.clientY);
-      const can = allowed();
-      const beforeX = viewport.scrollLeft, beforeY = viewport.scrollTop;
-      if (can.x) moveAxis('x', delta.x);
-      if (can.y) moveAxis('y', delta.y);
-      const instantX = (viewport.scrollLeft - beforeX) / elapsed;
-      const instantY = (viewport.scrollTop - beforeY) / elapsed;
-      state.velocityX = Math.max(-2.4, Math.min(2.4, state.velocityX * 0.55 + instantX * 0.45));
-      state.velocityY = Math.max(-2.4, Math.min(2.4, state.velocityY * 0.55 + instantY * 0.45));
-      gesture.x = touch.clientX;
-      gesture.y = touch.clientY;
-      gesture.lastTime = now;
-      paint();
-    };
-    const end = () => {
-      if (!state.gesture) return;
-      state.gesture = null;
-      animate();
-    };
-    const wheel = event => {
-      if (!viewport._elasticEnabled) return;
-      event.preventDefault();
-      stopFrame();
-      state.velocityX = state.velocityY = 0;
-      const scale = event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? Math.max(viewport.clientHeight, 1) : 1;
-      const delta = localDelta(event.deltaX * scale, event.deltaY * scale);
-      const can = allowed();
-      if (can.x) moveAxis('x', delta.x);
-      if (can.y) moveAxis('y', delta.y);
-      state.lastWheel = performance.now();
-      if (state.overX || state.overY) animate();
-      paint();
-    };
-    viewport.addEventListener('touchstart', start, { passive: true });
-    viewport.addEventListener('touchmove', move, { passive: false });
-    viewport.addEventListener('touchend', end, { passive: true });
-    viewport.addEventListener('touchcancel', end, { passive: true });
-    viewport.addEventListener('wheel', wheel, { passive: false });
-    viewport._elasticHandlers = { state };
-  }
-  const state = viewport._elasticHandlers.state;
-  if (!enabled) {
-    if (state.frame) cancelAnimationFrame(state.frame);
-    state.frame = 0;
-    state.gesture = null;
-    state.velocityX = state.velocityY = state.overX = state.overY = state.springVX = state.springVY = 0;
-    const content = canvas();
-    if (content) { content.style.transition = ''; content.style.transform = ''; }
+    viewport.addEventListener('wheel', wheelGuard, { passive: false });
+    viewport._scrollModeHandlers = { wheelGuard };
   }
 }
 const el = (tag, className, text) => {
@@ -343,7 +166,7 @@ export function renderScene(container, scene, { selectedId = null, preview = fal
     const insideScrollViewport = Boolean(parent.closest?.('.scene-scroll-viewport'));
     // In the editor, touch gestures inside a ScrollingFrame belong to its native scrollport.
     // Other instances retain direct-manipulation gestures.
-    item.style.touchAction = preview ? 'auto' : (isScrollingFrame || insideScrollViewport ? 'pan-x pan-y' : 'none');
+    item.style.touchAction = preview ? 'auto' : (insideScrollViewport && parent.closest('.scene-scroll-viewport')?.dataset.editorMode === 'scroll' ? 'pan-x pan-y' : 'none');
     item.style.transform = 'translate(' + (-p.anchorPoint.x * 100) + '%,' + (-p.anchorPoint.y * 100) + '%) rotate(' + (Number(p.rotation) || 0) + 'deg)';
     const backdropNode = isFrame ? node.children.map(childId => scene.get(childId)).find(child => child?.type === 'UIBackdrop') : null;
       item.style.background = isContainerFrame ? 'transparent' : (p.backgroundColor3 || p.background || 'transparent');
@@ -417,16 +240,19 @@ export function renderScene(container, scene, { selectedId = null, preview = fal
     childContainer.replaceChildren();
     childContainer.style.position = 'absolute';
     childContainer.style.inset = '0';
-    childContainer.style.overflow = isScrollingFrame ? (p.scrollingEnabled !== false ? 'auto' : 'hidden') : (node.type === 'Frame' && p.clipsDescendants ? 'hidden' : 'visible');
     childContainer.classList.toggle('scene-scroll-viewport', isScrollingFrame);
+    if (isScrollingFrame && !childContainer.dataset.editorMode) childContainer.dataset.editorMode = 'edit';
     const direction = ['X', 'Y', 'XY'].includes(p.scrollingDirection) ? p.scrollingDirection : 'XY';
     const enabled = isScrollingFrame && p.scrollingEnabled !== false;
+    const scrollMode = isScrollingFrame && childContainer.dataset.editorMode === 'scroll';
+    childContainer.style.overflow = isScrollingFrame ? (enabled ? 'auto' : 'hidden') : (node.type === 'Frame' && p.clipsDescendants ? 'hidden' : 'visible');
     if (isScrollingFrame) {
       childContainer.style.overflowX = enabled && direction !== 'Y' ? 'auto' : 'hidden';
       childContainer.style.overflowY = enabled && direction !== 'X' ? 'auto' : 'hidden';
-      childContainer.style.overscrollBehavior = p.elastic === false ? 'none' : 'contain';
-      childContainer.style.touchAction = enabled ? (p.elastic === false ? (direction === 'X' ? 'pan-x' : direction === 'Y' ? 'pan-y' : 'pan-x pan-y') : 'none') : 'none';
+      childContainer.style.overscrollBehavior = 'auto';
+      childContainer.style.touchAction = enabled && scrollMode ? (direction === 'X' ? 'pan-x' : direction === 'Y' ? 'pan-y' : 'pan-x pan-y') : 'none';
       childContainer.style.webkitOverflowScrolling = 'touch';
+      item.style.touchAction = enabled && scrollMode ? 'pan-x pan-y' : 'none';
       childContainer.style.setProperty('--scrollbar-thickness', Math.max(0, Math.min(24, Number(p.scrollBarThickness) || 8)) + 'px');
     } else {
       childContainer.style.overflowX = '';
@@ -502,7 +328,7 @@ export function renderScene(container, scene, { selectedId = null, preview = fal
       childRenderTarget = canvas;
       childContainer.scrollLeft = previousScrollLeft;
       childContainer.scrollTop = previousScrollTop;
-      setupElasticScroll(childContainer, enabled && p.elastic !== false, direction, p.rotation);
+      setupElasticScroll(childContainer, enabled, direction, p.elastic !== false);
     }
     if (isImageNode) {
       const asset = assetMap.get(p.assetId);
@@ -623,6 +449,17 @@ export function renderScene(container, scene, { selectedId = null, preview = fal
     for (const childId of orderedSiblingIds(scene, node.children)) build(childId, childRenderTarget, childSpace.width, childSpace.height);
     if (selectedId === node.id && !preview) {
       if (isScrollingFrame) {
+        const scrollMode = childContainer.dataset.editorMode === 'scroll';
+        const modeButton = el('button', 'scroll-mode-handle');
+        modeButton.type = 'button';
+        modeButton.dataset.scrollMode = 'true';
+        modeButton.setAttribute('aria-pressed', String(scrollMode));
+        modeButton.setAttribute('aria-label', scrollMode ? 'Editar conteúdo do ScrollingFrame' : 'Rolar conteúdo do ScrollingFrame');
+        modeButton.title = scrollMode ? 'Editar conteúdo' : 'Rolar conteúdo';
+        modeButton.innerHTML = scrollMode
+          ? '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v14H4zM8 9l-2 3 2 3M16 9l2 3-2 3"/></svg><span>Editar</span>'
+          : '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v18M8 7l4-4 4 4M8 17l4 4 4-4"/></svg><span>Rolar</span>';
+        item.append(modeButton);
         const move = el('button', 'move-handle');
         move.type = 'button';
         move.dataset.move = 'true';

@@ -105,6 +105,33 @@ class FlowiqStudio {
     window.addEventListener('pointerup', event => this.finishSceneTap(event));
     window.addEventListener('pointercancel', event => { if (this.sceneTap?.pointerId === event.pointerId) this.sceneTap = null; });
     $('scene').addEventListener('click', event => {
+      const modeButton = event.target.closest('[data-scroll-mode]');
+      if (modeButton) {
+        event.preventDefault();
+        event.stopPropagation();
+        const frame = modeButton.closest('.scene-node');
+        const viewport = frame?.querySelector(':scope > .scene-children.scene-scroll-viewport');
+        if (!frame || !viewport) return;
+        const scrolling = viewport.dataset.editorMode !== 'scroll';
+        viewport.dataset.editorMode = scrolling ? 'scroll' : 'edit';
+        const node = this.scene.get(frame.dataset.nodeId);
+        const direction = node?.props?.scrollingDirection || 'XY';
+        const enabled = node?.props?.scrollingEnabled !== false;
+        const axis = direction === 'X' ? 'pan-x' : direction === 'Y' ? 'pan-y' : 'pan-x pan-y';
+        viewport.style.touchAction = scrolling && enabled ? axis : 'none';
+        viewport.style.overscrollBehavior = node?.props?.elastic === false ? 'contain' : 'auto';
+        frame.style.touchAction = scrolling && enabled ? 'pan-x pan-y' : 'none';
+        viewport.querySelectorAll('.scene-node').forEach(child => {
+          child.style.touchAction = scrolling && enabled ? 'pan-x pan-y' : 'none';
+        });
+        modeButton.setAttribute('aria-pressed', String(scrolling));
+        modeButton.setAttribute('aria-label', scrolling ? 'Editar conteúdo do ScrollingFrame' : 'Rolar conteúdo do ScrollingFrame');
+        modeButton.title = scrolling ? 'Editar conteúdo' : 'Rolar conteúdo';
+        modeButton.innerHTML = scrolling
+          ? '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v14H4zM8 9l-2 3 2 3M16 9l2 3-2 3"/></svg><span>Editar</span>'
+          : '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v18M8 7l4-4 4 4M8 17l4 4 4-4"/></svg><span>Rolar</span>';
+        return;
+      }
       if (event.target === $('scene') && this.store.state.selectedId) this.select(null);
     });
     $('scene').addEventListener('dblclick', event => {
@@ -902,14 +929,14 @@ class FlowiqStudio {
     const node = this.scene.get(target.dataset.nodeId);
     if (!node) return;
     const scrollViewport = event.target.closest('.scene-scroll-viewport');
+    if (event.target.closest('[data-scroll-mode]')) return;
     const moveHandle = event.target.closest('[data-move]');
     const resizeHandle = event.target.closest('[data-resize]');
     const rotateHandle = event.target.closest('[data-rotate]');
     const isTouchGesture = event.pointerType === 'touch' || event.pointerType === 'pen';
 
-    // Touch/pen inside the viewport is reserved for scrolling, including over child instances.
-    // No pointer capture or preventDefault here: the browser must own the native scroll gesture.
-    if (scrollViewport && isTouchGesture && !moveHandle && !resizeHandle && !rotateHandle) {
+    // Native touch scrolling is active only in the explicit Scroll mode.
+    if (scrollViewport && scrollViewport.dataset.editorMode === 'scroll' && isTouchGesture && !moveHandle && !resizeHandle && !rotateHandle) {
       if (this.store.state.selectedId !== node.id) {
         this.sceneTap = { id: node.id, pointerId: event.pointerId, startX: event.clientX, startY: event.clientY };
       }
