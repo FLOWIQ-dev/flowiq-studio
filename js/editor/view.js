@@ -100,16 +100,17 @@ function setupElasticScroll(viewport, enabled, direction, rotation = 0) {
       viewport.scrollTop = Math.max(0, Math.min(maxY, desiredY));
       const overX = can.x ? desiredX - viewport.scrollLeft : 0;
       const overY = can.y ? desiredY - viewport.scrollTop : 0;
-      if (overX) { state.overX += overX; state.springVX = dx / Math.max(8, elapsed) * 0.72; }
-      if (overY) { state.overY += overY; state.springVY = dy / Math.max(8, elapsed) * 0.72; }
+      if (overX) { state.overX += overX; state.springVX = Math.max(-2.2, Math.min(2.2, dx / Math.max(8, elapsed) * 0.72)); }
+      if (overY) { state.overY += overY; state.springVY = Math.max(-2.2, Math.min(2.2, dy / Math.max(8, elapsed) * 0.72)); }
       if (source === 'touch') {
         state.velocityX = (viewport.scrollLeft - beforeX) / Math.max(1, elapsed);
         state.velocityY = (viewport.scrollTop - beforeY) / Math.max(1, elapsed);
       } else {
-        state.velocityX = dx / Math.max(8, elapsed) * 1.15;
-        state.velocityY = dy / Math.max(8, elapsed) * 1.15;
+        state.velocityX = Math.max(-1.8, Math.min(1.8, state.velocityX * 0.35 + dx / Math.max(8, elapsed) * 0.28));
+        state.velocityY = Math.max(-1.8, Math.min(1.8, state.velocityY * 0.35 + dy / Math.max(8, elapsed) * 0.28));
       }
-      if (overX || overY || state.velocityX || state.velocityY) animate();
+      if (source === 'touch') paint();
+      else if (overX || overY || state.velocityX || state.velocityY) animate();
     };
     const start = event => {
       if (!viewport._elasticEnabled || event.touches.length !== 1) return;
