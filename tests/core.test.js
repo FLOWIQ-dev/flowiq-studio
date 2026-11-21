@@ -773,7 +773,7 @@ test('opening a project renders ScrollingFrame without an out-of-scope enabled v
   const classToggle = view.indexOf("childContainer.classList.toggle('scene-scroll-viewport', isScrollingFrame)");
   const enabledDeclaration = view.indexOf("const enabled = isScrollingFrame && p.scrollingEnabled !== false", classToggle);
   const scrollingBlock = view.indexOf("if (isScrollingFrame) {", classToggle);
-  const elasticCall = view.indexOf("setupElasticScroll(childContainer, enabled && p.elastic !== false, direction, p.rotation)", scrollingBlock);
+  const elasticCall = view.indexOf("setupElasticScroll(childContainer, enabled, direction, p.elastic !== false)", scrollingBlock);
   assert.ok(enabledDeclaration > classToggle && enabledDeclaration < scrollingBlock);
   assert.ok(elasticCall > scrollingBlock);
   assert.ok(!view.includes("const enabled = p.scrollingEnabled !== false"));
