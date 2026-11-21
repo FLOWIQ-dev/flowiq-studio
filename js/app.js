@@ -927,7 +927,7 @@ class FlowiqStudio {
   }
 
   pointerDown(event) {
-    if (event.__flowiqScrollHandled || this.runtime.running || event.button > 0) return;
+    if (this.runtime.running || event.button > 0) return;
     let target = event.target.closest('.scene-node');
     if (!target) return;
     const node = this.scene.get(target.dataset.nodeId);
