@@ -761,7 +761,7 @@ test('ScrollingFrame preview uses custom drag momentum and elastic spring physic
   assert.ok(view.includes('window.addEventListener(\'pointermove\', pointerMove, { passive: false })'));
   assert.ok(view.includes('event.preventDefault()'));
   assert.ok(app.includes('event.__flowiqScrollHandled'));
-  assert.ok(css.includes('.scene-scroll-canvas{transform:translate3d(0,0,0)'));
+  assert.ok(css.includes('.scene-scroll-canvas{min-width:100%;min-height:100%;pointer-events:auto;transform:translate3d(0,0,0)'));
 });
 
 test('ScrollingFrame editor keeps object editing separate from scroll gestures', async () => {
