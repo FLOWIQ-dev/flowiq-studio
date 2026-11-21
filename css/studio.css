@@ -1457,7 +1457,7 @@ body[data-screen=editor]{
 
 
 /* ScrollingFrame: explicit edit/scroll modes with native momentum and platform bounce. */
-.scene-scroll-viewport{overscroll-behavior:auto!important;overscroll-behavior-x:auto!important;overscroll-behavior-y:auto!important;-webkit-overflow-scrolling:touch}
+.scene-scroll-viewport{overscroll-behavior:auto;overscroll-behavior-x:auto;overscroll-behavior-y:auto;-webkit-overflow-scrolling:touch}
 .scene-scroll-canvas{transform:none!important;will-change:auto!important}
 .scene-node>.scroll-mode-handle{position:absolute;z-index:16;top:-42px;right:4px;display:flex;align-items:center;justify-content:center;gap:5px;min-width:84px;height:32px;padding:0 10px;border:1px solid #6ba8ec;border-radius:8px;background:#173b61;color:#e6f2ff;font:600 12px Inter,ui-sans-serif,sans-serif;touch-action:manipulation;user-select:none;box-shadow:0 2px 8px rgba(0,0,0,.3)}
 .scene-node>.scroll-mode-handle svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
