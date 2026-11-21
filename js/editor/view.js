@@ -25,9 +25,9 @@ function setupElasticScroll(viewport, enabled, direction, elastic = true) {
 
   // Native browser scrolling is the single source of truth. No virtual offsets,
   // canvas transforms, wheel interception, or competing animation loop.
-  viewport.style.overflow = enabled ? 'auto' : 'hidden';
-  viewport.style.overflowX = enabled && direction !== 'Y' ? 'auto' : 'hidden';
-  viewport.style.overflowY = enabled && direction !== 'X' ? 'auto' : 'hidden';
+  viewport.style.overflow = canScroll ? 'auto' : 'hidden';
+  viewport.style.overflowX = canScroll && direction !== 'Y' ? 'auto' : 'hidden';
+  viewport.style.overflowY = canScroll && direction !== 'X' ? 'auto' : 'hidden';
   viewport.style.overscrollBehavior = elastic ? 'auto' : 'contain';
   viewport.style.webkitOverflowScrolling = 'touch';
   viewport.style.touchAction = canScroll ? axis : 'none';
@@ -68,8 +68,8 @@ function setupElasticScroll(viewport, enabled, direction, elastic = true) {
 
     const pointerDown = event => {
       const activePreview = Boolean(viewport.closest('#preview-screen'));
-      const activeScroll = Boolean(viewport._elasticEnabled) &&
-        (activePreview || viewport.dataset.editorMode === 'scroll');
+      const activeScroll = !activePreview && Boolean(viewport._elasticEnabled) &&
+        viewport.dataset.editorMode === 'scroll';
       if (!activeScroll || event.pointerType !== 'mouse' || event.button !== 0) return;
       if (event.target.closest?.('[data-scroll-mode],[data-move],[data-resize],[data-rotate]')) return;
       if (event.target.closest?.('.scene-scroll-viewport') !== viewport) return;
@@ -100,12 +100,6 @@ function setupElasticScroll(viewport, enabled, direction, elastic = true) {
     viewport._flowiqScrollHandlers = { pointerDown, moveMouseDrag, finishMouseDrag, clickGuard };
   }
 
-  if (!canScroll) {
-    viewport.scrollLeft = viewport.scrollLeft;
-    viewport.scrollTop = viewport.scrollTop;
-    state.pointerId = null;
-    state.dragging = false;
-  }
 }
 const el = (tag, className, text) => {
   const node = document.createElement(tag);
