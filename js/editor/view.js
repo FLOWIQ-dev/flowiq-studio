@@ -13,20 +13,27 @@ const ICONS = {
 };
 const icon = type => '<svg viewBox="0 0 24 24" aria-hidden="true">' + (ICONS[type] || ICONS.Frame) + '</svg>';
 const orderedSiblingIds = (scene, ids) => ids.map((id, index) => ({ id, index, node: scene.get(id) })).filter(item => item.node && item.node.type !== 'Script').sort((a, b) => normalizeZIndex(a.node.props.zIndex) - normalizeZIndex(b.node.props.zIndex) || a.index - b.index).map(item => item.id);
-function setupElasticScroll(viewport, enabled, direction) {
+function setupElasticScroll(viewport, enabled, direction, rotation = 0) {
   viewport._elasticEnabled = Boolean(enabled);
   viewport._elasticDirection = direction;
+  viewport._elasticRotation = Number(rotation) || 0;
   const canvas = () => viewport.querySelector(':scope > .scene-scroll-canvas');
-  const rubber = value => Math.sign(value) * Math.min(76, Math.abs(value) * 0.38);
+  const localDelta = (x, y) => {
+    const radians = -viewport._elasticRotation * Math.PI / 180;
+    const cosine = Math.cos(radians), sine = Math.sin(radians);
+    return { x: x * cosine - y * sine, y: x * sine + y * cosine };
+  };
+  const rubber = (value, dimension) => {
+    const limit = Math.min(112, Math.max(48, dimension * 0.3));
+    return Math.sign(value) * Math.min(limit, Math.abs(value) * 0.58);
+  };
   const paint = (x, y, spring = false) => {
     const content = canvas();
     if (!content) return;
-    content.style.transition = spring ? 'transform 440ms cubic-bezier(.18,.72,.22,1)' : 'none';
+    content.style.transition = spring ? 'transform 560ms cubic-bezier(.16,1,.3,1)' : 'none';
     content.style.transform = x || y ? 'translate3d(' + x + 'px,' + y + 'px,0)' : 'translate3d(0,0,0)';
   };
-  const springBack = () => {
-    paint(0, 0, true);
-  };
+  const springBack = () => paint(0, 0, true);
   if (!viewport._elasticHandlers) {
     const state = { gesture: null, frame: 0, wheelFrame: 0 };
     const start = event => {
@@ -47,13 +54,13 @@ function setupElasticScroll(viewport, enabled, direction) {
       const touch = Array.from(event.touches).find(item => item.identifier === gesture.id);
       if (!touch) return;
       event.preventDefault();
-      const dx = touch.clientX - gesture.x, dy = touch.clientY - gesture.y;
+      const delta = localDelta(touch.clientX - gesture.x, touch.clientY - gesture.y);
       const allowX = viewport._elasticDirection !== 'Y';
       const allowY = viewport._elasticDirection !== 'X';
       const maxX = Math.max(0, viewport.scrollWidth - viewport.clientWidth);
       const maxY = Math.max(0, viewport.scrollHeight - viewport.clientHeight);
-      const desiredX = allowX ? gesture.scrollX - dx : gesture.scrollX;
-      const desiredY = allowY ? gesture.scrollY - dy : gesture.scrollY;
+      const desiredX = allowX ? gesture.scrollX - delta.x : gesture.scrollX;
+      const desiredY = allowY ? gesture.scrollY - delta.y : gesture.scrollY;
       const nextX = Math.max(0, Math.min(maxX, desiredX));
       const nextY = Math.max(0, Math.min(maxY, desiredY));
       viewport.scrollLeft = nextX;
@@ -64,7 +71,7 @@ function setupElasticScroll(viewport, enabled, direction) {
       gesture.vx = (nextX - gesture.lastX) / elapsed;
       gesture.vy = (nextY - gesture.lastY) / elapsed;
       gesture.lastX = nextX; gesture.lastY = nextY; gesture.lastTime = now;
-      paint(rubber(-gesture.overX), rubber(-gesture.overY));
+      paint(rubber(-gesture.overX, viewport.clientWidth), rubber(-gesture.overY, viewport.clientHeight));
     };
     const end = () => {
       const gesture = state.gesture;
@@ -82,7 +89,7 @@ function setupElasticScroll(viewport, enabled, direction) {
         viewport.scrollTop = Math.max(0, Math.min(maxY, desiredY));
         const overX = desiredX - viewport.scrollLeft, overY = desiredY - viewport.scrollTop;
         if (overX || overY) {
-          paint(rubber(-overX), rubber(-overY));
+          paint(rubber(-overX, viewport.clientWidth), rubber(-overY, viewport.clientHeight));
           springBack();
           state.frame = 0;
           return;
@@ -96,15 +103,16 @@ function setupElasticScroll(viewport, enabled, direction) {
     };
     const wheel = event => {
       if (!viewport._elasticEnabled) return;
+      const delta = localDelta(event.deltaX, event.deltaY);
       const allowX = viewport._elasticDirection !== 'Y';
       const allowY = viewport._elasticDirection !== 'X';
       const maxX = Math.max(0, viewport.scrollWidth - viewport.clientWidth);
       const maxY = Math.max(0, viewport.scrollHeight - viewport.clientHeight);
-      const overX = allowX && ((viewport.scrollLeft <= 0 && event.deltaX < 0) || (viewport.scrollLeft >= maxX && event.deltaX > 0)) ? event.deltaX : 0;
-      const overY = allowY && ((viewport.scrollTop <= 0 && event.deltaY < 0) || (viewport.scrollTop >= maxY && event.deltaY > 0)) ? event.deltaY : 0;
+      const overX = allowX && ((viewport.scrollLeft <= 0 && delta.x < 0) || (viewport.scrollLeft >= maxX && delta.x > 0)) ? delta.x : 0;
+      const overY = allowY && ((viewport.scrollTop <= 0 && delta.y < 0) || (viewport.scrollTop >= maxY && delta.y > 0)) ? delta.y : 0;
       if (!overX && !overY) return;
       if (state.wheelFrame) cancelAnimationFrame(state.wheelFrame);
-      paint(rubber(-overX), rubber(-overY));
+      paint(rubber(-overX, viewport.clientWidth), rubber(-overY, viewport.clientHeight));
       state.wheelFrame = requestAnimationFrame(() => { springBack(); state.wheelFrame = 0; });
     };
     viewport.addEventListener('touchstart', start, { passive: true });
@@ -119,7 +127,6 @@ function setupElasticScroll(viewport, enabled, direction) {
     if (content) { content.style.transition = ''; content.style.transform = ''; }
   }
 }
-
 const el = (tag, className, text) => {
   const node = document.createElement(tag);
   if (className) node.className = className;
@@ -413,7 +420,7 @@ export function renderScene(container, scene, { selectedId = null, preview = fal
       childRenderTarget = canvas;
       childContainer.scrollLeft = previousScrollLeft;
       childContainer.scrollTop = previousScrollTop;
-      setupElasticScroll(childContainer, enabled && p.elastic !== false, direction);
+      setupElasticScroll(childContainer, enabled && p.elastic !== false, direction, p.rotation);
     }
     if (isImageNode) {
       const asset = assetMap.get(p.assetId);
