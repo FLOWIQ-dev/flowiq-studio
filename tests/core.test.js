@@ -770,7 +770,7 @@ test('ScrollingFrame editor keeps object editing separate from scroll gestures',
   assert.ok(view.includes("event.target.closest?.('.scene-scroll-viewport') !== viewport"));
   assert.ok(view.includes("viewport.dataset.editorMode = 'edit'") || view.includes("if (!viewport.dataset.editorMode) viewport.dataset.editorMode = 'edit'"));
   assert.ok(view.includes("move.dataset.move = 'true'"));
-  assert.ok(app.includes("if (event.__flowiqScrollHandled || this.runtime.running || event.button > 0) return;"));
+  assert.ok(app.includes("if (this.runtime.running || event.button > 0) return;"));
   assert.ok(app.includes("const moveHandle = event.target.closest('[data-move]')"));
 });
 
