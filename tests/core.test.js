@@ -766,6 +766,18 @@ test('ScrollingFrame exposes a single Elastic toggle and migrates legacy bounce 
 });
 
 
+test('opening a project renders ScrollingFrame without an out-of-scope enabled variable', async () => {
+  const view = await readFile(new URL('../js/editor/view.js', import.meta.url), 'utf8');
+  const classToggle = view.indexOf("childContainer.classList.toggle('scene-scroll-viewport', isScrollingFrame)");
+  const enabledDeclaration = view.indexOf("const enabled = isScrollingFrame && p.scrollingEnabled !== false", classToggle);
+  const scrollingBlock = view.indexOf("if (isScrollingFrame) {", classToggle);
+  const elasticCall = view.indexOf("setupElasticScroll(childContainer, enabled && p.elastic !== false, direction)", scrollingBlock);
+  assert.ok(enabledDeclaration > classToggle && enabledDeclaration < scrollingBlock);
+  assert.ok(elasticCall > scrollingBlock);
+  assert.ok(!view.includes("const enabled = p.scrollingEnabled !== false"));
+  assert.ok(!view.includes("const direction = ['X', 'Y', 'XY'].includes(p.scrollingDirection) ? p.scrollingDirection : 'XY';\n      let canvasWidth"));
+});
+
 test('ScrollingFrame editor separates touch scrolling from moving the selected frame', async () => {
   const view = await readFile(new URL('../js/editor/view.js', import.meta.url), 'utf8');
   const app = await readFile(new URL('../js/app.js', import.meta.url), 'utf8');
