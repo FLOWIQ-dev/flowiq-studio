@@ -757,6 +757,8 @@ test('ScrollingFrame exposes a single Elastic toggle and migrates legacy bounce 
   assert.match(view, /Math\.min\(76, Math\.abs\(value\) \* 0\.38\)/);
   assert.match(view, /440ms cubic-bezier/);
   assert.match(view, /requestAnimationFrame\(coast\)/);
+  assert.match(view, /const wheel = event =>/);
+  assert.match(view, /paint\(rubber\(-overX\), rubber\(-overY\)\)/);
   assert.ok(view.includes("webkitOverflowScrolling = 'touch'"));
   assert.ok(schema.includes("checkbox('elastic', 'Elastic')"));
   assert.ok(!schema.includes('WhenScrollable'));
