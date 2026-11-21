@@ -749,7 +749,7 @@ test('ScrollingFrame separates editing from native momentum scrolling', async ()
   const view = await readFile(new URL('../js/editor/view.js', import.meta.url), 'utf8');
   const app = await readFile(new URL('../js/app.js', import.meta.url), 'utf8');
   const css = await readFile(new URL('../css/studio.css', import.meta.url), 'utf8');
-  assert.ok(view.includes("function setupElasticScroll(viewport, enabled, direction)"));
+  assert.ok(view.includes("function setupElasticScroll(viewport, enabled, direction, elastic = true)"));
   assert.ok(view.includes("viewport.style.overscrollBehavior = 'auto'"));
   assert.ok(view.includes("viewport.style.webkitOverflowScrolling = 'touch'"));
   assert.ok(view.includes("viewport.dataset.editorMode = 'edit'"));
