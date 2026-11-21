@@ -1435,30 +1435,26 @@ body[data-screen=editor]{
 .inspector-instance-chip:hover{background:rgba(53,143,158,.2);border-color:rgba(95,217,228,.48)}
 .inspector-instance-chip.is-parent{border-color:rgba(130,184,255,.25);background:rgba(72,139,220,.1);color:#a8ccff}
 
-.scene-scroll-viewport{scrollbar-width:thin;scrollbar-color:rgba(148,163,184,.72) transparent;overscroll-behavior:auto}
+.scene-scroll-viewport{scrollbar-width:thin;scrollbar-color:rgba(148,163,184,.72) transparent;overscroll-behavior:none;-webkit-overflow-scrolling:auto;touch-action:none}
 .scene-scroll-viewport::-webkit-scrollbar{width:var(--scrollbar-thickness,8px);height:var(--scrollbar-thickness,8px)}
 .scene-scroll-viewport::-webkit-scrollbar-track{background:transparent}
 .scene-scroll-viewport::-webkit-scrollbar-thumb{background:rgba(148,163,184,.58);border:2px solid transparent;border-radius:999px;background-clip:padding-box}
 .scene-scroll-viewport::-webkit-scrollbar-thumb:hover{background:rgba(203,213,225,.82);background-clip:padding-box}
-.scene-scroll-canvas{min-width:100%;min-height:100%;pointer-events:auto}
+.scene-scroll-canvas{min-width:100%;min-height:100%;pointer-events:auto;transform:translate3d(0,0,0);transform-origin:top left;will-change:transform}
 
 
 /* Preview: do not let editor-only touch-action:none block native nested scrolling. */
 .preview-screen .scene-node{touch-action:auto}
 
 
-/* ScrollingFrame editor gestures: keep native rubber-band scrolling and provide a dedicated move grip. */
-.scene-scroll-viewport{overscroll-behavior:contain;overscroll-behavior-x:contain;overscroll-behavior-y:contain;will-change:scroll-position}
-.scene-scroll-canvas{transform:translate3d(0,0,0);transform-origin:center;will-change:transform}
+/* ScrollingFrame editor move grip. */
 .scene-node>.move-handle{position:absolute;z-index:14;top:-42px;left:calc(50% - 54px);display:grid;place-items:center;width:32px;min-width:32px;height:32px;min-height:32px;padding:0;border:1.5px solid #83baff;border-radius:50%;background:#173b61;color:#e0efff;box-shadow:0 2px 8px rgba(0,0,0,.45);cursor:grab;touch-action:none;user-select:none}
 .scene-node>.move-handle svg{display:block;width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .scene-node>.move-handle:active{background:#8bc4ff;cursor:grabbing}
 @media(max-width:680px){.scene-node>.move-handle{top:-29px;left:calc(50% - 38px);width:22px;min-width:22px;height:22px;min-height:22px;border-width:1px;background:rgba(23,59,97,.5);color:rgba(224,239,255,.75);box-shadow:0 1px 5px rgba(0,0,0,.28);opacity:.72}.scene-node>.move-handle svg{width:13px;height:13px}}
 
 
-/* ScrollingFrame: explicit edit/scroll modes with native momentum and platform bounce. */
-.scene-scroll-viewport{overscroll-behavior:none;-webkit-overflow-scrolling:auto;touch-action:none}
-.scene-scroll-canvas{transform:translate3d(0,0,0);transform-origin:top left;will-change:transform}
+/* ScrollingFrame editor scroll-mode control. */
 .scene-node>.scroll-mode-handle{position:absolute;z-index:16;top:-42px;right:4px;display:flex;align-items:center;justify-content:center;gap:5px;min-width:84px;height:32px;padding:0 10px;border:1px solid #6ba8ec;border-radius:8px;background:#173b61;color:#e6f2ff;font:600 12px Inter,ui-sans-serif,sans-serif;touch-action:manipulation;user-select:none;box-shadow:0 2px 8px rgba(0,0,0,.3)}
 .scene-node>.scroll-mode-handle svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .scene-node>.scroll-mode-handle[aria-pressed="true"]{background:#245b47;border-color:#65c79b;color:#e8fff4}
