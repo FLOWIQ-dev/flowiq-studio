@@ -63,7 +63,7 @@ test('service worker and document use the same new cache build', async () => {
   const app = await read('index.html');
   const worker = await read('sw.js');
   assert.match(app, /2026\.11\.20\.159/);
-  assert.match(worker, /flowiq-studio-clean-v159/);
+  assert.match(worker, /flowiq-studio-clean-v160/);
   assert.match(worker, /2026\.11\.20\.159/);
 });
 
