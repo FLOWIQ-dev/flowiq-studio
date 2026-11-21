@@ -119,7 +119,7 @@ class FlowiqStudio {
         const enabled = node?.props?.scrollingEnabled !== false;
         const axis = direction === 'X' ? 'pan-x' : direction === 'Y' ? 'pan-y' : 'pan-x pan-y';
         viewport.style.touchAction = scrolling && enabled ? axis : 'none';
-        viewport.style.overscrollBehavior = 'auto';
+        viewport.style.overscrollBehavior = node?.props?.elastic === false ? 'contain' : 'auto';
         frame.style.touchAction = scrolling && enabled ? 'pan-x pan-y' : 'none';
         viewport.querySelectorAll('.scene-node').forEach(child => {
           child.style.touchAction = scrolling && enabled ? 'pan-x pan-y' : 'none';
