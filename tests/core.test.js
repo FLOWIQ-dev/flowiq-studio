@@ -754,8 +754,12 @@ test('ScrollingFrame exposes a single Elastic toggle and migrates legacy bounce 
   assert.ok(view.includes("p.elastic === false ? 'none' : 'contain'"));
   assert.match(view, /function setupElasticScroll\(viewport, enabled, direction\)/);
   assert.match(view, /event\.preventDefault\(\)/);
-  assert.match(view, /Math\.min\(76, Math\.abs\(value\) \* 0\.38\)/);
-  assert.match(view, /440ms cubic-bezier/);
+  assert.match(view, /Math\.min\(112, Math\.max\(48, dimension \* 0\.3\)\)/);
+  assert.match(view, /Math\.abs\(value\) \* 0\.58/);
+  assert.match(view, /560ms cubic-bezier/);
+  assert.match(view, /localDelta\(touch\.clientX - gesture\.x, touch\.clientY - gesture\.y\)/);
+  assert.match(view, /const radians = -viewport\._elasticRotation \* Math\.PI \/ 180/);
+  assert.match(view, /setupElasticScroll\(childContainer, enabled && p\.elastic !== false, direction, p\.rotation\)/);
   assert.match(view, /requestAnimationFrame\(coast\)/);
   assert.match(view, /const wheel = event =>/);
   assert.match(view, /paint\(rubber\(-overX\), rubber\(-overY\)\)/);
