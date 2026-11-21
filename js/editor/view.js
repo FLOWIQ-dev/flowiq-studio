@@ -20,8 +20,8 @@ function setupElasticScroll(viewport, enabled, direction, elastic = true) {
   const previewMode = Boolean(viewport.closest('#preview-screen'));
   const canScroll = Boolean(enabled) && (previewMode || viewport.dataset.editorMode === 'scroll');
   viewport.style.overflow = enabled ? 'auto' : 'hidden';
-  viewport.style.overflowX = enabled && state.axisX ? 'auto' : 'hidden';
-  viewport.style.overflowY = enabled && state.axisY ? 'auto' : 'hidden';
+  viewport.style.overflowX = enabled && direction !== 'Y' ? 'auto' : 'hidden';
+  viewport.style.overflowY = enabled && direction !== 'X' ? 'auto' : 'hidden';
   viewport.style.overscrollBehavior = 'none';
   viewport.style.webkitOverflowScrolling = 'auto';
   viewport.style.touchAction = canScroll ? 'none' : 'auto';
@@ -32,8 +32,8 @@ function setupElasticScroll(viewport, enabled, direction, elastic = true) {
     dragging: false, suppressClick: false, frame: 0, lastFrame: 0
   });
   // Gesture handlers are attached once; keep their settings live across scene renders.
-  state.state.axisX = direction !== 'Y';
-  state.state.axisY = direction !== 'X';
+  state.axisX = direction !== 'Y';
+  state.axisY = direction !== 'X';
   state.elastic = Boolean(elastic);
   const canvas = () => viewport.querySelector(':scope > .scene-scroll-canvas');
   const maxX = () => Math.max(0, viewport.scrollWidth - viewport.clientWidth);
