@@ -745,23 +745,21 @@ test('preview GuiObjects allow touch gestures to reach nested ScrollingFrame vie
   assert.ok(css.includes('.scene-scroll-viewport'));
 });
 
-test('ScrollingFrame preview uses custom drag momentum and elastic spring physics', async () => {
+test('ScrollingFrame delegates touch, wheel, and trackpad scrolling to the browser', async () => {
   const view = await readFile(new URL('../js/editor/view.js', import.meta.url), 'utf8');
   const app = await readFile(new URL('../js/app.js', import.meta.url), 'utf8');
   const css = await readFile(new URL('../css/studio.css', import.meta.url), 'utf8');
-  assert.ok(view.includes('const previewMode = Boolean(viewport.closest(\'#preview-screen\'))'));
-  assert.ok(view.includes('const setPosition = (x, y) =>'));
-  assert.ok(view.includes('Math.min(112, Math.abs(x - clampedX) * 0.42)'));
-  assert.ok(view.includes("state.axisX = direction !== 'Y'"));
-  assert.ok(view.includes("state.axisY = direction !== 'X'"));
-  assert.ok(view.includes('state.elastic = Boolean(elastic)'));
-  assert.ok(view.includes('const limitX = state.axisX ? maxX() : 0'));
-  assert.ok(view.includes('state.velocityX * dt'));
-  assert.ok(view.includes('Math.exp(-dt / 285)'));
-  assert.ok(view.includes('window.addEventListener(\'pointermove\', pointerMove, { passive: false })'));
-  assert.ok(view.includes('event.preventDefault()'));
-  assert.ok(app.includes('event.__flowiqScrollHandled'));
-  assert.ok(css.includes('.scene-scroll-canvas{min-width:100%;min-height:100%;pointer-events:auto;transform:translate3d(0,0,0)'));
+  assert.ok(view.includes("viewport.style.overflow = canScroll ? 'auto' : 'hidden'"));
+  assert.ok(view.includes("viewport.style.overscrollBehavior = elastic ? 'auto' : 'contain'"));
+  assert.ok(view.includes("viewport.style.webkitOverflowScrolling = 'touch'"));
+  assert.ok(view.includes("viewport.dataset.editorMode === 'scroll'"));
+  assert.ok(view.includes('viewport.scrollLeft = state.scrollLeft - dx'));
+  assert.ok(view.includes("event.pointerType !== 'mouse'"));
+  assert.ok(!view.includes('requestAnimationFrame(animate)'));
+  assert.ok(!view.includes("addEventListener('wheel'"));
+  assert.ok(app.includes("const isTouchGesture = event.pointerType === 'touch' || event.pointerType === 'pen'"));
+  assert.ok(app.includes("viewport.style.overflow = scrolling && enabled ? 'auto' : 'hidden'"));
+  assert.ok(css.includes('.scene-scroll-viewport'));
 });
 
 test('ScrollingFrame editor keeps object editing separate from scroll gestures', async () => {
