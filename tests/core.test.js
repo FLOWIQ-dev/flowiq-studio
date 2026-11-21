@@ -790,7 +790,7 @@ test('ScrollingFrame editor separates touch scrolling from moving the selected f
   assert.match(view, /move\.innerHTML = '<svg viewBox="0 0 24 24"/);
   assert.match(css, /\.scene-node>\.move-handle svg/);
   assert.ok(app.includes("const isTouchGesture = event.pointerType === 'touch' || event.pointerType === 'pen'"));
-  assert.ok(app.includes('if (scrollViewport && scrollViewport.dataset.editorMode === 'scroll' && isTouchGesture && !moveHandle && !resizeHandle && !rotateHandle)'));
+  assert.ok(app.includes("if (scrollViewport && scrollViewport.dataset.editorMode === 'scroll' && isTouchGesture && !moveHandle && !resizeHandle && !rotateHandle)"));
   assert.ok(app.includes("const moveHandle = event.target.closest('[data-move]')"));
   assert.ok(css.includes('.scene-node>.move-handle'));
   assert.ok(css.includes('overscroll-behavior:contain'));
