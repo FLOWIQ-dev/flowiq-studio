@@ -13,14 +13,14 @@ const ICONS = {
 };
 const icon = type => '<svg viewBox="0 0 24 24" aria-hidden="true">' + (ICONS[type] || ICONS.Frame) + '</svg>';
 const orderedSiblingIds = (scene, ids) => ids.map((id, index) => ({ id, index, node: scene.get(id) })).filter(item => item.node && item.node.type !== 'Script').sort((a, b) => normalizeZIndex(a.node.props.zIndex) - normalizeZIndex(b.node.props.zIndex) || a.index - b.index).map(item => item.id);
-function setupElasticScroll(viewport, enabled, direction) {
+function setupElasticScroll(viewport, enabled, direction, elastic = true) {
   viewport._elasticEnabled = Boolean(enabled);
   viewport._elasticDirection = direction;
   if (!viewport.dataset.editorMode) viewport.dataset.editorMode = 'edit';
   const scrolling = enabled && viewport.dataset.editorMode === 'scroll';
   const axis = direction === 'X' ? 'pan-x' : direction === 'Y' ? 'pan-y' : 'pan-x pan-y';
   viewport.style.touchAction = scrolling ? axis : 'none';
-  viewport.style.overscrollBehavior = 'auto';
+  viewport.style.overscrollBehavior = elastic ? 'auto' : 'contain';
   viewport.style.webkitOverflowScrolling = 'touch';
   if (!viewport._scrollModeHandlers) {
     // Native overflow scrolling owns touch momentum and platform rubber-banding.
@@ -328,7 +328,7 @@ export function renderScene(container, scene, { selectedId = null, preview = fal
       childRenderTarget = canvas;
       childContainer.scrollLeft = previousScrollLeft;
       childContainer.scrollTop = previousScrollTop;
-      setupElasticScroll(childContainer, enabled && p.elastic !== false, direction);
+      setupElasticScroll(childContainer, enabled, direction, p.elastic !== false);
     }
     if (isImageNode) {
       const asset = assetMap.get(p.assetId);
@@ -449,7 +449,7 @@ export function renderScene(container, scene, { selectedId = null, preview = fal
     for (const childId of orderedSiblingIds(scene, node.children)) build(childId, childRenderTarget, childSpace.width, childSpace.height);
     if (selectedId === node.id && !preview) {
       if (isScrollingFrame) {
-        const scrollMode = childRenderTarget?.dataset?.editorMode === 'scroll';
+        const scrollMode = childContainer.dataset.editorMode === 'scroll';
         const modeButton = el('button', 'scroll-mode-handle');
         modeButton.type = 'button';
         modeButton.dataset.scrollMode = 'true';
