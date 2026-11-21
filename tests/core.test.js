@@ -763,7 +763,7 @@ test('ScrollingFrame separates editing from native momentum scrolling', async ()
   assert.ok(app.includes("viewport.dataset.editorMode = scrolling ? 'scroll' : 'edit'"));
   assert.ok(app.includes("scrollViewport.dataset.editorMode === 'scroll' && isTouchGesture"));
   assert.ok(app.includes("viewport.querySelectorAll('.scene-node').forEach(child =>"));
-  assert.ok(css.includes(".scene-scroll-viewport{overscroll-behavior:auto!important"));
+  assert.ok(css.includes(".scene-scroll-viewport{overscroll-behavior:auto;"));
   assert.ok(css.includes("-webkit-overflow-scrolling:touch"));
   assert.ok(css.includes(".scene-node>.scroll-mode-handle"));
 });
