@@ -752,7 +752,7 @@ test('ScrollingFrame exposes a single Elastic toggle and migrates legacy bounce 
   assert.ok(model.includes("elastic: true"));
   assert.ok(model.includes("delete merged.elasticBehavior"));
   assert.ok(view.includes("p.elastic === false ? 'none' : 'contain'"));
-  assert.match(view, /function setupElasticScroll\(viewport, enabled, direction\)/);
+  assert.match(view, /function setupElasticScroll\(viewport, enabled, direction, rotation = 0\)/);
   assert.match(view, /event\.preventDefault\(\)/);
   assert.match(view, /Math\.min\(112, Math\.max\(48, dimension \* 0\.3\)\)/);
   assert.match(view, /Math\.abs\(value\) \* 0\.58/);
@@ -762,7 +762,7 @@ test('ScrollingFrame exposes a single Elastic toggle and migrates legacy bounce 
   assert.match(view, /setupElasticScroll\(childContainer, enabled && p\.elastic !== false, direction, p\.rotation\)/);
   assert.match(view, /requestAnimationFrame\(coast\)/);
   assert.match(view, /const wheel = event =>/);
-  assert.match(view, /paint\(rubber\(-overX\), rubber\(-overY\)\)/);
+  assert.match(view, /paint\(rubber\(-overX, viewport\.clientWidth\), rubber\(-overY, viewport\.clientHeight\)\)/);
   assert.ok(view.includes("webkitOverflowScrolling = 'touch'"));
   assert.ok(schema.includes("checkbox('elastic', 'Elastic')"));
   assert.ok(!schema.includes('WhenScrollable'));
