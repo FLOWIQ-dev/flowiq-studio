@@ -240,12 +240,12 @@ export function renderScene(container, scene, { selectedId = null, preview = fal
     childContainer.replaceChildren();
     childContainer.style.position = 'absolute';
     childContainer.style.inset = '0';
+    childContainer.classList.toggle('scene-scroll-viewport', isScrollingFrame);
     if (isScrollingFrame && !childContainer.dataset.editorMode) childContainer.dataset.editorMode = 'edit';
     const direction = ['X', 'Y', 'XY'].includes(p.scrollingDirection) ? p.scrollingDirection : 'XY';
     const enabled = isScrollingFrame && p.scrollingEnabled !== false;
     const scrollMode = isScrollingFrame && childContainer.dataset.editorMode === 'scroll';
     childContainer.style.overflow = isScrollingFrame ? (enabled ? 'auto' : 'hidden') : (node.type === 'Frame' && p.clipsDescendants ? 'hidden' : 'visible');
-    childContainer.classList.toggle('scene-scroll-viewport', isScrollingFrame);
     if (isScrollingFrame) {
       childContainer.style.overflowX = enabled && direction !== 'Y' ? 'auto' : 'hidden';
       childContainer.style.overflowY = enabled && direction !== 'X' ? 'auto' : 'hidden';
