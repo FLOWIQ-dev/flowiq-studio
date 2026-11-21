@@ -18,12 +18,10 @@ function setupElasticScroll(viewport, enabled, direction, elastic = true) {
   viewport._elasticDirection = direction;
   if (!viewport.dataset.editorMode) viewport.dataset.editorMode = 'edit';
   const previewMode = Boolean(viewport.closest('#preview-screen'));
-  const axisX = direction !== 'Y';
-  const axisY = direction !== 'X';
   const canScroll = Boolean(enabled) && (previewMode || viewport.dataset.editorMode === 'scroll');
   viewport.style.overflow = enabled ? 'auto' : 'hidden';
-  viewport.style.overflowX = enabled && axisX ? 'auto' : 'hidden';
-  viewport.style.overflowY = enabled && axisY ? 'auto' : 'hidden';
+  viewport.style.overflowX = enabled && state.axisX ? 'auto' : 'hidden';
+  viewport.style.overflowY = enabled && state.axisY ? 'auto' : 'hidden';
   viewport.style.overscrollBehavior = 'none';
   viewport.style.webkitOverflowScrolling = 'auto';
   viewport.style.touchAction = canScroll ? 'none' : 'auto';
@@ -33,16 +31,20 @@ function setupElasticScroll(viewport, enabled, direction, elastic = true) {
     lastTime: 0, velocityX: 0, velocityY: 0, virtualX: 0, virtualY: 0,
     dragging: false, suppressClick: false, frame: 0, lastFrame: 0
   });
+  // Gesture handlers are attached once; keep their settings live across scene renders.
+  state.state.axisX = direction !== 'Y';
+  state.state.axisY = direction !== 'X';
+  state.elastic = Boolean(elastic);
   const canvas = () => viewport.querySelector(':scope > .scene-scroll-canvas');
   const maxX = () => Math.max(0, viewport.scrollWidth - viewport.clientWidth);
   const maxY = () => Math.max(0, viewport.scrollHeight - viewport.clientHeight);
   const setPosition = (x, y) => {
-    const limitX = axisX ? maxX() : 0;
-    const limitY = axisY ? maxY() : 0;
+    const limitX = state.axisX ? maxX() : 0;
+    const limitY = state.axisY ? maxY() : 0;
     const clampedX = Math.max(0, Math.min(limitX, x));
     const clampedY = Math.max(0, Math.min(limitY, y));
-    const overX = elastic && axisX ? Math.sign(x - clampedX) * Math.min(112, Math.abs(x - clampedX) * 0.42) : 0;
-    const overY = elastic && axisY ? Math.sign(y - clampedY) * Math.min(112, Math.abs(y - clampedY) * 0.42) : 0;
+    const overX = state.elastic && state.axisX ? Math.sign(x - clampedX) * Math.min(112, Math.abs(x - clampedX) * 0.42) : 0;
+    const overY = state.elastic && state.axisY ? Math.sign(y - clampedY) * Math.min(112, Math.abs(y - clampedY) * 0.42) : 0;
     viewport.scrollLeft = clampedX;
     viewport.scrollTop = clampedY;
     const content = canvas();
@@ -61,15 +63,15 @@ function setupElasticScroll(viewport, enabled, direction, elastic = true) {
     state.lastFrame = timestamp;
     let x = state.virtualX + state.velocityX * dt;
     let y = state.virtualY + state.velocityY * dt;
-    const limitX = axisX ? maxX() : 0;
-    const limitY = axisY ? maxY() : 0;
+    const limitX = state.axisX ? maxX() : 0;
+    const limitY = state.axisY ? maxY() : 0;
     const outsideX = x < 0 ? x : x > limitX ? x - limitX : 0;
     const outsideY = y < 0 ? y : y > limitY ? y - limitY : 0;
     if (outsideX) state.velocityX += (-0.00115 * outsideX - 0.073 * state.velocityX) * dt;
     else state.velocityX *= Math.exp(-dt / 285);
     if (outsideY) state.velocityY += (-0.00115 * outsideY - 0.073 * state.velocityY) * dt;
     else state.velocityY *= Math.exp(-dt / 285);
-    if (!elastic) {
+    if (!state.elastic) {
       x = Math.max(0, Math.min(limitX, x));
       y = Math.max(0, Math.min(limitY, y));
     }
@@ -130,8 +132,8 @@ function setupElasticScroll(viewport, enabled, direction, elastic = true) {
       event.stopPropagation();
       const now = performance.now();
       const elapsed = Math.max(1, now - state.lastTime);
-      const deltaX = axisX ? state.lastX - event.clientX : 0;
-      const deltaY = axisY ? state.lastY - event.clientY : 0;
+      const deltaX = state.axisX ? state.lastX - event.clientX : 0;
+      const deltaY = state.axisY ? state.lastY - event.clientY : 0;
       state.virtualX += deltaX;
       state.virtualY += deltaY;
       state.velocityX = state.velocityX * 0.62 + (deltaX / elapsed) * 0.38;
@@ -156,8 +158,8 @@ function setupElasticScroll(viewport, enabled, direction, elastic = true) {
       const activeScroll = Boolean(viewport._elasticEnabled) && (activePreview || viewport.dataset.editorMode === 'scroll');
       if (!activeScroll) { event.preventDefault(); return; }
       const factor = event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? viewport.clientHeight : 1;
-      const dx = axisX ? event.deltaX * factor : 0;
-      const dy = axisY ? event.deltaY * factor : 0;
+      const dx = state.axisX ? event.deltaX * factor : 0;
+      const dy = state.axisY ? event.deltaY * factor : 0;
       if (!dx && !dy) return;
       event.preventDefault();
       stopAnimation();
