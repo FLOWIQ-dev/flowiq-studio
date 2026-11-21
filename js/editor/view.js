@@ -17,174 +17,94 @@ function setupElasticScroll(viewport, enabled, direction, elastic = true) {
   viewport._elasticEnabled = Boolean(enabled);
   viewport._elasticDirection = direction;
   if (!viewport.dataset.editorMode) viewport.dataset.editorMode = 'edit';
+
   const previewMode = Boolean(viewport.closest('#preview-screen'));
-  const canScroll = Boolean(enabled) && (previewMode || viewport.dataset.editorMode === 'scroll');
+  const editorScrollMode = viewport.dataset.editorMode === 'scroll';
+  const canScroll = Boolean(enabled) && (previewMode || editorScrollMode);
+  const axis = direction === 'X' ? 'pan-x' : direction === 'Y' ? 'pan-y' : 'pan-x pan-y';
+
+  // Native browser scrolling is the single source of truth. No virtual offsets,
+  // canvas transforms, wheel interception, or competing animation loop.
   viewport.style.overflow = enabled ? 'auto' : 'hidden';
   viewport.style.overflowX = enabled && direction !== 'Y' ? 'auto' : 'hidden';
   viewport.style.overflowY = enabled && direction !== 'X' ? 'auto' : 'hidden';
-  viewport.style.overscrollBehavior = 'none';
-  viewport.style.webkitOverflowScrolling = 'auto';
-  viewport.style.touchAction = canScroll ? 'none' : 'auto';
+  viewport.style.overscrollBehavior = elastic ? 'auto' : 'contain';
+  viewport.style.webkitOverflowScrolling = 'touch';
+  viewport.style.touchAction = canScroll ? axis : 'none';
 
   const state = viewport._flowiqScrollState || (viewport._flowiqScrollState = {
-    pointerId: null, startX: 0, startY: 0, lastX: 0, lastY: 0,
-    lastTime: 0, velocityX: 0, velocityY: 0, virtualX: 0, virtualY: 0,
-    dragging: false, suppressClick: false, frame: 0, lastFrame: 0
+    pointerId: null,
+    startX: 0,
+    startY: 0,
+    scrollLeft: 0,
+    scrollTop: 0,
+    dragging: false,
+    suppressClick: false
   });
-  // Gesture handlers are attached once; keep their settings live across scene renders.
-  state.axisX = direction !== 'Y';
-  state.axisY = direction !== 'X';
-  state.elastic = Boolean(elastic);
-  const canvas = () => viewport.querySelector(':scope > .scene-scroll-canvas');
-  const maxX = () => Math.max(0, viewport.scrollWidth - viewport.clientWidth);
-  const maxY = () => Math.max(0, viewport.scrollHeight - viewport.clientHeight);
-  const setPosition = (x, y) => {
-    const limitX = state.axisX ? maxX() : 0;
-    const limitY = state.axisY ? maxY() : 0;
-    const clampedX = Math.max(0, Math.min(limitX, x));
-    const clampedY = Math.max(0, Math.min(limitY, y));
-    const overX = state.elastic && state.axisX ? Math.sign(x - clampedX) * Math.min(112, Math.abs(x - clampedX) * 0.42) : 0;
-    const overY = state.elastic && state.axisY ? Math.sign(y - clampedY) * Math.min(112, Math.abs(y - clampedY) * 0.42) : 0;
-    viewport.scrollLeft = clampedX;
-    viewport.scrollTop = clampedY;
-    const content = canvas();
-    if (content) content.style.transform = 'translate3d(' + overX.toFixed(2) + 'px,' + overY.toFixed(2) + 'px,0)';
-    state.virtualX = x;
-    state.virtualY = y;
-  };
-  const stopAnimation = () => {
-    if (state.frame) cancelAnimationFrame(state.frame);
-    state.frame = 0;
-    state.lastFrame = 0;
-  };
-  const animate = timestamp => {
-    if (!state.lastFrame) state.lastFrame = timestamp;
-    const dt = Math.min(32, Math.max(1, timestamp - state.lastFrame));
-    state.lastFrame = timestamp;
-    let x = state.virtualX + state.velocityX * dt;
-    let y = state.virtualY + state.velocityY * dt;
-    const limitX = state.axisX ? maxX() : 0;
-    const limitY = state.axisY ? maxY() : 0;
-    const outsideX = x < 0 ? x : x > limitX ? x - limitX : 0;
-    const outsideY = y < 0 ? y : y > limitY ? y - limitY : 0;
-    if (outsideX) state.velocityX += (-0.00115 * outsideX - 0.073 * state.velocityX) * dt;
-    else state.velocityX *= Math.exp(-dt / 285);
-    if (outsideY) state.velocityY += (-0.00115 * outsideY - 0.073 * state.velocityY) * dt;
-    else state.velocityY *= Math.exp(-dt / 285);
-    if (!state.elastic) {
-      x = Math.max(0, Math.min(limitX, x));
-      y = Math.max(0, Math.min(limitY, y));
-    }
-    setPosition(x, y);
-    const settledX = Math.abs(state.velocityX) < 0.012 && Math.abs(x - Math.max(0, Math.min(limitX, x))) < 0.6;
-    const settledY = Math.abs(state.velocityY) < 0.012 && Math.abs(y - Math.max(0, Math.min(limitY, y))) < 0.6;
-    if (settledX && settledY) {
-      state.velocityX = 0;
-      state.velocityY = 0;
-      setPosition(Math.max(0, Math.min(limitX, x)), Math.max(0, Math.min(limitY, y)));
-      state.frame = 0;
-      state.lastFrame = 0;
-      return;
-    }
-    state.frame = requestAnimationFrame(animate);
-  };
-  const startAnimation = () => {
-    stopAnimation();
-    if (Math.abs(state.velocityX) > 0.012 || Math.abs(state.velocityY) > 0.012 ||
-        state.virtualX < 0 || state.virtualX > maxX() || state.virtualY < 0 || state.virtualY > maxY()) {
-      state.frame = requestAnimationFrame(animate);
-    } else {
-      setPosition(Math.max(0, Math.min(maxX(), state.virtualX)), Math.max(0, Math.min(maxY(), state.virtualY)));
-    }
-  };
 
+  // Desktop mouse drag-to-scroll is intentionally direct and non-inertial.
+  // Touch, pen, wheel, and trackpad remain fully native browser interactions.
   if (!viewport._flowiqScrollHandlers) {
-    const pointerDown = event => {
-      const activePreview = Boolean(viewport.closest('#preview-screen'));
-      const activeScroll = Boolean(viewport._elasticEnabled) && (activePreview || viewport.dataset.editorMode === 'scroll');
-      if (!activeScroll || event.button > 0 || (event.pointerType === 'mouse' && !activePreview && viewport.dataset.editorMode !== 'scroll')) return;
-      if (event.target.closest?.('[data-scroll-mode],[data-move],[data-resize],[data-rotate]')) return;
-      if (event.target.closest?.('.scene-scroll-viewport') !== viewport) return;
-      stopAnimation();
-      state.pointerId = event.pointerId;
-      state.startX = state.lastX = event.clientX;
-      state.startY = state.lastY = event.clientY;
-      state.lastTime = performance.now();
-      state.velocityX = state.velocityY = 0;
-      state.virtualX = viewport.scrollLeft;
-      state.virtualY = viewport.scrollTop;
-      state.dragging = false;
-      state.suppressClick = false;
-      event.__flowiqScrollHandled = true;
-      event.stopPropagation();
-      window.addEventListener('pointermove', pointerMove, { passive: false });
-      window.addEventListener('pointerup', pointerUp);
-      window.addEventListener('pointercancel', pointerUp);
-    };
-    const pointerMove = event => {
+    const finishMouseDrag = event => {
       if (event.pointerId !== state.pointerId) return;
-      const totalX = event.clientX - state.startX;
-      const totalY = event.clientY - state.startY;
-      if (!state.dragging && Math.hypot(totalX, totalY) < 5) return;
+      window.removeEventListener('pointermove', moveMouseDrag);
+      window.removeEventListener('pointerup', finishMouseDrag);
+      window.removeEventListener('pointercancel', finishMouseDrag);
+      state.pointerId = null;
+      state.dragging = false;
+    };
+
+    const moveMouseDrag = event => {
+      if (event.pointerId !== state.pointerId) return;
+      const dx = event.clientX - state.startX;
+      const dy = event.clientY - state.startY;
+      if (!state.dragging && Math.hypot(dx, dy) < 5) return;
       state.dragging = true;
       state.suppressClick = true;
       event.preventDefault();
-      event.stopPropagation();
-      const now = performance.now();
-      const elapsed = Math.max(1, now - state.lastTime);
-      const deltaX = state.axisX ? state.lastX - event.clientX : 0;
-      const deltaY = state.axisY ? state.lastY - event.clientY : 0;
-      state.virtualX += deltaX;
-      state.virtualY += deltaY;
-      state.velocityX = state.velocityX * 0.62 + (deltaX / elapsed) * 0.38;
-      state.velocityY = state.velocityY * 0.62 + (deltaY / elapsed) * 0.38;
-      state.lastX = event.clientX;
-      state.lastY = event.clientY;
-      state.lastTime = now;
-      setPosition(state.virtualX, state.virtualY);
+      viewport.scrollLeft = state.scrollLeft - dx;
+      viewport.scrollTop = state.scrollTop - dy;
     };
-    const pointerUp = event => {
-      if (event.pointerId !== state.pointerId) return;
-      window.removeEventListener('pointermove', pointerMove);
-      window.removeEventListener('pointerup', pointerUp);
-      window.removeEventListener('pointercancel', pointerUp);
-      state.pointerId = null;
-      if (state.dragging) startAnimation();
-      state.dragging = false;
-    };
-    const wheel = event => {
-      if (event.target.closest?.('.scene-scroll-viewport') !== viewport) return;
+
+    const pointerDown = event => {
       const activePreview = Boolean(viewport.closest('#preview-screen'));
-      const activeScroll = Boolean(viewport._elasticEnabled) && (activePreview || viewport.dataset.editorMode === 'scroll');
-      if (!activeScroll) { event.preventDefault(); return; }
-      const factor = event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? viewport.clientHeight : 1;
-      const dx = state.axisX ? event.deltaX * factor : 0;
-      const dy = state.axisY ? event.deltaY * factor : 0;
-      if (!dx && !dy) return;
+      const activeScroll = Boolean(viewport._elasticEnabled) &&
+        (activePreview || viewport.dataset.editorMode === 'scroll');
+      if (!activeScroll || event.pointerType !== 'mouse' || event.button !== 0) return;
+      if (event.target.closest?.('[data-scroll-mode],[data-move],[data-resize],[data-rotate]')) return;
+      if (event.target.closest?.('.scene-scroll-viewport') !== viewport) return;
+
+      state.pointerId = event.pointerId;
+      state.startX = event.clientX;
+      state.startY = event.clientY;
+      state.scrollLeft = viewport.scrollLeft;
+      state.scrollTop = viewport.scrollTop;
+      state.dragging = false;
+      state.suppressClick = false;
       event.preventDefault();
-      stopAnimation();
-      state.velocityX = state.velocityY = 0;
-      setPosition(viewport.scrollLeft + dx, viewport.scrollTop + dy);
+      event.stopPropagation();
+      window.addEventListener('pointermove', moveMouseDrag, { passive: false });
+      window.addEventListener('pointerup', finishMouseDrag);
+      window.addEventListener('pointercancel', finishMouseDrag);
     };
+
     const clickGuard = event => {
       if (!state.suppressClick) return;
       state.suppressClick = false;
       event.preventDefault();
       event.stopPropagation();
     };
+
     viewport.addEventListener('pointerdown', pointerDown);
-    viewport.addEventListener('wheel', wheel, { passive: false });
     viewport.addEventListener('click', clickGuard, true);
-    viewport._flowiqScrollHandlers = { pointerDown, pointerMove, pointerUp, wheel, clickGuard };
+    viewport._flowiqScrollHandlers = { pointerDown, moveMouseDrag, finishMouseDrag, clickGuard };
   }
-  viewport.style.touchAction = canScroll ? 'none' : 'none';
+
   if (!canScroll) {
-    stopAnimation();
-    state.velocityX = state.velocityY = 0;
-    state.virtualX = viewport.scrollLeft;
-    state.virtualY = viewport.scrollTop;
-    const content = canvas();
-    if (content) content.style.transform = 'none';
+    viewport.scrollLeft = viewport.scrollLeft;
+    viewport.scrollTop = viewport.scrollTop;
+    state.pointerId = null;
+    state.dragging = false;
   }
 }
 const el = (tag, className, text) => {
