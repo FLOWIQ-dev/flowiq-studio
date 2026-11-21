@@ -17,7 +17,8 @@ function setupElasticScroll(viewport, enabled, direction, elastic = true) {
   viewport._elasticEnabled = Boolean(enabled);
   viewport._elasticDirection = direction;
   if (!viewport.dataset.editorMode) viewport.dataset.editorMode = 'edit';
-  const scrolling = enabled && viewport.dataset.editorMode === 'scroll';
+  const previewMode = Boolean(viewport.closest('#preview-screen'));
+  const scrolling = enabled && (previewMode || viewport.dataset.editorMode === 'scroll');
   const axis = direction === 'X' ? 'pan-x' : direction === 'Y' ? 'pan-y' : 'pan-x pan-y';
   viewport.style.touchAction = scrolling ? axis : 'none';
   viewport.style.overscrollBehavior = elastic ? 'auto' : 'contain';
@@ -26,7 +27,7 @@ function setupElasticScroll(viewport, enabled, direction, elastic = true) {
     // Native overflow scrolling owns touch momentum and platform rubber-banding.
     // Wheel input is available only in the explicit Scroll mode.
     const wheelGuard = event => {
-      if (viewport.dataset.editorMode !== 'scroll') event.preventDefault();
+      if (!previewMode && viewport.dataset.editorMode !== 'scroll') event.preventDefault();
     };
     viewport.addEventListener('wheel', wheelGuard, { passive: false });
     viewport._scrollModeHandlers = { wheelGuard };
@@ -252,7 +253,7 @@ export function renderScene(container, scene, { selectedId = null, preview = fal
       childContainer.style.overscrollBehavior = 'auto';
       childContainer.style.touchAction = enabled && scrollMode ? (direction === 'X' ? 'pan-x' : direction === 'Y' ? 'pan-y' : 'pan-x pan-y') : 'none';
       childContainer.style.webkitOverflowScrolling = 'touch';
-      item.style.touchAction = enabled && scrollMode ? 'pan-x pan-y' : 'none';
+      item.style.touchAction = preview ? 'auto' : (enabled && scrollMode ? (direction === 'X' ? 'pan-x' : direction === 'Y' ? 'pan-y' : 'pan-x pan-y') : 'none');
       childContainer.style.setProperty('--scrollbar-thickness', Math.max(0, Math.min(24, Number(p.scrollBarThickness) || 8)) + 'px');
     } else {
       childContainer.style.overflowX = '';
