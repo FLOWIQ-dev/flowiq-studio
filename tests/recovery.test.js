@@ -89,7 +89,7 @@ test('Script Explorer rows keep Abrir separate and expose move, rename, duplicat
   assert.match(app, /else if \(action === 'delete'\) this\.deleteSelected\(\)/);
 });
 
-test('ScrollingFrame is a persisted scene class with Roblox-style elastic scrolling properties', async () => {
+test('ScrollingFrame keeps its Roblox properties while using native browser elasticity', async () => {
   const model = await read('js/data/model.js');
   const schema = await read('js/editor/property-schema.js');
   const view = await read('js/editor/view.js');
@@ -99,9 +99,9 @@ test('ScrollingFrame is a persisted scene class with Roblox-style elastic scroll
   assert.match(schema, /registerPropertySchema\('ScrollingFrame'/);
   assert.match(schema, /checkbox\('elastic', 'Elastic'\)/);
   assert.match(view, /scene-scroll-viewport/);
-  assert.match(view, /Math\.min\(112, Math\.abs\(x - clampedX\) \* 0\.42\)/);
-  assert.match(view, /state\.velocityX \* dt/);
-  assert.match(view, /Math\.exp\(-dt \/ 285\)/);
-  assert.match(view, /window\.addEventListener\('pointermove', pointerMove, \{ passive: false \}\)/);
+  assert.match(view, /viewport\.style\.overscrollBehavior = elastic \? 'auto' : 'contain'/);
+  assert.match(view, /viewport\.style\.webkitOverflowScrolling = 'touch'/);
+  assert.doesNotMatch(view, /state\.velocityX \* dt/);
+  assert.doesNotMatch(view, /requestAnimationFrame\(animate\)/);
   assert.match(html, /data-add-type="ScrollingFrame"/);
 });

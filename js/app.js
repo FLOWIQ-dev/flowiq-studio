@@ -118,11 +118,15 @@ class FlowiqStudio {
         const direction = node?.props?.scrollingDirection || 'XY';
         const enabled = node?.props?.scrollingEnabled !== false;
         const axis = direction === 'X' ? 'pan-x' : direction === 'Y' ? 'pan-y' : 'pan-x pan-y';
+        viewport.style.overflow = scrolling && enabled ? 'auto' : 'hidden';
+        viewport.style.overflowX = scrolling && enabled && direction !== 'Y' ? 'auto' : 'hidden';
+        viewport.style.overflowY = scrolling && enabled && direction !== 'X' ? 'auto' : 'hidden';
         viewport.style.touchAction = scrolling && enabled ? axis : 'none';
         viewport.style.overscrollBehavior = node?.props?.elastic === false ? 'contain' : 'auto';
-        frame.style.touchAction = scrolling && enabled ? 'pan-x pan-y' : 'none';
+        viewport.style.webkitOverflowScrolling = 'touch';
+        frame.style.touchAction = scrolling && enabled ? axis : 'none';
         viewport.querySelectorAll('.scene-node').forEach(child => {
-          child.style.touchAction = scrolling && enabled ? 'pan-x pan-y' : 'none';
+          child.style.touchAction = scrolling && enabled ? axis : 'none';
         });
         modeButton.setAttribute('aria-pressed', String(scrolling));
         modeButton.setAttribute('aria-label', scrolling ? 'Editar conteúdo do ScrollingFrame' : 'Rolar conteúdo do ScrollingFrame');
@@ -923,7 +927,7 @@ class FlowiqStudio {
   }
 
   pointerDown(event) {
-    if (event.__flowiqScrollHandled || this.runtime.running || event.button > 0) return;
+    if (this.runtime.running || event.button > 0) return;
     let target = event.target.closest('.scene-node');
     if (!target) return;
     const node = this.scene.get(target.dataset.nodeId);
