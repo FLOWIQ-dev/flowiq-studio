@@ -27,21 +27,18 @@ function setupElasticScroll(viewport, enabled, direction, rotation = 0) {
     x: viewport._elasticDirection !== 'Y',
     y: viewport._elasticDirection !== 'X'
   });
-  const rubber = (value, dimension) => {
-    const limit = Math.min(190, Math.max(72, dimension * 0.42));
-    return Math.sign(value) * limit * (1 - Math.exp(-Math.abs(value) / (limit * 0.72)));
-  };
+  const MAX_PULL = 92;
   const paint = () => {
     const content = canvas();
     if (!content) return;
-    const x = rubber(state.overX, viewport.clientWidth);
-    const y = rubber(state.overY, viewport.clientHeight);
     content.style.transition = 'none';
-    content.style.transform = x || y ? 'translate3d(' + (-x) + 'px,' + (-y) + 'px,0)' : 'translate3d(0,0,0)';
+    content.style.transform = state.overX || state.overY
+      ? 'translate3d(' + (-state.overX) + 'px,' + (-state.overY) + 'px,0)'
+      : 'translate3d(0,0,0)';
   };
   if (!viewport._elasticHandlers) {
     const state = {
-      gesture: null, frame: 0, lastInput: 0,
+      gesture: null, frame: 0, lastWheel: 0,
       velocityX: 0, velocityY: 0,
       overX: 0, overY: 0, springVX: 0, springVY: 0
     };
@@ -49,77 +46,110 @@ function setupElasticScroll(viewport, enabled, direction, rotation = 0) {
       if (state.frame) cancelAnimationFrame(state.frame);
       state.frame = 0;
     };
+    const maxScroll = axis => Math.max(0,
+      axis === 'x' ? viewport.scrollWidth - viewport.clientWidth : viewport.scrollHeight - viewport.clientHeight);
+    const rubberPull = (current, delta) => {
+      if (!delta) return current;
+      const sameDirection = !current || Math.sign(current) === Math.sign(delta);
+      const next = sameDirection
+        ? current + delta * (0.17 / (1 + Math.abs(current) / 72))
+        : current + delta * 0.72;
+      return Math.max(-MAX_PULL, Math.min(MAX_PULL, next));
+    };
+    const moveAxis = (axis, delta) => {
+      if (!delta) return 0;
+      const horizontal = axis === 'x';
+      const scroll = horizontal ? 'scrollLeft' : 'scrollTop';
+      const over = horizontal ? 'overX' : 'overY';
+      const maximum = maxScroll(axis);
+      let remaining = delta;
+      if (state[over]) {
+        const sameDirection = Math.sign(state[over]) === Math.sign(remaining);
+        if (sameDirection) {
+          state[over] = rubberPull(state[over], remaining);
+          return 0;
+        }
+        const unwind = Math.min(Math.abs(remaining), Math.abs(state[over]) / 0.72);
+        state[over] += Math.sign(remaining) * unwind * 0.72;
+        remaining -= Math.sign(remaining) * unwind;
+        if (Math.abs(state[over]) < 0.12) state[over] = 0;
+      }
+      if (!remaining) return 0;
+      const before = viewport[scroll];
+      const target = Math.max(0, Math.min(maximum, before + remaining));
+      viewport[scroll] = target;
+      const consumed = target - before;
+      const leftover = remaining - consumed;
+      if (leftover && ((target <= 0 && leftover < 0) || (target >= maximum && leftover > 0))) {
+        state[over] = rubberPull(state[over], leftover);
+      }
+      return consumed;
+    };
+    const spring = (offset, velocity, dt) => {
+      // A low-energy, near-critically-damped return: no snap and no launch.
+      const stiffness = 0.00012;
+      const damping = 0.018;
+      velocity += (-stiffness * offset - damping * velocity) * dt;
+      offset += velocity * dt;
+      if (Math.abs(offset) < 0.16 && Math.abs(velocity) < 0.003) return [0, 0];
+      return [offset, velocity];
+    };
     const animate = () => {
       if (state.frame) return;
       let previous = performance.now();
       const tick = now => {
         const dt = Math.min(32, Math.max(1, now - previous));
         previous = now;
-        const maxX = Math.max(0, viewport.scrollWidth - viewport.clientWidth);
-        const maxY = Math.max(0, viewport.scrollHeight - viewport.clientHeight);
         const can = allowed();
-        const decay = Math.pow(0.94, dt / 16);
-        const beforeX = viewport.scrollLeft, beforeY = viewport.scrollTop;
-        const desiredX = beforeX + (can.x ? state.velocityX * dt : 0);
-        const desiredY = beforeY + (can.y ? state.velocityY * dt : 0);
-        viewport.scrollLeft = Math.max(0, Math.min(maxX, desiredX));
-        viewport.scrollTop = Math.max(0, Math.min(maxY, desiredY));
-        const hitX = can.x ? desiredX - viewport.scrollLeft : 0;
-        const hitY = can.y ? desiredY - viewport.scrollTop : 0;
-        if (hitX) { state.overX += hitX; state.springVX += state.velocityX * 0.55; state.velocityX = 0; }
-        if (hitY) { state.overY += hitY; state.springVY += state.velocityY * 0.55; state.velocityY = 0; }
-        state.velocityX *= decay;
-        state.velocityY *= decay;
-        const spring = (offset, velocity) => {
-          const stiffness = 0.00072;
-          const damping = 0.034;
-          velocity += (-stiffness * offset - damping * velocity) * dt;
-          offset += velocity * dt;
-          if (Math.abs(offset) < 0.18 && Math.abs(velocity) < 0.012) return [0, 0];
-          return [offset, velocity];
-        };
-        [state.overX, state.springVX] = spring(state.overX, state.springVX);
-        [state.overY, state.springVY] = spring(state.overY, state.springVY);
+        if (state.gesture) {
+          state.frame = 0;
+          return;
+        }
+        // Trackpads already emit their own momentum events. Never add a second wheel inertia.
+        if (now - state.lastWheel < 90) {
+          state.frame = requestAnimationFrame(tick);
+          return;
+        }
+        const decay = Math.pow(0.998, dt);
+        for (const axis of ['x', 'y']) {
+          if (!can[axis]) continue;
+          const velocityKey = axis === 'x' ? 'velocityX' : 'velocityY';
+          const overKey = axis === 'x' ? 'overX' : 'overY';
+          const springKey = axis === 'x' ? 'springVX' : 'springVY';
+          const velocity = state[velocityKey];
+          if (Math.abs(velocity) > 0.012) {
+            const consumed = moveAxis(axis, velocity * dt);
+            if (Math.abs(consumed) < Math.abs(velocity * dt) - 0.01) {
+              state[velocityKey] = 0;
+              state[springKey] = 0;
+            } else {
+              state[velocityKey] *= decay;
+            }
+          } else state[velocityKey] = 0;
+          [state[overKey], state[springKey]] = spring(state[overKey], state[springKey], dt);
+        }
         paint();
-        const moving = Math.abs(state.velocityX) + Math.abs(state.velocityY) > 0.018
-          || Math.abs(state.overX) + Math.abs(state.overY) > 0.18
-          || Math.abs(state.springVX) + Math.abs(state.springVY) > 0.012;
+        const moving = Math.abs(state.velocityX) + Math.abs(state.velocityY) > 0.012
+          || Math.abs(state.overX) + Math.abs(state.overY) > 0.16
+          || Math.abs(state.springVX) + Math.abs(state.springVY) > 0.003;
         if (moving) state.frame = requestAnimationFrame(tick);
-        else { state.frame = 0; state.overX = state.overY = 0; state.springVX = state.springVY = 0; paint(); }
+        else {
+          state.frame = 0;
+          state.overX = state.overY = state.springVX = state.springVY = 0;
+          paint();
+        }
       };
       state.frame = requestAnimationFrame(tick);
-    };
-    const applyScrollDelta = (dx, dy, elapsed, source) => {
-      const can = allowed();
-      const maxX = Math.max(0, viewport.scrollWidth - viewport.clientWidth);
-      const maxY = Math.max(0, viewport.scrollHeight - viewport.clientHeight);
-      const beforeX = viewport.scrollLeft, beforeY = viewport.scrollTop;
-      const desiredX = beforeX + (can.x ? dx : 0);
-      const desiredY = beforeY + (can.y ? dy : 0);
-      viewport.scrollLeft = Math.max(0, Math.min(maxX, desiredX));
-      viewport.scrollTop = Math.max(0, Math.min(maxY, desiredY));
-      const overX = can.x ? desiredX - viewport.scrollLeft : 0;
-      const overY = can.y ? desiredY - viewport.scrollTop : 0;
-      if (overX) { state.overX += overX; state.springVX = Math.max(-2.2, Math.min(2.2, dx / Math.max(8, elapsed) * 0.72)); }
-      if (overY) { state.overY += overY; state.springVY = Math.max(-2.2, Math.min(2.2, dy / Math.max(8, elapsed) * 0.72)); }
-      if (source === 'touch') {
-        state.velocityX = (viewport.scrollLeft - beforeX) / Math.max(1, elapsed);
-        state.velocityY = (viewport.scrollTop - beforeY) / Math.max(1, elapsed);
-      } else {
-        state.velocityX = Math.max(-1.8, Math.min(1.8, state.velocityX * 0.35 + dx / Math.max(8, elapsed) * 0.28));
-        state.velocityY = Math.max(-1.8, Math.min(1.8, state.velocityY * 0.35 + dy / Math.max(8, elapsed) * 0.28));
-      }
-      if (source === 'touch') paint();
-      else if (overX || overY || state.velocityX || state.velocityY) animate();
     };
     const start = event => {
       if (!viewport._elasticEnabled || event.touches.length !== 1) return;
       stopFrame();
       const touch = event.touches[0];
       state.velocityX = state.velocityY = 0;
+      state.springVX = state.springVY = 0;
       state.gesture = {
         id: touch.identifier, x: touch.clientX, y: touch.clientY,
-        lastTime: performance.now(), lastScrollX: viewport.scrollLeft, lastScrollY: viewport.scrollTop
+        lastTime: performance.now()
       };
     };
     const move = event => {
@@ -130,8 +160,18 @@ function setupElasticScroll(viewport, enabled, direction, rotation = 0) {
       event.preventDefault();
       const now = performance.now(), elapsed = Math.max(1, now - gesture.lastTime);
       const delta = localDelta(gesture.x - touch.clientX, gesture.y - touch.clientY);
-      applyScrollDelta(delta.x, delta.y, elapsed, 'touch');
-      gesture.x = touch.clientX; gesture.y = touch.clientY; gesture.lastTime = now;
+      const can = allowed();
+      const beforeX = viewport.scrollLeft, beforeY = viewport.scrollTop;
+      if (can.x) moveAxis('x', delta.x);
+      if (can.y) moveAxis('y', delta.y);
+      const instantX = (viewport.scrollLeft - beforeX) / elapsed;
+      const instantY = (viewport.scrollTop - beforeY) / elapsed;
+      state.velocityX = Math.max(-2.4, Math.min(2.4, state.velocityX * 0.55 + instantX * 0.45));
+      state.velocityY = Math.max(-2.4, Math.min(2.4, state.velocityY * 0.55 + instantY * 0.45));
+      gesture.x = touch.clientX;
+      gesture.y = touch.clientY;
+      gesture.lastTime = now;
+      paint();
     };
     const end = () => {
       if (!state.gesture) return;
@@ -142,12 +182,15 @@ function setupElasticScroll(viewport, enabled, direction, rotation = 0) {
       if (!viewport._elasticEnabled) return;
       event.preventDefault();
       stopFrame();
+      state.velocityX = state.velocityY = 0;
       const scale = event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? Math.max(viewport.clientHeight, 1) : 1;
       const delta = localDelta(event.deltaX * scale, event.deltaY * scale);
-      const now = performance.now(), elapsed = state.lastInput ? Math.max(8, now - state.lastInput) : 16;
-      state.lastInput = now;
-      applyScrollDelta(delta.x, delta.y, elapsed, 'wheel');
-      animate();
+      const can = allowed();
+      if (can.x) moveAxis('x', delta.x);
+      if (can.y) moveAxis('y', delta.y);
+      state.lastWheel = performance.now();
+      if (state.overX || state.overY) animate();
+      paint();
     };
     viewport.addEventListener('touchstart', start, { passive: true });
     viewport.addEventListener('touchmove', move, { passive: false });
