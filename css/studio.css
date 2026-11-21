@@ -1454,3 +1454,12 @@ body[data-screen=editor]{
 .scene-node>.move-handle svg{display:block;width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .scene-node>.move-handle:active{background:#8bc4ff;cursor:grabbing}
 @media(max-width:680px){.scene-node>.move-handle{top:-29px;left:calc(50% - 38px);width:22px;min-width:22px;height:22px;min-height:22px;border-width:1px;background:rgba(23,59,97,.5);color:rgba(224,239,255,.75);box-shadow:0 1px 5px rgba(0,0,0,.28);opacity:.72}.scene-node>.move-handle svg{width:13px;height:13px}}
+
+
+/* ScrollingFrame: explicit edit/scroll modes with native momentum and platform bounce. */
+.scene-scroll-viewport{overscroll-behavior:auto!important;overscroll-behavior-x:auto!important;overscroll-behavior-y:auto!important;-webkit-overflow-scrolling:touch}
+.scene-scroll-canvas{transform:none!important;will-change:auto!important}
+.scene-node>.scroll-mode-handle{position:absolute;z-index:16;top:-42px;right:4px;display:flex;align-items:center;justify-content:center;gap:5px;min-width:84px;height:32px;padding:0 10px;border:1px solid #6ba8ec;border-radius:8px;background:#173b61;color:#e6f2ff;font:600 12px Inter,ui-sans-serif,sans-serif;touch-action:manipulation;user-select:none;box-shadow:0 2px 8px rgba(0,0,0,.3)}
+.scene-node>.scroll-mode-handle svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.scene-node>.scroll-mode-handle[aria-pressed="true"]{background:#245b47;border-color:#65c79b;color:#e8fff4}
+@media(max-width:680px){.scene-node>.scroll-mode-handle{top:-31px;right:2px;min-width:72px;height:27px;padding:0 7px;font-size:11px;border-radius:7px}.scene-node>.scroll-mode-handle svg{width:13px;height:13px}}
