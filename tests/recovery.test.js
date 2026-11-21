@@ -99,7 +99,9 @@ test('ScrollingFrame is a persisted scene class with Roblox-style elastic scroll
   assert.match(schema, /registerPropertySchema\('ScrollingFrame'/);
   assert.match(schema, /checkbox\('elastic', 'Elastic'\)/);
   assert.match(view, /scene-scroll-viewport/);
-  assert.match(view, /overscrollBehavior = elastic \? 'auto' : 'contain'/);
-  assert.match(view, /webkitOverflowScrolling = 'touch'/);
+  assert.match(view, /Math\.min\(112, Math\.abs\(x - clampedX\) \* 0\.42\)/);
+  assert.match(view, /state\.velocityX \* dt/);
+  assert.match(view, /Math\.exp\(-dt \/ 285\)/);
+  assert.match(view, /window\.addEventListener\('pointermove', pointerMove, \{ passive: false \}\)/);
   assert.match(html, /data-add-type="ScrollingFrame"/);
 });
