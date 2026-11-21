@@ -752,6 +752,10 @@ test('ScrollingFrame preview uses custom drag momentum and elastic spring physic
   assert.ok(view.includes('const previewMode = Boolean(viewport.closest(\'#preview-screen\'))'));
   assert.ok(view.includes('const setPosition = (x, y) =>'));
   assert.ok(view.includes('Math.min(112, Math.abs(x - clampedX) * 0.42)'));
+  assert.ok(view.includes("state.axisX = direction !== 'Y'"));
+  assert.ok(view.includes("state.axisY = direction !== 'X'"));
+  assert.ok(view.includes('state.elastic = Boolean(elastic)'));
+  assert.ok(view.includes('const limitX = state.axisX ? maxX() : 0'));
   assert.ok(view.includes('state.velocityX * dt'));
   assert.ok(view.includes('Math.exp(-dt / 285)'));
   assert.ok(view.includes('window.addEventListener(\'pointermove\', pointerMove, { passive: false })'));
