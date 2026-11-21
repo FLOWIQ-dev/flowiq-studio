@@ -13,6 +13,113 @@ const ICONS = {
 };
 const icon = type => '<svg viewBox="0 0 24 24" aria-hidden="true">' + (ICONS[type] || ICONS.Frame) + '</svg>';
 const orderedSiblingIds = (scene, ids) => ids.map((id, index) => ({ id, index, node: scene.get(id) })).filter(item => item.node && item.node.type !== 'Script').sort((a, b) => normalizeZIndex(a.node.props.zIndex) - normalizeZIndex(b.node.props.zIndex) || a.index - b.index).map(item => item.id);
+function setupElasticScroll(viewport, enabled, direction) {
+  viewport._elasticEnabled = Boolean(enabled);
+  viewport._elasticDirection = direction;
+  const canvas = () => viewport.querySelector(':scope > .scene-scroll-canvas');
+  const rubber = value => Math.sign(value) * Math.min(76, Math.abs(value) * 0.38);
+  const paint = (x, y, spring = false) => {
+    const content = canvas();
+    if (!content) return;
+    content.style.transition = spring ? 'transform 440ms cubic-bezier(.18,.72,.22,1)' : 'none';
+    content.style.transform = x || y ? 'translate3d(' + x + 'px,' + y + 'px,0)' : 'translate3d(0,0,0)';
+  };
+  const springBack = () => {
+    paint(0, 0, true);
+  };
+  if (!viewport._elasticHandlers) {
+    const state = { gesture: null, frame: 0, wheelFrame: 0 };
+    const start = event => {
+      if (!viewport._elasticEnabled || event.touches.length !== 1) return;
+      if (state.frame) cancelAnimationFrame(state.frame);
+      state.frame = 0;
+      const touch = event.touches[0];
+      state.gesture = {
+        id: touch.identifier, x: touch.clientX, y: touch.clientY,
+        scrollX: viewport.scrollLeft, scrollY: viewport.scrollTop,
+        lastX: viewport.scrollLeft, lastY: viewport.scrollTop,
+        lastTime: performance.now(), vx: 0, vy: 0, overX: 0, overY: 0
+      };
+    };
+    const move = event => {
+      const gesture = state.gesture;
+      if (!viewport._elasticEnabled || !gesture) return;
+      const touch = Array.from(event.touches).find(item => item.identifier === gesture.id);
+      if (!touch) return;
+      event.preventDefault();
+      const dx = touch.clientX - gesture.x, dy = touch.clientY - gesture.y;
+      const allowX = viewport._elasticDirection !== 'Y';
+      const allowY = viewport._elasticDirection !== 'X';
+      const maxX = Math.max(0, viewport.scrollWidth - viewport.clientWidth);
+      const maxY = Math.max(0, viewport.scrollHeight - viewport.clientHeight);
+      const desiredX = allowX ? gesture.scrollX - dx : gesture.scrollX;
+      const desiredY = allowY ? gesture.scrollY - dy : gesture.scrollY;
+      const nextX = Math.max(0, Math.min(maxX, desiredX));
+      const nextY = Math.max(0, Math.min(maxY, desiredY));
+      viewport.scrollLeft = nextX;
+      viewport.scrollTop = nextY;
+      gesture.overX = allowX ? desiredX - nextX : 0;
+      gesture.overY = allowY ? desiredY - nextY : 0;
+      const now = performance.now(), elapsed = Math.max(1, now - gesture.lastTime);
+      gesture.vx = (nextX - gesture.lastX) / elapsed;
+      gesture.vy = (nextY - gesture.lastY) / elapsed;
+      gesture.lastX = nextX; gesture.lastY = nextY; gesture.lastTime = now;
+      paint(rubber(-gesture.overX), rubber(-gesture.overY));
+    };
+    const end = () => {
+      const gesture = state.gesture;
+      if (!gesture) return;
+      state.gesture = null;
+      if (gesture.overX || gesture.overY) { springBack(); return; }
+      let vx = gesture.vx, vy = gesture.vy, previous = performance.now();
+      const coast = now => {
+        const elapsed = Math.min(32, Math.max(1, now - previous)); previous = now;
+        const maxX = Math.max(0, viewport.scrollWidth - viewport.clientWidth);
+        const maxY = Math.max(0, viewport.scrollHeight - viewport.clientHeight);
+        const beforeX = viewport.scrollLeft, beforeY = viewport.scrollTop;
+        const desiredX = beforeX + vx * elapsed, desiredY = beforeY + vy * elapsed;
+        viewport.scrollLeft = Math.max(0, Math.min(maxX, desiredX));
+        viewport.scrollTop = Math.max(0, Math.min(maxY, desiredY));
+        const overX = desiredX - viewport.scrollLeft, overY = desiredY - viewport.scrollTop;
+        if (overX || overY) {
+          paint(rubber(-overX), rubber(-overY));
+          springBack();
+          state.frame = 0;
+          return;
+        }
+        const friction = Math.pow(0.92, elapsed / 16);
+        vx *= friction; vy *= friction;
+        if (Math.abs(vx) + Math.abs(vy) < 0.025) { state.frame = 0; return; }
+        state.frame = requestAnimationFrame(coast);
+      };
+      if (Math.abs(vx) + Math.abs(vy) > 0.025) state.frame = requestAnimationFrame(coast);
+    };
+    const wheel = event => {
+      if (!viewport._elasticEnabled) return;
+      const allowX = viewport._elasticDirection !== 'Y';
+      const allowY = viewport._elasticDirection !== 'X';
+      const maxX = Math.max(0, viewport.scrollWidth - viewport.clientWidth);
+      const maxY = Math.max(0, viewport.scrollHeight - viewport.clientHeight);
+      const overX = allowX && ((viewport.scrollLeft <= 0 && event.deltaX < 0) || (viewport.scrollLeft >= maxX && event.deltaX > 0)) ? event.deltaX : 0;
+      const overY = allowY && ((viewport.scrollTop <= 0 && event.deltaY < 0) || (viewport.scrollTop >= maxY && event.deltaY > 0)) ? event.deltaY : 0;
+      if (!overX && !overY) return;
+      if (state.wheelFrame) cancelAnimationFrame(state.wheelFrame);
+      paint(rubber(overX), rubber(overY));
+      state.wheelFrame = requestAnimationFrame(() => { springBack(); state.wheelFrame = 0; });
+    };
+    viewport.addEventListener('touchstart', start, { passive: true });
+    viewport.addEventListener('touchmove', move, { passive: false });
+    viewport.addEventListener('touchend', end, { passive: true });
+    viewport.addEventListener('touchcancel', end, { passive: true });
+    viewport.addEventListener('wheel', wheel, { passive: true });
+    viewport._elasticHandlers = { state };
+  }
+  if (!enabled) {
+    const content = canvas();
+    if (content) { content.style.transition = ''; content.style.transform = ''; }
+  }
+}
+
 const el = (tag, className, text) => {
   const node = document.createElement(tag);
   if (className) node.className = className;
@@ -229,7 +336,7 @@ export function renderScene(container, scene, { selectedId = null, preview = fal
       childContainer.style.overflowX = enabled && direction !== 'Y' ? 'auto' : 'hidden';
       childContainer.style.overflowY = enabled && direction !== 'X' ? 'auto' : 'hidden';
       childContainer.style.overscrollBehavior = p.elastic === false ? 'none' : 'contain';
-      childContainer.style.touchAction = enabled ? (direction === 'X' ? 'pan-x' : direction === 'Y' ? 'pan-y' : 'pan-x pan-y') : 'none';
+      childContainer.style.touchAction = enabled ? (p.elastic === false ? (direction === 'X' ? 'pan-x' : direction === 'Y' ? 'pan-y' : 'pan-x pan-y') : 'none') : 'none';
       childContainer.style.webkitOverflowScrolling = 'touch';
       childContainer.style.setProperty('--scrollbar-thickness', Math.max(0, Math.min(24, Number(p.scrollBarThickness) || 8)) + 'px');
     } else {
@@ -307,6 +414,7 @@ export function renderScene(container, scene, { selectedId = null, preview = fal
       childRenderTarget = canvas;
       childContainer.scrollLeft = previousScrollLeft;
       childContainer.scrollTop = previousScrollTop;
+      setupElasticScroll(childContainer, enabled && p.elastic !== false, direction);
     }
     if (isImageNode) {
       const asset = assetMap.get(p.assetId);
@@ -432,7 +540,7 @@ export function renderScene(container, scene, { selectedId = null, preview = fal
         move.dataset.move = 'true';
         move.setAttribute('aria-label', 'Mover ScrollingFrame');
         move.title = 'Mover ScrollingFrame';
-        move.textContent = '•••';
+        move.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v18M3 12h18M8 7l4-4 4 4M8 17l4 4 4-4M7 8l-4 4 4 4M17 8l4 4-4 4"/></svg>';
         item.append(move);
       }
       for (const direction of ['nw','n','ne','e','se','s','sw','w']) {
