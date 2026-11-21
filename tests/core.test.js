@@ -745,6 +745,16 @@ test('preview GuiObjects allow touch gestures to reach nested ScrollingFrame vie
   assert.ok(css.includes('.scene-scroll-viewport'));
 });
 
+test('ScrollingFrame preview always enables native touch, wheel, and elastic overflow scrolling', async () => {
+  const view = await readFile(new URL('../js/editor/view.js', import.meta.url), 'utf8');
+  assert.match(view, /const previewMode = Boolean\(viewport\.closest\('#preview-screen'\)\)/);
+  assert.match(view, /enabled && \(previewMode \|\| viewport\.dataset\.editorMode === 'scroll'\)/);
+  assert.match(view, /if \(!previewMode && viewport\.dataset\.editorMode !== 'scroll'\) event\.preventDefault\(\)/);
+  assert.match(view, /item\.style\.touchAction = preview \? 'auto' : \(enabled && scrollMode \?/);
+  assert.match(view, /viewport\.style\.overscrollBehavior = elastic \? 'auto' : 'contain'/);
+  assert.match(view, /viewport\.style\.webkitOverflowScrolling = 'touch'/);
+});
+
 test('ScrollingFrame separates editing from native momentum scrolling', async () => {
   const view = await readFile(new URL('../js/editor/view.js', import.meta.url), 'utf8');
   const app = await readFile(new URL('../js/app.js', import.meta.url), 'utf8');
